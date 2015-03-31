@@ -537,10 +537,18 @@ begin
               end if
            end do
  
-           highyr = hiyr(:hicntr-1)
-           delete(hiyr)
-           lowyr = loyr(:locntr-1)
-           delete([/loyr,hicntr,locntr/])
+           if (hicntr.eq.0) then     ; for simulations with climatological SSTs
+              highyr = hiyr(0)
+           else
+              highyr = hiyr(:hicntr-1)
+           end if
+           delete([/hiyr,hicntr/])
+           if (locntr.eq.0) then
+              lowyr = loyr(0)
+           else
+              lowyr = loyr(:locntr-1)
+           end if
+           delete([/loyr,locntr/])
         
            dimS = dimsizes(psl&time)    ; change time from YYYYMM->YYYY.frac
            tmin = psl&time(0)/100
@@ -576,6 +584,7 @@ begin
            
            if (dimsizes(highyr).le.1) then
               print("For "+names(ee)+", 1 or less (normalized) nino3.4 value greater than one standard deviation found, setting nino3.4 spatial composites to missing")  ; sc_*_hi arrays left to _FillValue
+              sc_tas_hi@is_all_missing = True
            else           
               do gg = 0,23
                  tt = gg/12.
@@ -607,6 +616,7 @@ begin
            delete(sst&time)
            sst&time = TIME    
            delete(TIME)       
+                      
            if (OUTPUT_DATA.eq."True") then
               n34sc_sst&lat@standard_name = "latitude"
               n34sc_sst&lon@standard_name = "longitude"
@@ -660,8 +670,8 @@ begin
      val2 = .99
      pct = 0.1 
      spectra_mvf = False        ; missing value flag for nino3.4
-     if (any(ismissing(nino34))) then
-        print("Missing data detected for "+names(ee)+", power spectra function does not allow missing data, not creating spectra in sst.indices.ncl")
+     if (any(ismissing(nino34)).or.isatt(n34sc_tas,"is_all_missing")) then     ; n34sc_tas@is_all_missing results from there being no standardized nino34 values above 1 std dev, and that                                                             
+        print("Missing data detected for "+names(ee)+", power spectra function does not allow missing data, not creating spectra in sst.indices.ncl")  ; likely occurred due to climatological SSTs being present. Climatological SSTs may cause specx_ci to fail.
         spectra_mvf = True
         if (isfilepresent2("obs_ts").and.ee.eq.0) then
            spectra_mvf_obs = True    ; missing value flag for obs nino3.4
@@ -857,7 +867,7 @@ begin
      xyiod(ee) = gsn_csm_xy(wks_tio,fspan(syear(ee),eyear(ee)+.91667,dimsizes(iod)),arr,xyres)
      delete([/arr,tttt/])
      
-     xyres2@gsnCenterString = names(ee)
+     xyres2@gsnLeftString = names(ee)
      if (nyr(ee).ge.35) then
         xyres2@gsnRightString = sprintf("%4.2f", min(sd_run))+" / "+sprintf("%4.2f", avg(sd_run))+" / "+sprintf("%4.2f", max(sd_run))
         xyn34_rst(ee) = gsn_csm_xy(wks_n34_rst,fspan(syear(ee),eyear(ee)+.91667,dimsizes(sd_run)),sd_run,xyres2)
@@ -1242,15 +1252,19 @@ begin
            finpr_psl = finpr_psl+sprintf(format2,(pattern_cor(patcor_psl(0,:,:),patcor_psl(hh,:,:),clat_psl,0)))+"/"+sprintf(format3,(dim_rmsd(ndtooned(NewCosWeight(patcor_psl(0,:,:))),ndtooned(NewCosWeight(patcor_psl(hh,:,:))))))
         end if
      end do
-     if (.not.isfilepresent2(getenv("OUTDIR")+"metrics_orig.txt")) then
-        header = (/"","Pattern Correlations/RMS Differences   Observations vs. Model(s)",""/)
-        write_table(getenv("OUTDIR")+"metrics_orig.txt","w",[/header/],"%s")
-        write_table(getenv("OUTDIR")+"metrics_orig.txt","a",[/line3/],"%s")
-        write_table(getenv("OUTDIR")+"metrics_orig.txt","a",[/line4/],"%s")
-        delete(header)
-     end if
-     write_table(getenv("OUTDIR")+"metrics_orig.txt","a",[/finpr_sst/],"%s")
-     write_table(getenv("OUTDIR")+"metrics_orig.txt","a",[/finpr_psl/],"%s")
+     if (dimsizes(tochar(line4)).ge.8190) then   ; system or fortran compiler limit
+        print("Metrics table warning: Not creating metrics table as size of comparison results in a invalid ascii row size.")   
+     else
+        if (.not.isfilepresent2(getenv("OUTDIR")+"metrics_orig.txt")) then
+           header = (/"","Pattern Correlations/RMS Differences   Observations vs. Model(s)",""/)
+           write_table(getenv("OUTDIR")+"metrics_orig.txt","w",[/header/],"%s")
+           write_table(getenv("OUTDIR")+"metrics_orig.txt","a",[/line3/],"%s")
+           write_table(getenv("OUTDIR")+"metrics_orig.txt","a",[/line4/],"%s")
+           delete(header)
+        end if
+        write_table(getenv("OUTDIR")+"metrics_orig.txt","a",[/finpr_sst/],"%s")
+        write_table(getenv("OUTDIR")+"metrics_orig.txt","a",[/finpr_psl/],"%s")
+     end if  
      delete([/finpr_sst,finpr_psl,line3,line4,format2,format3,nchar,ntc,clat_sst,clat_psl,patcor_tas,patcor_psl,dimY,ntb/])
   end if
   if (isfilepresent2("obs_ts").and.ee.ge.1) then           ; for pattern correlation table  
@@ -1280,15 +1294,19 @@ begin
            finpr_lo = finpr_lo+sprintf(format2,(pattern_cor(patcor_hov_lo(0,24:52,:),patcor_hov_lo(hh,24:52,:),1.0,0)))+"/"+sprintf(format3,(dim_rmsd(ndtooned(patcor_hov_lo(0,24:52,:)),ndtooned(patcor_hov_lo(hh,24:52,:)))))
         end if
      end do
-     if (.not.isfilepresent2(getenv("OUTDIR")+"metrics_orig.txt")) then
-        header = (/"","Pattern Correlations/RMS Differences   Observations vs. Model(s)",""/)
-        write_table(getenv("OUTDIR")+"metrics_orig.txt","w",[/header/],"%s")
-        write_table(getenv("OUTDIR")+"metrics_orig.txt","a",[/line3/],"%s")
-        write_table(getenv("OUTDIR")+"metrics_orig.txt","a",[/line4/],"%s")
-        delete(header)
+     if (dimsizes(tochar(line4)).ge.8190) then   ; system or fortran compiler limit
+        print("Metrics table warning: Not creating metrics table as size of comparison results in a invalid ascii row size.")   
+     else
+        if (.not.isfilepresent2(getenv("OUTDIR")+"metrics_orig.txt")) then
+           header = (/"","Pattern Correlations/RMS Differences   Observations vs. Model(s)",""/)
+           write_table(getenv("OUTDIR")+"metrics_orig.txt","w",[/header/],"%s")
+           write_table(getenv("OUTDIR")+"metrics_orig.txt","a",[/line3/],"%s")
+           write_table(getenv("OUTDIR")+"metrics_orig.txt","a",[/line4/],"%s")
+           delete(header)
+        end if
+        write_table(getenv("OUTDIR")+"metrics_orig.txt","a",[/finpr_hi/],"%s")
+        write_table(getenv("OUTDIR")+"metrics_orig.txt","a",[/finpr_lo/],"%s")
      end if
-     write_table(getenv("OUTDIR")+"metrics_orig.txt","a",[/finpr_hi/],"%s")
-     write_table(getenv("OUTDIR")+"metrics_orig.txt","a",[/finpr_lo/],"%s")
      delete([/finpr_hi,finpr_lo,line3,line4,format2,format3,nchar,ntc,patcor_hov_hi,patcor_hov_lo/])  
   end if
   
@@ -1338,7 +1356,8 @@ begin
   gsn_panel(wks_tio,xytio,lp,panres)   
   
   panres@txString = "Indian Ocean Dipole (Monthly, "+title_iod+")"
-  gsn_panel(wks_tio,xyiod,lp,panres)   
+  gsn_panel(wks_tio,xyiod,lp,panres)  
+  delete(wks_tio) 
 
   if (all(ismissing(xyn34_rst))) then
      print("No valid running standard deviation plots, skipping")

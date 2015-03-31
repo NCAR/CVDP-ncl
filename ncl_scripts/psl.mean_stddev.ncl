@@ -42,32 +42,53 @@ begin
      wks_type@wkWidth = 1500*PNG_SCALE
      wks_type@wkHeight = 1500*PNG_SCALE
   end if
-  wks_djf = gsn_open_wks(wks_type,getenv("OUTDIR")+"psl.mean_stddev.djf")
-  wks_mam = gsn_open_wks(wks_type,getenv("OUTDIR")+"psl.mean_stddev.mam")
-  wks_jja = gsn_open_wks(wks_type,getenv("OUTDIR")+"psl.mean_stddev.jja")
-  wks_son = gsn_open_wks(wks_type,getenv("OUTDIR")+"psl.mean_stddev.son")
-  wks_ann = gsn_open_wks(wks_type,getenv("OUTDIR")+"psl.mean_stddev.ann")
+  wks_stddev_djf = gsn_open_wks(wks_type,getenv("OUTDIR")+"psl.stddev.djf")
+  wks_stddev_mam = gsn_open_wks(wks_type,getenv("OUTDIR")+"psl.stddev.mam")
+  wks_stddev_jja = gsn_open_wks(wks_type,getenv("OUTDIR")+"psl.stddev.jja")
+  wks_stddev_son = gsn_open_wks(wks_type,getenv("OUTDIR")+"psl.stddev.son")
+  wks_stddev_ann = gsn_open_wks(wks_type,getenv("OUTDIR")+"psl.stddev.ann")
+  wks_mean_djf = gsn_open_wks(wks_type,getenv("OUTDIR")+"psl.mean.djf")
+  wks_mean_mam = gsn_open_wks(wks_type,getenv("OUTDIR")+"psl.mean.mam")
+  wks_mean_jja = gsn_open_wks(wks_type,getenv("OUTDIR")+"psl.mean.jja")
+  wks_mean_son = gsn_open_wks(wks_type,getenv("OUTDIR")+"psl.mean.son")
+  wks_mean_ann = gsn_open_wks(wks_type,getenv("OUTDIR")+"psl.mean.ann")
+
   
   if (COLORMAP.eq.0) then
-     gsn_define_colormap(wks_djf,"rainbow+white") 
-     gsn_define_colormap(wks_mam,"rainbow+white")  
-     gsn_define_colormap(wks_jja,"rainbow+white") 
-     gsn_define_colormap(wks_son,"rainbow+white")  
-     gsn_define_colormap(wks_ann,"rainbow+white")
+     gsn_define_colormap(wks_stddev_djf,"rainbow+white") 
+     gsn_define_colormap(wks_stddev_mam,"rainbow+white")  
+     gsn_define_colormap(wks_stddev_jja,"rainbow+white") 
+     gsn_define_colormap(wks_stddev_son,"rainbow+white")  
+     gsn_define_colormap(wks_stddev_ann,"rainbow+white")
+     gsn_define_colormap(wks_mean_djf,"ncl_default") 
+     gsn_define_colormap(wks_mean_mam,"ncl_default")  
+     gsn_define_colormap(wks_mean_jja,"ncl_default") 
+     gsn_define_colormap(wks_mean_son,"ncl_default")  
+     gsn_define_colormap(wks_mean_ann,"ncl_default")
   end if
   if (COLORMAP.eq.1) then
-     gsn_define_colormap(wks_djf,"cb_rainbow") 
-     gsn_define_colormap(wks_mam,"cb_rainbow")  
-     gsn_define_colormap(wks_jja,"cb_rainbow") 
-     gsn_define_colormap(wks_son,"cb_rainbow")  
-     gsn_define_colormap(wks_ann,"cb_rainbow")
+     gsn_define_colormap(wks_stddev_djf,"cb_rainbow") 
+     gsn_define_colormap(wks_stddev_mam,"cb_rainbow")  
+     gsn_define_colormap(wks_stddev_jja,"cb_rainbow") 
+     gsn_define_colormap(wks_stddev_son,"cb_rainbow")  
+     gsn_define_colormap(wks_stddev_ann,"cb_rainbow")
+     gsn_define_colormap(wks_mean_djf,"BlueDarkRed18") 
+     gsn_define_colormap(wks_mean_mam,"BlueDarkRed18")  
+     gsn_define_colormap(wks_mean_jja,"BlueDarkRed18") 
+     gsn_define_colormap(wks_mean_son,"BlueDarkRed18")  
+     gsn_define_colormap(wks_mean_ann,"BlueDarkRed18")     
   end if
 
-  plot_djf = new(nsim,"graphic")  
-  plot_mam = new(nsim,"graphic")  
-  plot_jja = new(nsim,"graphic")  
-  plot_son = new(nsim,"graphic")   
-  plot_ann = new(nsim,"graphic")  
+  plot_mean_djf = new(nsim,"graphic")  
+  plot_mean_mam = new(nsim,"graphic")  
+  plot_mean_jja = new(nsim,"graphic")  
+  plot_mean_son = new(nsim,"graphic")   
+  plot_mean_ann = new(nsim,"graphic")  
+  plot_stddev_djf = new(nsim,"graphic")  
+  plot_stddev_mam = new(nsim,"graphic")  
+  plot_stddev_jja = new(nsim,"graphic")  
+  plot_stddev_son = new(nsim,"graphic")   
+  plot_stddev_ann = new(nsim,"graphic")   
   do ee = 0,nsim-1
      psl = data_read_in(paths(ee),"PSL",syear(ee),eyear(ee))    ; read in data, orient lats/lons correctly, set time coordinate variable up   
      if (isatt(psl,"is_all_missing")) then
@@ -142,6 +163,11 @@ begin
      res@mpCenterLonF = 210.
      res@mpOutlineOn = True  
      res@mpDataSetName = "Earth..4"
+     if (wks_type.eq."png") then
+        res@mpGeophysicalLineThicknessF = 2.  
+     else
+        res@mpGeophysicalLineThicknessF = 1.  
+     end if
      res@gsnDraw      = False
      res@gsnFrame     = False
   
@@ -151,13 +177,7 @@ begin
      res@lbLabelBarOn    = False
 
      res@cnLevelSelectionMode = "ExplicitLevels"
-     res@cnLevels = fspan(.4,6.0,8)
-     if (COLORMAP.eq.0) then
-        res@cnFillColors = (/54,80,95,125,175,185,195,205,236/)
-     end if
-     if (COLORMAP.eq.1) then
-        res@cnFillColors = (/35,47,63,79,95,111,124,155,175/)
-     end if
+     
 
      res@gsnLeftStringOrthogonalPosF = -0.05
      res@gsnLeftStringParallelPosF = .005
@@ -169,39 +189,19 @@ begin
      res@gsnCenterStringFontHeightF = 0.018
      res@gsnRightStringFontHeightF = 0.014
 
-     sres = True
-     sres@cnLevelSelectionMode = "ExplicitLevels"
-     sres@cnLevels  = ispan(980,1052,4)     ;13)
-     sres@cnLinesOn = True
-     sres@gsnDraw   = False
-     sres@gsnFrame  = False
-     sres@tiMainOn = False
-     sres@cnInfoLabelOn = False
-     sres@cnLineColor = "white"
-     sres@cnLineLabelsOn = True
-     sres@cnLineDashSegLenF          = 0.18          ; assist in controlling concentration
-     sres@cnLineLabelInterval        = 2             ; default = 2
-     sres@cnLineLabelPlacementMode   = "constant"    ; choose constant label method
-     sres@cnLineLabelFontColor = "white"
-     if (nsim.le.5) then
-        sres@cnLineLabelFontHeightF = 0.010
-     else
-        sres@cnLineLabelFontHeightF = 0.018
+     sres = res
+     
+     res@cnLevels = fspan(.4,6.0,8)
+     if (COLORMAP.eq.0) then
+        res@cnFillColors = (/54,80,95,125,175,185,195,205,236/)
+        sres@cnLevels  = ispan(972,1044,4)
      end if
-     sres@cnLineDrawOrder = "PostDraw"
-     sres@cnLabelDrawOrder = sres@cnLineDrawOrder
-
-     if (wks_type.eq."png") then
-        sres@cnLineThicknessF   = 2.
-        res@mpGeophysicalLineThicknessF = 2.  
-     else
-        sres@cnLineThicknessF   = 1.
-        res@mpGeophysicalLineThicknessF = 1.  
+     if (COLORMAP.eq.1) then
+        res@cnFillColors = (/35,47,63,79,95,111,124,155,175/)
+        sres@cnLevels  = ispan(980,1036,4)
      end if
 
-     res@gsnLeftString = syear(ee)+"-"+eyear(ee) 
-     res@gsnRightString = psl_mean_djf@units
-     res@gsnCenterString = names(ee)
+
      
      if (isfilepresent2("obs_psl").and.ee.eq.0) then    ; for pattern correlation table
         patcor = new((/nsim,dimsizes(psl_sd_ann&lat),dimsizes(psl_sd_ann&lon)/),typeof(psl_sd_ann))
@@ -214,13 +214,25 @@ begin
      if (isfilepresent2("obs_psl").and.ee.ge.1) then
         patcor(ee,:,:) = (/ linint2(psl_sd_ann&lon,psl_sd_ann&lat,psl_sd_ann,True,patcor&lon,patcor&lat,0) /)
      end if
+
+     res@gsnLeftString = syear(ee)+"-"+eyear(ee) 
+     res@gsnRightString = psl_mean_djf@units
+     res@gsnCenterString = names(ee)     
+     plot_stddev_djf(ee) = gsn_csm_contour_map(wks_stddev_djf,psl_sd_djf,res)
+     plot_stddev_mam(ee) = gsn_csm_contour_map(wks_stddev_mam,psl_sd_mam,res)
+     plot_stddev_jja(ee) = gsn_csm_contour_map(wks_stddev_jja,psl_sd_jja,res)
+     plot_stddev_son(ee) = gsn_csm_contour_map(wks_stddev_son,psl_sd_son,res)
+     plot_stddev_ann(ee) = gsn_csm_contour_map(wks_stddev_ann,psl_sd_ann,res)
      
-     plot_djf(ee) = gsn_csm_contour_map_overlay(wks_djf,psl_sd_djf,psl_mean_djf,res,sres)
-     plot_mam(ee) = gsn_csm_contour_map_overlay(wks_mam,psl_sd_mam,psl_mean_mam,res,sres)
-     plot_jja(ee) = gsn_csm_contour_map_overlay(wks_jja,psl_sd_jja,psl_mean_jja,res,sres)
-     plot_son(ee) = gsn_csm_contour_map_overlay(wks_son,psl_sd_son,psl_mean_son,res,sres)
-     plot_ann(ee) = gsn_csm_contour_map_overlay(wks_ann,psl_sd_ann,psl_mean_ann,res,sres)
-     delete([/psl_sd_djf,psl_sd_mam,psl_sd_jja,psl_sd_son,psl_sd_ann,psl_mean_djf,psl_mean_mam,psl_mean_jja,psl_mean_son,psl_mean_ann/])
+     sres@gsnLeftString = syear(ee)+"-"+eyear(ee) 
+     sres@gsnRightString = psl_mean_djf@units
+     sres@gsnCenterString = names(ee)
+     plot_mean_djf(ee) = gsn_csm_contour_map(wks_mean_djf,psl_mean_djf,sres)
+     plot_mean_mam(ee) = gsn_csm_contour_map(wks_mean_mam,psl_mean_mam,sres)
+     plot_mean_jja(ee) = gsn_csm_contour_map(wks_mean_jja,psl_mean_jja,sres)
+     plot_mean_son(ee) = gsn_csm_contour_map(wks_mean_son,psl_mean_son,sres)
+     plot_mean_ann(ee) = gsn_csm_contour_map(wks_mean_ann,psl_mean_ann,sres)
+     delete([/psl_sd_djf,psl_sd_mam,psl_sd_jja,psl_sd_son,psl_sd_ann,psl_mean_djf,psl_mean_mam,psl_mean_jja,psl_mean_son,psl_mean_ann,res,sres/])
   end do     
   
   if (isfilepresent2("obs_psl")) then    ; for pattern correlation table  
@@ -256,12 +268,16 @@ begin
            finpr = finpr+sprintf(format2,(pattern_cor(patcor(0,:,:),patcor(hh,:,:),clat,0)))+"/"+sprintf(format3,(dim_rmsd(ndtooned(NewCosWeight(patcor(0,:,:))),ndtooned(NewCosWeight(patcor(hh,:,:))))))
         end if
      end do
-     if (.not.isfilepresent2(getenv("OUTDIR")+"metrics_orig.txt")) then
-        header = (/"","Pattern Correlations/RMS Differences   Observations vs. Model(s)",""/)
-        write_table(getenv("OUTDIR")+"metrics_orig.txt","w",[/header/],"%s")
-        write_table(getenv("OUTDIR")+"metrics_orig.txt","a",[/line3/],"%s")
-        write_table(getenv("OUTDIR")+"metrics_orig.txt","a",[/line4/],"%s")
-        delete(header)
+     if (dimsizes(tochar(line4)).ge.8190) then   ; system or fortran compiler limit
+        print("Metrics table warning: Not creating metrics table as size of comparison results in a invalid ascii row size.")   
+     else
+        if (.not.isfilepresent2(getenv("OUTDIR")+"metrics_orig.txt")) then
+           header = (/"","Pattern Correlations/RMS Differences   Observations vs. Model(s)",""/)
+           write_table(getenv("OUTDIR")+"metrics_orig.txt","w",[/header/],"%s")
+           write_table(getenv("OUTDIR")+"metrics_orig.txt","a",[/line3/],"%s")
+           write_table(getenv("OUTDIR")+"metrics_orig.txt","a",[/line4/],"%s")
+           delete(header)
+        end if
      end if
      write_table(getenv("OUTDIR")+"metrics_orig.txt","a",[/finpr/],"%s")
      delete([/finpr,line3,line4,format2,format3,nchar,ntc,clat,patcor,dimY,ntb/])
@@ -287,25 +303,45 @@ begin
   ncol = floattointeger(sqrt(nsim))
   nrow = (nsim/ncol)+mod(nsim,ncol)  
   
-  panres@txString = "PSL Means / Standard Deviations (DJF)"
-  gsn_panel(wks_djf,plot_djf,(/nrow,ncol/),panres)
-  delete(wks_djf)
+  panres@txString = "PSL Standard Deviations (DJF)"
+  gsn_panel(wks_stddev_djf,plot_stddev_djf,(/nrow,ncol/),panres)
+  delete(wks_stddev_djf)
   
-  panres@txString = "PSL Means / Standard Deviations (MAM)"
-  gsn_panel(wks_mam,plot_mam,(/nrow,ncol/),panres)
-  delete(wks_mam)
+  panres@txString = "PSL Standard Deviations (MAM)"
+  gsn_panel(wks_stddev_mam,plot_stddev_mam,(/nrow,ncol/),panres)
+  delete(wks_stddev_mam)
   
-  panres@txString = "PSL Means / Standard Deviations (JJA)"
-  gsn_panel(wks_jja,plot_jja,(/nrow,ncol/),panres)
-  delete(wks_jja)
+  panres@txString = "PSL Standard Deviations (JJA)"
+  gsn_panel(wks_stddev_jja,plot_stddev_jja,(/nrow,ncol/),panres)
+  delete(wks_stddev_jja)
   
-  panres@txString = "PSL Means / Standard Deviations (SON)"
-  gsn_panel(wks_son,plot_son,(/nrow,ncol/),panres)
-  delete(wks_son)
+  panres@txString = "PSL Standard Deviations (SON)"
+  gsn_panel(wks_stddev_son,plot_stddev_son,(/nrow,ncol/),panres)
+  delete(wks_stddev_son)
   
-  panres@txString = "PSL Means / Standard Deviations (Annual)"
-  gsn_panel(wks_ann,plot_ann,(/nrow,ncol/),panres)
-  delete(wks_ann)
+  panres@txString = "PSL Standard Deviations (Annual)"
+  gsn_panel(wks_stddev_ann,plot_stddev_ann,(/nrow,ncol/),panres)
+  delete(wks_stddev_ann)
+  
+  panres@txString = "PSL Means (DJF)"
+  gsn_panel(wks_mean_djf,plot_mean_djf,(/nrow,ncol/),panres)
+  delete(wks_mean_djf)
+  
+  panres@txString = "PSL Means (MAM)"
+  gsn_panel(wks_mean_mam,plot_mean_mam,(/nrow,ncol/),panres)
+  delete(wks_mean_mam)
+  
+  panres@txString = "PSL Means (JJA)"
+  gsn_panel(wks_mean_jja,plot_mean_jja,(/nrow,ncol/),panres)
+  delete(wks_mean_jja)
+  
+  panres@txString = "PSL Means (SON)"
+  gsn_panel(wks_mean_son,plot_mean_son,(/nrow,ncol/),panres)
+  delete(wks_mean_son)
+  
+  panres@txString = "PSL Means (Annual)"
+  gsn_panel(wks_mean_ann,plot_mean_ann,(/nrow,ncol/),panres)
+  delete(wks_mean_ann)
   delete(panres)
   print("Finished: psl.mean_stddev.ncl")
 end

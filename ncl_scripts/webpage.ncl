@@ -30,9 +30,9 @@ begin
      subtxt = "Climatological Period Used: "+CLIMO_SYEAR+"-"+CLIMO_EYEAR
   end if
   if (OBS.eq."True") then
-     namelist_txt = "Input Namelists: <a href="+quote+"namelist_obs"+quote+">OBS</a> | <a href="+quote+"namelist"+quote+">Models</a><br>Derived Namelists: <a href="+quote+"namelist_prect"+quote+">PR</a> | <a href="+quote+"namelist_psl"+quote+">PSL</a> | <a href="+quote+"namelist_snowdp"+quote+">SND</a> | <a href="+quote+"namelist_trefht"+quote+">TAS</a> | <a href="+quote+"namelist_ts"+quote+">TS</a>"          
+     namelist_txt = "Input Namelists: <a href="+quote+"namelist_obs"+quote+">OBS</a> | <a href="+quote+"namelist"+quote+">Models</a><br>Derived Namelists: <a href="+quote+"namelist_moc"+quote+">MOC</a> | <a href="+quote+"namelist_prect"+quote+">PR</a> | <a href="+quote+"namelist_psl"+quote+">PSL</a><br>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="+quote+"namelist_snowdp"+quote+">SND</a> | <a href="+quote+"namelist_trefht"+quote+">TAS</a> | <a href="+quote+"namelist_ts"+quote+">TS</a>"          
   else
-     namelist_txt = "Input Namelist: <a href="+quote+"namelist"+quote+">Models</a><br>Derived Namelists: <a href="+quote+"namelist_prect"+quote+">PR</a> | <a href="+quote+"namelist_psl"+quote+">PSL</a> | <a href="+quote+"namelist_snowdp"+quote+">SND</a> | <a href="+quote+"namelist_trefht"+quote+">TAS</a> | <a href="+quote+"namelist_ts"+quote+">TS</a>"
+     namelist_txt = "Input Namelist: <a href="+quote+"namelist"+quote+">Models</a><br>Derived Namelists: <a href="+quote+"namelist_moc"+quote+">MOC</a> | <a href="+quote+"namelist_prect"+quote+">PR</a> | <a href="+quote+"namelist_psl"+quote+">PSL</a><br>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="+quote+"namelist_snowdp"+quote+">SND</a> | <a href="+quote+"namelist_trefht"+quote+">TAS</a> | <a href="+quote+"namelist_ts"+quote+">TS</a>"
   end if
   nsim_noobs = numAsciiRow("namelist")
   na = asciiread("namelist",(/nsim_noobs/),"string")
@@ -67,28 +67,20 @@ begin
   delete([/subtxt,namelist_txt/])
 
   txt(13) = "<br><TABLE width='600' border=1 frame=void rules=all cellpadding=6>"
-  txt(14) = "<CAPTION>Means and Standard Deviation Maps</CAPTION>"
-  txt(15) = "<tr><td><b>SST</b></td><td>"+table_link_setup(OUTDIR,"sst.mean_stddev.djf.png","DJF")+"</td>"  
-  txt(16) = "<td>"+table_link_setup(OUTDIR,"sst.mean_stddev.mam.png","MAM")+"</td>"  
-  txt(17) = "<td>"+table_link_setup(OUTDIR,"sst.mean_stddev.jja.png","JJA")+"</td>"  
-  txt(18) = "<td>"+table_link_setup(OUTDIR,"sst.mean_stddev.son.png","SON")+"</td>"  
-  txt(19) = "<td>"+table_link_setup(OUTDIR,"sst.mean_stddev.ann.png","Annual")+"</td></tr>"    
-  txt(20) = "<tr><td><b>TAS</b></td><td>"+table_link_setup(OUTDIR,"tas.mean_stddev.djf.png","DJF")+"</td>"  
-  txt(21) = "<td>"+table_link_setup(OUTDIR,"tas.mean_stddev.mam.png","MAM")+"</td>"  
-  txt(22) = "<td>"+table_link_setup(OUTDIR,"tas.mean_stddev.jja.png","JJA")+"</td>"  
-  txt(23) = "<td>"+table_link_setup(OUTDIR,"tas.mean_stddev.son.png","SON")+"</td>"  
-  txt(24) = "<td>"+table_link_setup(OUTDIR,"tas.mean_stddev.ann.png","Annual")+"</td></tr>"    
-  txt(25) = "<tr><td><b>PSL</b></td><td>"+table_link_setup(OUTDIR,"psl.mean_stddev.djf.png","DJF")+"</td>"  
-  txt(26) = "<td>"+table_link_setup(OUTDIR,"psl.mean_stddev.mam.png","MAM")+"</td>"  
-  txt(27) = "<td>"+table_link_setup(OUTDIR,"psl.mean_stddev.jja.png","JJA")+"</td>"  
-  txt(28) = "<td>"+table_link_setup(OUTDIR,"psl.mean_stddev.son.png","SON")+"</td>"  
-  txt(29) = "<td>"+table_link_setup(OUTDIR,"psl.mean_stddev.ann.png","Annual")+"</td></tr>"    
-  txt(30) = "<tr><td><b>PR</b></td><td>"+table_link_setup(OUTDIR,"pr.mean_stddev.djf.png","DJF")+"</td>"  
-  txt(31) = "<td>"+table_link_setup(OUTDIR,"pr.mean_stddev.mam.png","MAM")+"</td>"  
-  txt(32) = "<td>"+table_link_setup(OUTDIR,"pr.mean_stddev.jja.png","JJA")+"</td>"  
-  txt(33) = "<td>"+table_link_setup(OUTDIR,"pr.mean_stddev.son.png","SON")+"</td>"  
-  txt(34) = "<td>"+table_link_setup(OUTDIR,"pr.mean_stddev.ann.png","Annual")+"</td></tr>"  
-  txt(35) = "</table>"  
+  txt(14) = "<CAPTION>Means</CAPTION>"
+  txt(15) = "<tr><td><b>SST</b></td><td>"+table_link_setup(OUTDIR,"sst.mean.djf.png","DJF")+"</td><td>"+table_link_setup(OUTDIR,"sst.mean.mam.png","MAM")+"</td><td>"+table_link_setup(OUTDIR,"sst.mean.jja.png","JJA")+"</td><td>"+table_link_setup(OUTDIR,"sst.mean.son.png","SON")+"</td><td>"+table_link_setup(OUTDIR,"sst.mean.ann.png","Annual")+"</td></tr>"    
+  txt(16) = "<tr><td><b>TAS</b></td><td>"+table_link_setup(OUTDIR,"tas.mean.djf.png","DJF")+"</td><td>"+table_link_setup(OUTDIR,"tas.mean.mam.png","MAM")+"</td><td>"+table_link_setup(OUTDIR,"tas.mean.jja.png","JJA")+"</td><td>"+table_link_setup(OUTDIR,"tas.mean.son.png","SON")+"</td><td>"+table_link_setup(OUTDIR,"tas.mean.ann.png","Annual")+"</td></tr>"    
+  txt(17) = "<tr><td><b>PSL</b></td><td>"+table_link_setup(OUTDIR,"psl.mean.djf.png","DJF")+"</td><td>"+table_link_setup(OUTDIR,"psl.mean.mam.png","MAM")+"</td><td>"+table_link_setup(OUTDIR,"psl.mean.jja.png","JJA")+"</td><td>"+table_link_setup(OUTDIR,"psl.mean.son.png","SON")+"</td><td>"+table_link_setup(OUTDIR,"psl.mean.ann.png","Annual")+"</td></tr>"    
+  txt(18) = "<tr><td><b>PR</b></td><td>"+table_link_setup(OUTDIR,"pr.mean.djf.png","DJF")+"</td><td>"+table_link_setup(OUTDIR,"pr.mean.mam.png","MAM")+"</td><td>"+table_link_setup(OUTDIR,"pr.mean.jja.png","JJA")+"</td><td>"+table_link_setup(OUTDIR,"pr.mean.son.png","SON")+"</td><td>"+table_link_setup(OUTDIR,"pr.mean.ann.png","Annual")+"</td></tr>"    
+  txt(19) = "</table>"  
+  
+  txt(23) = "<br><TABLE width='600' border=1 frame=void rules=all cellpadding=6>"
+  txt(24) = "<CAPTION>Standard Deviations</CAPTION>"
+  txt(25) = "<tr><td><b>SST</b></td><td>"+table_link_setup(OUTDIR,"sst.stddev.djf.png","DJF")+"</td><td>"+table_link_setup(OUTDIR,"sst.stddev.mam.png","MAM")+"</td><td>"+table_link_setup(OUTDIR,"sst.stddev.jja.png","JJA")+"</td><td>"+table_link_setup(OUTDIR,"sst.stddev.son.png","SON")+"</td><td>"+table_link_setup(OUTDIR,"sst.stddev.ann.png","Annual")+"</td></tr>"    
+  txt(26) = "<tr><td><b>TAS</b></td><td>"+table_link_setup(OUTDIR,"tas.stddev.djf.png","DJF")+"</td><td>"+table_link_setup(OUTDIR,"tas.stddev.mam.png","MAM")+"</td><td>"+table_link_setup(OUTDIR,"tas.stddev.jja.png","JJA")+"</td><td>"+table_link_setup(OUTDIR,"tas.stddev.son.png","SON")+"</td><td>"+table_link_setup(OUTDIR,"tas.stddev.ann.png","Annual")+"</td></tr>"    
+  txt(27) = "<tr><td><b>PSL</b></td><td>"+table_link_setup(OUTDIR,"psl.stddev.djf.png","DJF")+"</td><td>"+table_link_setup(OUTDIR,"psl.stddev.mam.png","MAM")+"</td><td>"+table_link_setup(OUTDIR,"psl.stddev.jja.png","JJA")+"</td><td>"+table_link_setup(OUTDIR,"psl.stddev.son.png","SON")+"</td><td>"+table_link_setup(OUTDIR,"psl.stddev.ann.png","Annual")+"</td></tr>"    
+  txt(28) = "<tr><td><b>PR</b></td><td>"+table_link_setup(OUTDIR,"pr.stddev.djf.png","DJF")+"</td><td>"+table_link_setup(OUTDIR,"pr.stddev.mam.png","MAM")+"</td><td>"+table_link_setup(OUTDIR,"pr.stddev.jja.png","JJA")+"</td><td>"+table_link_setup(OUTDIR,"pr.stddev.son.png","SON")+"</td><td>"+table_link_setup(OUTDIR,"pr.stddev.ann.png","Annual")+"</td></tr>"    
+  txt(29) = "</table>"  
   
   txt(36) = "<br><TABLE width='600' border=1 frame=void rules=all cellpadding=6>"
   txt(37) = "<CAPTION>Coupled Modes of Variability</CAPTION>"  
@@ -181,6 +173,18 @@ begin
   txt(128) = "<td>"+table_link_setup(OUTDIR,"psa2.sstreg.jja.png","JJA")+"</td><td>"+table_link_setup(OUTDIR,"psa2.sstreg.son.png","SON")+"</td>"
   txt(129) = "<td>"+table_link_setup(OUTDIR,"psa2.sstreg.ann.png","Annual")+"</td><td>"+table_link_setup(OUTDIR,"psa2.sstreg.mon.png","Monthly")+"</td></tr>"
   txt(130) = "</tr></table>"
+
+  txt(132) = "<br><TABLE width='600' border=1 frame=void rules=all cellpadding=6>"
+  txt(133) = "<CAPTION>AMOC</CAPTION>"
+  txt(134) = "<tr><td>"+table_link_setup(OUTDIR,"amoc.mean.ann.png","Means")+"</td>"
+  txt(135) = "<td>"+table_link_setup(OUTDIR,"amoc.stddev.ann.png","Standard Deviations")+"</td>"
+  txt(136) = "<td>"+table_link_setup(OUTDIR,"amoc.ann.png","Patterns")+"</td>"
+  txt(137) = "<td>"+table_link_setup(OUTDIR,"amoc.timeseries.ann.png","Timeseries")+"</td></tr>"
+  txt(138) = "<tr><td>"+table_link_setup(OUTDIR,"amoc.powspec.ann.png","Spectra")+"</td>"
+  txt(139) = "<td>"+table_link_setup(OUTDIR,"amoc.tasreg.ann.png","TAS Regressions")+"</td>"
+  txt(140) = "<td>"+table_link_setup(OUTDIR,"amoc.sstreg.ann.png","SST Regressions")+"</td>"
+  txt(141) = "<td>"+table_link_setup(OUTDIR,"amoc_amo.leadlag.ann.png","AMO/AMOC Lag Correlations")+"</td></tr></table>" 
+
   
   txt(162) = "<br><TABLE width='600' border=1 frame=void rules=all cellpadding=6>"
   txt(163) = "<CAPTION>Global Trend Maps</CAPTION>"
@@ -327,7 +331,7 @@ begin
   txt(60) = "<tr><td><b>Global Average Running Trends</b></td>"
   txt(61) = "<td>N-year running trends are computed by calculating the linear trend over the N-year interval beginning at each successive timestep.  For instance, for a global timeseries that runs from 1970-2012, the 8yr running trend value for January 1970 is the linear trend during January 1970 - December 1977, and the value for January 2005 is the linear trend during January 2005 - December 2012.</td></tr>"  
   txt(62) = "<tr><td><b>Metrics Table</b></td>"
-  txt(63) = "<td>Area-weighted pattern correlations and rms differences are calculated between observations and each model simulation (regridded to match observational grid) for 11 climate metrics. The Total Score column shows the average of the 11 pattern correlations (Z-transformed) and rms differences.</td></tr>" 
+  txt(63) = "<td>Area-weighted pattern correlations and rms differences are calculated between observations and each model simulation (regridded to match the observational grid) for 11 climate metrics. The Total Score column shows the average of the 11 pattern correlations (Z-transformed) and rms differences. Domains Used: Means, standard deviations, AMO, and PDO: Global. Hovmollers: Entire longitude/temporal range shown. NAM: Entire domain shown (20:90&deg;N). SAM: Entire domain shown (20:90&deg;S).</td></tr>" 
   txt(64) = "<tr><td><b>Power Spectra</b></td>"
   txt(65) = "<td>The best-fit first-order Markov red noise spectrum (red curve) and its 95% (blue curve) and 99% (green curve) confidence bounds are shown on each panel. Top X-axis shows the period (in years), and the bottom X-axis shows the frequency (cycles/mo). If calculated, the observational spectrum is overlaid in gray on each model spectrum. The spectra are displayed in variance-conserving form.</td></tr>"
   txt(66) = "<tr><td><b>Climatological Zonal Averages</b></td>"
@@ -336,9 +340,11 @@ begin
   txt(69) = "<td>Winter (December-March) average PSL anomalies area-averaged over 30&deg;:65&deg;N, 160&deg;E:140&deg;W. Based on Trenberth, K. E. and J. W. Hurrell, 1994: Decadal atmosphere-ocean variations in the Pacific, <i>Climate Dynamics</i>, 9, 303-319.</td></tr>"  
   txt(70) = "<tr><td><b>Additional Indices</b></td>"
   txt(71) = "<td>Area-averaged anomalies as specified in the plot title. Red/blue shading denotes positive/negative departures from the best-fit linear trend line.</td></tr>"  
+  txt(70) = "<tr><td><b>AMOC</b></td>"
+  txt(71) = "<td>MOC annual averages are formed, weighted by the cosine of the latitude and by the depth of the vertical layer, and then the data is masked by setting all those areas to missing where the variance is less than 1.e-6. The leading EOF and associated principal component (PC) timeseries are then computed over the Atlantic basin from 33&deg;S:90&deg;N. The AMOC patterns are created by regressing Atlantic MOC anomalies onto normalized PC timeseries. The SST/TAS patterns are created by regressing global TAS/SST anomalies onto the normalized PC timeseries. A 15pt low-pass filter is applied to the AMO and AMOC PC timeseries prior to the lead/lag correlation calculations, and at least 90 years of data are required. Unlike the cited reference paper the data is never detrended. For CCSM4 and CESM1 the MOC variable is read in, the components are summed over, and the Atlantic Ocean + Mediterranean Sea + Labrador Sea + GIN Sea + Arctic Ocean + Hudson Bay transport region is selected. For CCSM2 and CCSM3 the same transport region is selected but only the Eulerian Mean component is used as that is all that is available. For CMIP5 data the atlantic_arctic_ocean basin is used, while for CMIP3 data the atlantic_ocean geo_region is used. See Danabasoglu, G., S. G. Yeager, Y. -O. Kwon, J. J. Tribbia, A. S. Phillips, and J. W. Hurrell, 2012. Variability of the Atlantic Meridional Overturning Circulation in CCSM4. <i>J. Climate</i>, 25, 5153-5172, doi: 10.1175/JCLI-D-11-00463.1.</td></tr>" 
 
-  txt(72) = "</table>"
-  txt(73) = ""
+  txt(75) = "</table>"
+  txt(76) = ""
   
   txt(100) = "<br>Created "+systemfunc("date")
   txt(101) = "<p class=btext>CVDP Version "+VERSION+"</p>"

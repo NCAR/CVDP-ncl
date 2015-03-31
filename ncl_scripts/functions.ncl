@@ -1,24 +1,38 @@
 ;=================================================================================================
 ; create blank array for use when something may be/is wrong.
 ;
-function create_empty_array(yS:numeric,yE:numeric,mS:numeric,mE:numeric)
-local yS,yE,mS,mE
+function create_empty_array(yS:numeric,yE:numeric,mS:numeric,mE:numeric,opttype:string)
+local yS,yE,mS,mE,opttype
 begin
   timeT =  yyyymm_time(yS, yE, "integer")
-  time = timeT({yS*100+mS:yE*100+mE})  
-  blankarr = new((/dimsizes(time),90,180/),"float",1.e20)
-  blankarr!0 = "time"    ; time coordinate variable assigned below  
-  blankarr&time = time
-  blankarr!1 = "lat"
-  blankarr&lat = fspan(-89,89,90)
-  blankarr!2 = "lon"
-  blankarr&lon = fspan(0,358,180)
-  blankarr&lat@units = "degrees_north"
-  blankarr&lon@units = "degrees_east"
+  time = timeT({yS*100+mS:yE*100+mE})
+  if (opttype.eq."time_lat_lon") then  
+     blankarr = new((/dimsizes(time),90,180/),"float",1.e20)
+     blankarr!0 = "time"    ; time coordinate variable assigned below  
+     blankarr&time = time
+     blankarr!1 = "lat"
+     blankarr&lat = fspan(-89,89,90)
+     blankarr!2 = "lon"
+     blankarr&lon = fspan(0,358,180)
+     blankarr&lat@units = "degrees_north"
+     blankarr&lon@units = "degrees_east"
+  end if
+  if (opttype.eq."time_lev_lat") then  
+     blankarr = new((/dimsizes(time),41,90/),"float",1.e20)
+     blankarr!0 = "time"    ; time coordinate variable assigned below  
+     blankarr&time = time
+     blankarr!1 = "lev"
+     blankarr&lev =fspan(0,5000,41)
+     blankarr!2 = "lat"
+     blankarr&lat = fspan(-89,89,90)
+     blankarr&lat@units = "degrees_north"
+     blankarr&lev@units = "m"
+     blankarr&lev@positive = "down"
+  end if
   blankarr@units = ""
   blankarr@is_all_missing = True
   return(blankarr)
-  delete([/yS,yE,mS,mE,blankarr,timeT,time/])
+  delete([/yS,yE,mS,mE,opttype,blankarr,timeT,time/])
 end
 ;===================================================================================================
 ; read in atmospheric/land data from selected files
@@ -57,7 +71,7 @@ begin
 
   if (ismissing(zpath) ) then
      print("File missing, creating blank array of data. View "+vn+" namelist for details.")
-     arr = create_empty_array(yearS,yearE,1,12)
+     arr = create_empty_array(yearS,yearE,1,12,"time_lat_lon")
      sydata = yearS     ; assign these variables based on yearS/yearE provided in namelist. Doesn't matter 
      eydata = yearE     ; as data array is totally missing..  
      smdata = 1
@@ -77,7 +91,7 @@ begin
                  print("Fatal: Need both PRECC and PRECL file(s), creating blank array")
                  print(fils_precc)
                  print(fils_precl)
-                 arr = create_empty_array(yearS,yearE,1,12)
+                 arr = create_empty_array(yearS,yearE,1,12,"time_lat_lon")
                  sydata = yearS     ; assign these variables based on yearS/yearE provided in namelist. Doesn't matter 
                  eydata = yearE     ; as data array is totally missing..  
                  smdata = 1
@@ -140,6 +154,11 @@ begin
      delete([/ta,cpath0/])
   end if
   
+  if (isvar("arr").eq.False) then
+     print("Variable ("+vn+") not found. Examine input file "+zpath+". Creating empty array and continuing")
+     arr = create_empty_array(yearS,yearE,1,12,"time_lat_lon")
+  end if
+
   if (isshort(arr)) then
      arrT = short2flt(arr)
      delete(arr)
@@ -195,7 +214,7 @@ begin
      print("script: data_read_in.ncl")
      print("Setting array to all missing")
      delete(arr)
-     arr = create_empty_array(yearS,yearE,smdata,emdata)
+     arr = create_empty_array(yearS,yearE,smdata,emdata,"time_lat_lon")
      sydata = yearS     ; assign these variables based on yearS/yearE provided in namelist. Doesn't matter 
      eydata = yearE     ; as data array is totally missing..  
      smdata = 1
@@ -214,7 +233,7 @@ begin
         print("File = "+zpath)
         print("Read from file name: "+min(time)+"-"+max(time))        
         delete(arr)
-        arr = create_empty_array(yearS,yearE,smdata,emdata)
+        arr = create_empty_array(yearS,yearE,smdata,emdata,"time_lat_lon")
         sydata = yearS     ; assign these variables based on yearS/yearE provided in namelist. Doesn't matter 
         eydata = yearE     ; as data array is totally missing..  
         smdata = 1
@@ -247,7 +266,7 @@ begin
      print("Time requested: "+yearS+"-"+yearE)
      print(farr&time)
      delete(farr)
-     farr = create_empty_array(yearS,yearE,1,12)
+     farr = create_empty_array(yearS,yearE,1,12,"time_lat_lon")
   end if
   delete(mocheck)
   
@@ -259,7 +278,7 @@ begin
      print("Model = "+names(gg)+", path = "+paths(gg))
      print("Fatal: Longitudes not in expected 0-360E range, creating blank array")
      delete(farr)
-     farr = create_empty_array(yearS,yearE,1,12)
+     farr = create_empty_array(yearS,yearE,1,12,"time_lat_lon")
   end if
   
   if (vn.eq."TREFHT".or.vn.eq."TS") then      ; units check
@@ -584,6 +603,248 @@ begin
   return(farr)
 end
 ;=================================================================================================
+; read in MOC ocean data from given files
+;
+; assign time coordinate variables, check for issues with the array, assign _FillValue (if needed)
+; assign dimension names (for ease-of-use), check and modify units
+;
+function data_read_in_ocean_MOC(zpath:string,vn:string,yearS:integer,yearE:integer)
+; path for MOC file(s), variable name, start year, and end year are read in.
+local zpath,vn,cpath0,ta,tfiles,c,arr,farr,yearS,yearE,mocheck,dimC,lev
+begin
+  if (vn.eq."MOC") then
+     vname = (/"MOC","msftmyz","stfmmc"/)
+  end if
+
+  if (ismissing(zpath) ) then
+     print("File missing, creating blank array of data. View "+vn+" namelist for details.")
+     arr = create_empty_array(yearS,yearE,1,12,"time_lev_lat")
+     sydata = yearS     ; assign these variables based on yearS/yearE provided in namelist. Doesn't matter 
+     eydata = yearE     ; as data array is totally missing..  
+     smdata = 1
+     emdata = 12
+  else
+     cpath0 = stringtochar(zpath)
+  
+     ta = stringtochar("*")
+     if (any(cpath0.eq.ta(0)).or.any(cpath0.eq."{")) then   ; check for "*" and "{" denoting multiple files
+        tfiles = systemfunc("ls "+zpath+" 2> /dev/null")   ; /dev/null suppresses all standard error output
+        c = addfiles(tfiles,"r")
+        do ii=0,dimsizes(vname)-1
+           if (isfilevar(c[0],vname(ii))) then
+              dimC = filevardimsizes(c[0],"MOC")
+              if (vname(ii).eq."MOC") then    ; CCSM/CESM file     
+                 if (dimC(2).ge.2) then
+                    arr = dim_sum_n_Wrap(c[:]->$vname(ii)$(:,1,:,:,:),1)  ; select Atl+Med+Labrador+GIN sea+Arctic+Hudson Bay transport region and sum over moc_comp
+                 else
+                    arr = c[:]->$vname(ii)$(:,1,0,:,:)        ; select Atl+Med+Labrador+GIN sea+Arctic+Hudson Bay transport region and the only moc_comp dimension        
+                 end if
+              else                           ; CMIP file
+                 arr = c[:]->$vname(ii)$(:,0,:,:)             ; CMIP file: 0th basin/region = atlantic_ocean (CMIP3) or atlantic_arctic_ocean (CMIP5)         
+              end if   
+              delete(dimC)  
+              break
+           end if
+        end do     
+        nfil = dimsizes(tfiles)
+        cpathS = stringtochar(tfiles(0))      
+        cpathE = stringtochar(tfiles(nfil-1)) 
+        ncharS = dimsizes(cpathS)
+        ncharE = dimsizes(cpathE)
+        sydata = stringtointeger(charactertostring(cpathS(ncharS-17:ncharS-14)))
+        smdata = stringtointeger(charactertostring(cpathS(ncharS-13:ncharS-12)))
+        eydata = stringtointeger(charactertostring(cpathE(ncharE-10:ncharE-7)))
+        emdata = stringtointeger(charactertostring(cpathE(ncharE-6:ncharE-5)))      
+        delete([/cpathS,cpathE,ncharS,ncharE,nfil/])
+;        delete(c)
+     else
+        c = addfile(zpath,"r")
+        do i=0,dimsizes(vname)-1
+           if (isfilevar(c,vname(i))) then
+              dimC = filevardimsizes(c,"MOC")
+              if (vname(i).eq."MOC") then    ; CCSM/CESM file     
+                 if (dimC(2).ge.2) then
+                    arr = dim_sum_n_Wrap(c->$vname(i)$(:,1,:,:,:),1)  ; select Atl+Med+Labrador+GIN sea+Arctic+Hudson Bay transport region and sum over moc_comp
+                 else
+                    arr = c->$vname(i)$(:,1,0,:,:)        ; select Atl+Med+Labrador+GIN sea+Arctic+Hudson Bay transport region         
+                 end if
+              else                           ; CMIP file
+                 arr = c->$vname(i)$(:,0,:,:)             ; CMIP file: 0th basin/region = atlantic_ocean (CMIP3) or atlantic_arctic_ocean (CMIP5)         
+              end if   
+              delete(dimC)                       
+              break
+           end if                             
+        end do                           
+        cpath = stringtochar(zpath)     
+        nchar = dimsizes(cpath)
+        sydata = stringtointeger(charactertostring(cpath(nchar-17:nchar-14)))
+        smdata = stringtointeger(charactertostring(cpath(nchar-13:nchar-12)))
+        eydata = stringtointeger(charactertostring(cpath(nchar-10:nchar-7)))
+        emdata = stringtointeger(charactertostring(cpath(nchar-6:nchar-5))) 
+        delete([/cpath,nchar/])
+;        delete(c)     
+     end if
+     delete([/ta,cpath0/])
+  end if
+
+  if (isvar("arr").eq.False) then
+     print("Variable ("+vn+") not found. Examine input file "+zpath+". Creating empty array and continuing")
+     arr = create_empty_array(yearS,yearE,1,12,"time_lev_lat")
+  end if
+  if (isshort(arr)) then
+     arrT = short2flt(arr)
+     delete(arr)
+     arr = arrT
+     delete(arrT)
+  end if
+  if (.not.isatt(arr,"_FillValue")) then     ; assign _FillValue if one is not present
+     if (isatt(arr,"missing_value")) then
+        arr@_FillValue = arr@missing_value
+     else
+        arr@_FillValue = default_fillvalue(typeof(arr)) 
+     end if
+  end if
+  arr!0 = "time"
+  arr!1 = "lev"
+  arr!2 = "lat"
+  
+  if (arr&lev@units.eq."centimeters".or.arr&lev@units.eq."cm") then
+     lev = arr&lev
+     lev@units = "m"
+     lev = lev/100.
+     lev&lev = lev
+     delete(arr&lev)
+     arr&lev = lev
+;    print("Level converted to m from cm")
+;     printVarSummary(lev)
+;     print(lev)
+     delete(lev)
+  end if
+  
+  if (arr&lev(2).lt.0) then   ; check for negative levels
+     lev = arr&lev
+     lev = lev*-1.
+     if (any(lev.lt.0)) then
+        print("Error detected in MOC level sign conversion")
+        print(lev)
+     end if
+     lev@positive = "down"
+     lev&lev = lev
+     delete(arr&lev)
+     arr&lev = lev
+;     print("Levels converted from negative downwards to positive downwards")
+;     printVarSummary(lev)
+;     print(lev)
+     delete(lev)
+  end if
+  
+  
+  if (isatt(arr,"valid_range")) then    ; check to make sure data is in valid range. Reset to stay within the valid range if needed.
+;     print("Data outside valid_range in "+zpath+", resetting data to be within valid_range")
+     arr = where(arr.lt.arr@valid_range(0),arr@valid_range(0),arr)
+     arr = where(arr.gt.arr@valid_range(1),arr@valid_range(1),arr)
+  end if
+  
+  if (any(abs(arr).ge.1.e20)) then   ; check for inf values or values way out of range, reset to _FillValue.
+     print("Values greater than 1.e20 or less than -1.e20 detected in "+zpath+", resetting to _FillValue")
+     arr = where(abs(arr).ge.1.e20,arr@_FillValue,arr)
+  end if
+     
+  if (yearS.lt.sydata.or.yearE.gt.eydata) then
+     print("Requested "+yearS+"-"+yearE+" time span is outside the input file "+zpath+" time span of "+sydata+"-"+eydata+"")
+     print("script: data_read_in.ncl")
+     print("Setting array to all missing")
+     delete(arr)
+     arr = create_empty_array(yearS,yearE,smdata,emdata,"time_lev_lat")
+     sydata = yearS     ; assign these variables based on yearS/yearE provided in namelist. Doesn't matter 
+     eydata = yearE     ; as data array is totally missing..  
+     smdata = 1
+     emdata = 12          
+  else
+     timeT =  yyyymm_time(sydata, eydata, "integer")
+     time = timeT({sydata*100+smdata:eydata*100+emdata})  
+     if (iscoord(arr,"time")) then
+        delete(arr&time)
+     end if
+     dimz = dimsizes(arr)
+     if (dimz(0).eq.dimsizes(time)) then
+        arr&time = time
+     else
+        print("Possible mismatch detected between time specified in file name and file variables, setting array to missing")
+        print("File = "+zpath)
+        print("Read from file name: "+min(time)+"-"+max(time))        
+        delete(arr)
+        arr = create_empty_array(yearS,yearE,smdata,emdata,"time_lev_lat")
+        sydata = yearS     ; assign these variables based on yearS/yearE provided in namelist. Doesn't matter 
+        eydata = yearE     ; as data array is totally missing..  
+        smdata = 1
+        emdata = 12 
+     end if
+     delete(dimz)
+     delete([/time,timeT/])
+  end if
+  delete([/sydata,smdata,eydata,emdata/])
+    
+;  printVarSummary(arr)
+;  printVarSummary(arr({sy*100+1:ey*100+12},:,:))
+  if (arr&lat(0).ge.0) then
+     farr = arr({yearS*100+1:yearE*100+12},:,::-1)   ; flip the latitudes
+  else
+     farr = arr({yearS*100+1:yearE*100+12},:,:)
+  end if
+;  printVarSummary(farr)
+  delete(arr)     
+  
+  mocheck = (/(yearS*100+1)-min(farr&time),(yearE*100+12) - max(farr&time)/)
+  if (any(mocheck.ne.0)) then    ; previously: if (mod(dimsizes(farr&time),12).ne.0) then
+     if (mocheck(0).ne.0) then
+        print("First requested year is incomplete")
+     end if
+     if (mocheck(1).ne.0) then
+        print("Last requested year is incomplete")
+     end if
+     print("Incomplete data year(s) requested for file "+zpath+", printing out time and creating blank array")
+     print("Time requested: "+yearS+"-"+yearE)
+     print(farr&time)
+     delete(farr)
+     farr = create_empty_array(yearS,yearE,1,12,"time_lev_lat")
+  end if
+  delete(mocheck)
+  
+  ; check units for MOC array. CMIP5 = "kg s-1"  CMIP3 = "m3 s-1" CCSM3 = "Sverdrups" CCSM4 = "Sverdrups"
+
+  if (farr@units.eq."Sverdrups") then
+     farr@units = "Sv"
+  end if
+  if (farr@units.eq."kg s-1".or.farr@units.eq."KG S-1".or.farr@units.eq."kg/s".or.farr@units.eq."KG/S") then     ; 1 Sv = 1.e9 kg/s
+     farr = (/ farr/1.e9 /)
+     farr@units = "Sv"
+  end if
+  if (farr@units.eq."m3 s-1".or.farr@units.eq."M3 S-1".or.farr@units.eq."m3/s".or.farr@units.eq."M3/S") then     ; 1 Sv = 1.e6 m3/s
+     farr = (/ farr/1.e6 /)
+     farr@units = "Sv"
+  end if
+  
+;  printVarSummary(farr)
+  
+  date = farr&time         ; switch time to be CF-conforming
+  delete(farr&time)
+  yyyy = date/100
+  mm = date-(yyyy*100)
+  days = (days_in_month(yyyy,mm))/2
+  hms  = days
+  hms = 0   ; hours, minutes, seconds all the same (=0)
+  time = cd_inv_calendar(yyyy,mm,days,hms,hms,hms,"months since "+min(yyyy)+"-01-15 00:00:00",0)
+  time@long_name = "Time"
+  time@standard_name = "time"
+  time!0 = "time"
+  time&time = time
+  farr&time = time
+  delete([/time,yyyy,mm,days,hms,date/])
+  return(farr)
+end
+
+;=================================================================================================
 ;  alters the formatting of the Y-axis
 ;
 ;  not currently used
@@ -637,12 +898,16 @@ begin
   if (num0.eq.6) then
      if (num1.le.1) then
         ra = isfilepresent(fdpres)
-     else
+     end if
+     if (num1.eq.2) then
         if (num2.eq.0) then
            ra = isfilepresent(fdpres)
         else
            ra = fileexists(fdpres)
         end if
+     end if
+     if (num1.ge.3) then
+        ra = fileexists(fdpres)
      end if
   end if  
   if (num0.ge.7) then

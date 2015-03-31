@@ -406,12 +406,15 @@ begin
      coswgt!0 = "lat"
      coswgt&lat = arr_djf&lat
      npi_ndjfm = wgt_areaave(arr_ndjfm(:,{30:65},{160:220}),coswgt({30.:65.}),1.0,0)
-     delete([/coswgt,arr_ndjfm/])
      npi_ndjfm!0 = "TIME"
      npi_ndjfm&TIME = ispan(syear(ee),eyear(ee),1)
      npi_ndjfm&TIME@units = "YYYY"
      npi_ndjfm&TIME@long_name = "time"
-
+     
+     npi_ndjfm@area = "30:65N, 160:220E"
+     npi_ndjfm@units = arr_ndjfm@units
+     npi_ndjfm@long_name = "North Pacific Index"
+     delete([/coswgt,arr_ndjfm/])
 ;---------NAM calculations----------------------------------------------------------     
      arr_djf_CW = SqrtCosWeight(arr_djf)
      arr_mam_CW = SqrtCosWeight(arr_mam)
@@ -436,11 +439,13 @@ begin
         nam_sst_djf = sst_djf(0,:,:)
         nam_sst_djf = (/ regCoef(nam_pc_djf,sst_djf(lat|:,lon|:,time|:)) /)
      end if
-     if (nam_djf({85},{5}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
-        nam_djf = nam_djf*-1.
-        nam_pc_djf = nam_pc_djf*-1.
-        if (sstreg_plot_flag.eq.0) then
-           nam_sst_djf = nam_sst_djf*-1.
+     if (.not.ismissing(nam_djf({85},{5}))) then
+        if (nam_djf({85},{5}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
+           nam_djf = nam_djf*-1.
+           nam_pc_djf = nam_pc_djf*-1.
+           if (sstreg_plot_flag.eq.0) then
+              nam_sst_djf = nam_sst_djf*-1.
+           end if
         end if
      end if
      nam_djf@pcvar = tofloat(sprintf("%4.1f", evecv@pcvar(0)))
@@ -456,11 +461,13 @@ begin
         nam_sst_mam = sst_mam(0,:,:)
         nam_sst_mam = (/ regCoef(nam_pc_mam,sst_mam(lat|:,lon|:,time|:)) /)
      end if
-     if (nam_mam({85},{5}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
-        nam_mam = nam_mam*-1.
-        nam_pc_mam = nam_pc_mam*-1.
-        if (sstreg_plot_flag.eq.0) then
-           nam_sst_mam = nam_sst_mam*-1.
+     if (.not.ismissing(nam_mam({85},{5}))) then
+        if (nam_mam({85},{5}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
+           nam_mam = nam_mam*-1.
+           nam_pc_mam = nam_pc_mam*-1.
+           if (sstreg_plot_flag.eq.0) then
+              nam_sst_mam = nam_sst_mam*-1.
+           end if
         end if
      end if
      nam_mam@pcvar = tofloat(sprintf("%4.1f", evecv@pcvar(0)))     
@@ -476,11 +483,13 @@ begin
         nam_sst_jja = sst_jja(0,:,:)
         nam_sst_jja = (/ regCoef(nam_pc_jja,sst_jja(lat|:,lon|:,time|:)) /)
      end if
-     if (nam_jja({85},{5}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
-        nam_jja = nam_jja*-1.
-        nam_pc_jja = nam_pc_jja*-1.
-        if (sstreg_plot_flag.eq.0) then
-           nam_sst_jja = nam_sst_jja*-1.
+     if (.not.ismissing(nam_jja({85},{5}))) then
+        if (nam_jja({85},{5}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
+           nam_jja = nam_jja*-1.
+           nam_pc_jja = nam_pc_jja*-1.
+           if (sstreg_plot_flag.eq.0) then
+              nam_sst_jja = nam_sst_jja*-1.
+           end if
         end if
      end if
      nam_jja@pcvar = tofloat(sprintf("%4.1f", evecv@pcvar(0)))
@@ -496,11 +505,13 @@ begin
         nam_sst_son = sst_son(0,:,:)
         nam_sst_son = (/ regCoef(nam_pc_son,sst_son(lat|:,lon|:,time|:)) /)
      end if
-     if (nam_son({85},{5}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
-        nam_son = nam_son*-1.
-        nam_pc_son = nam_pc_son*-1.
-        if (sstreg_plot_flag.eq.0) then
-           nam_sst_son = nam_sst_son*-1.
+     if (.not.ismissing(nam_son({85},{5}))) then
+        if (nam_son({85},{5}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
+           nam_son = nam_son*-1.
+           nam_pc_son = nam_pc_son*-1.
+           if (sstreg_plot_flag.eq.0) then
+              nam_sst_son = nam_sst_son*-1.
+           end if
         end if
      end if
      nam_son@pcvar = tofloat(sprintf("%4.1f", evecv@pcvar(0)))
@@ -516,11 +527,13 @@ begin
         nam_sst_ann = sst_ann(0,:,:)
         nam_sst_ann = (/ regCoef(nam_pc_ann,sst_ann(lat|:,lon|:,time|:)) /)
      end if
-     if (nam_ann({85},{5}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
-        nam_ann = nam_ann*-1.
-        nam_pc_ann = nam_pc_ann*-1.
-        if (sstreg_plot_flag.eq.0) then
-           nam_sst_ann = nam_sst_ann*-1.
+     if (.not.ismissing(nam_ann({85},{5}))) then
+        if (nam_ann({85},{5}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
+           nam_ann = nam_ann*-1.
+           nam_pc_ann = nam_pc_ann*-1.
+           if (sstreg_plot_flag.eq.0) then
+              nam_sst_ann = nam_sst_ann*-1.
+           end if
         end if
      end if
      nam_ann@pcvar = tofloat(sprintf("%4.1f", evecv@pcvar(0)))    
@@ -537,11 +550,13 @@ begin
            nam_sst_mon = sst(0,:,:)
            nam_sst_mon = (/ regCoef(nam_pc_mon,sst(lat|:,lon|:,time|:)) /)
         end if
-        if (nam_mon({85},{5}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
-           nam_mon = nam_mon*-1.
-           nam_pc_mon = nam_pc_mon*-1.
-           if (sstreg_plot_flag.eq.0) then
-              nam_sst_mon = nam_sst_mon*-1.
+        if (.not.ismissing(nam_mon({85},{5}))) then
+           if (nam_mon({85},{5}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
+              nam_mon = nam_mon*-1.
+              nam_pc_mon = nam_pc_mon*-1.
+              if (sstreg_plot_flag.eq.0) then
+                 nam_sst_mon = nam_sst_mon*-1.
+              end if
            end if
         end if
         nam_mon@pcvar = tofloat(sprintf("%4.1f", evecv@pcvar(0))) 
@@ -570,27 +585,33 @@ begin
         psa2_sst_djf = (/ regCoef(psa2_pc_djf,sst_djf(lat|:,lon|:,time|:)) /)
      end if     
      
-     if (sam_djf({-85},{5}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
-        sam_djf = sam_djf*-1.
-        sam_pc_djf = sam_pc_djf*-1.
-        if (sstreg_plot_flag.eq.0) then
-           sam_sst_djf = sam_sst_djf*-1.
+     if (.not.ismissing(sam_djf({-85},{5}))) then
+        if (sam_djf({-85},{5}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
+           sam_djf = sam_djf*-1.
+           sam_pc_djf = sam_pc_djf*-1.
+           if (sstreg_plot_flag.eq.0) then
+              sam_sst_djf = sam_sst_djf*-1.
+           end if
         end if
      end if
-     if (psa1_djf({-62},{270}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
-        psa1_djf = psa1_djf*-1.
-        psa1_pc_djf = psa1_pc_djf*-1.
-        if (sstreg_plot_flag.eq.0) then
-           psa1_sst_djf = psa1_sst_djf*-1.
+     if (.not.ismissing(psa1_djf({-62},{270}))) then
+        if (psa1_djf({-62},{270}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
+           psa1_djf = psa1_djf*-1.
+           psa1_pc_djf = psa1_pc_djf*-1.
+           if (sstreg_plot_flag.eq.0) then
+              psa1_sst_djf = psa1_sst_djf*-1.
+           end if
         end if
      end if
-     if (psa2_djf({-52},{150}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
-        psa2_djf = psa2_djf*-1.
-        psa2_pc_djf = psa2_pc_djf*-1.
-        if (sstreg_plot_flag.eq.0) then
-           psa2_sst_djf = psa2_sst_djf*-1.
-        end if
-     end if     
+     if (.not.ismissing(psa2_djf({-52},{150}))) then
+        if (psa2_djf({-52},{150}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
+           psa2_djf = psa2_djf*-1.
+           psa2_pc_djf = psa2_pc_djf*-1.
+           if (sstreg_plot_flag.eq.0) then
+              psa2_sst_djf = psa2_sst_djf*-1.
+           end if
+        end if     
+     end if
      sam_djf@pcvar = tofloat(sprintf("%4.1f", evecv@pcvar(0)))
      psa1_djf@pcvar = tofloat(sprintf("%4.1f", evecv@pcvar(1)))
      psa2_djf@pcvar = tofloat(sprintf("%4.1f", evecv@pcvar(2)))
@@ -619,26 +640,32 @@ begin
         psa2_sst_mam = (/ regCoef(psa2_pc_mam,sst_mam(lat|:,lon|:,time|:)) /)
      end if  
      
-     if (sam_mam({-85},{5}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
-        sam_mam = sam_mam*-1.
-        sam_pc_mam = sam_pc_mam*-1.
-        if (sstreg_plot_flag.eq.0) then
-           sam_sst_mam = sam_sst_mam*-1.
+     if (.not.ismissing(sam_mam({-85},{5}))) then
+        if (sam_mam({-85},{5}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
+           sam_mam = sam_mam*-1.
+           sam_pc_mam = sam_pc_mam*-1.
+           if (sstreg_plot_flag.eq.0) then
+              sam_sst_mam = sam_sst_mam*-1.
+           end if
         end if
      end if
-     if (psa1_mam({-62},{270}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
-        psa1_mam = psa1_mam*-1.
-        psa1_pc_mam = psa1_pc_mam*-1.
-        if (sstreg_plot_flag.eq.0) then
-           psa1_sst_mam = psa1_sst_mam*-1.
+     if (.not.ismissing(psa1_mam({-62},{270}))) then
+        if (psa1_mam({-62},{270}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
+           psa1_mam = psa1_mam*-1.
+           psa1_pc_mam = psa1_pc_mam*-1.
+           if (sstreg_plot_flag.eq.0) then
+              psa1_sst_mam = psa1_sst_mam*-1.
+           end if
         end if
      end if
-     if (psa2_mam({-52},{150}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
-        psa2_mam = psa2_mam*-1.
-        psa2_pc_mam = psa2_pc_mam*-1.
-        if (sstreg_plot_flag.eq.0) then
-           psa2_sst_mam = psa2_sst_mam*-1.
-        end if
+     if (.not.ismissing(psa2_mam({-52},{150}))) then
+        if (psa2_mam({-52},{150}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
+           psa2_mam = psa2_mam*-1.
+           psa2_pc_mam = psa2_pc_mam*-1.
+           if (sstreg_plot_flag.eq.0) then
+              psa2_sst_mam = psa2_sst_mam*-1.
+           end if
+        end if     
      end if
      sam_mam@pcvar = tofloat(sprintf("%4.1f", evecv@pcvar(0)))
      psa1_mam@pcvar = tofloat(sprintf("%4.1f", evecv@pcvar(1)))
@@ -667,26 +694,32 @@ begin
         psa2_sst_jja = sst_jja(0,:,:)
         psa2_sst_jja = (/ regCoef(psa2_pc_jja,sst_jja(lat|:,lon|:,time|:)) /)
      end if  
-     if (sam_jja({-85},{5}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
-        sam_jja = sam_jja*-1.
-        sam_pc_jja = sam_pc_jja*-1.
-        if (sstreg_plot_flag.eq.0) then
-           sam_sst_jja = sam_sst_jja*-1.
+     if (.not.ismissing(sam_jja({-85},{5}))) then
+        if (sam_jja({-85},{5}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
+           sam_jja = sam_jja*-1.
+           sam_pc_jja = sam_pc_jja*-1.
+           if (sstreg_plot_flag.eq.0) then
+              sam_sst_jja = sam_sst_jja*-1.
+           end if
         end if
      end if
-     if (psa1_jja({-62},{270}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
-        psa1_jja = psa1_jja*-1.
-        psa1_pc_jja = psa1_pc_jja*-1.
-        if (sstreg_plot_flag.eq.0) then
-           psa1_sst_jja = psa1_sst_jja*-1.
+     if (.not.ismissing(psa1_jja({-62},{270}))) then
+        if (psa1_jja({-62},{270}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
+           psa1_jja = psa1_jja*-1.
+           psa1_pc_jja = psa1_pc_jja*-1.
+           if (sstreg_plot_flag.eq.0) then
+              psa1_sst_jja = psa1_sst_jja*-1.
+           end if
         end if
      end if
-     if (psa2_jja({-52},{150}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
-        psa2_jja = psa2_jja*-1.
-        psa2_pc_jja = psa2_pc_jja*-1.
-        if (sstreg_plot_flag.eq.0) then
-           psa2_sst_jja = psa2_sst_jja*-1.
-        end if
+     if (.not.ismissing(psa2_jja({-52},{150}))) then
+        if (psa2_jja({-52},{150}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
+           psa2_jja = psa2_jja*-1.
+           psa2_pc_jja = psa2_pc_jja*-1.
+           if (sstreg_plot_flag.eq.0) then
+              psa2_sst_jja = psa2_sst_jja*-1.
+           end if
+        end if     
      end if
      sam_jja@pcvar = tofloat(sprintf("%4.1f", evecv@pcvar(0)))
      psa1_jja@pcvar = tofloat(sprintf("%4.1f", evecv@pcvar(1)))
@@ -715,26 +748,32 @@ begin
         psa2_sst_son = sst_son(0,:,:)
         psa2_sst_son = (/ regCoef(psa2_pc_son,sst_son(lat|:,lon|:,time|:)) /)
      end if  
-     if (sam_son({-85},{5}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
-        sam_son = sam_son*-1.
-        sam_pc_son = sam_pc_son*-1.
-        if (sstreg_plot_flag.eq.0) then
-           sam_sst_son = sam_sst_son*-1.
+     if (.not.ismissing(sam_son({-85},{5}))) then
+        if (sam_son({-85},{5}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
+           sam_son = sam_son*-1.
+           sam_pc_son = sam_pc_son*-1.
+           if (sstreg_plot_flag.eq.0) then
+              sam_sst_son = sam_sst_son*-1.
+           end if
         end if
      end if
-     if (psa1_son({-62},{270}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
-        psa1_son = psa1_son*-1.
-        psa1_pc_son = psa1_pc_son*-1.
-        if (sstreg_plot_flag.eq.0) then
-           psa1_sst_son = psa1_sst_son*-1.
+     if (.not.ismissing(psa1_son({-62},{270}))) then
+        if (psa1_son({-62},{270}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
+           psa1_son = psa1_son*-1.
+           psa1_pc_son = psa1_pc_son*-1.
+           if (sstreg_plot_flag.eq.0) then
+              psa1_sst_son = psa1_sst_son*-1.
+           end if
         end if
      end if
-     if (psa2_son({-52},{150}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
-        psa2_son = psa2_son*-1.
-        psa2_pc_son = psa2_pc_son*-1.
-        if (sstreg_plot_flag.eq.0) then
-           psa2_sst_son = psa2_sst_son*-1.
-        end if
+     if (.not.ismissing(psa2_son({-52},{150}))) then
+        if (psa2_son({-52},{150}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
+           psa2_son = psa2_son*-1.
+           psa2_pc_son = psa2_pc_son*-1.
+           if (sstreg_plot_flag.eq.0) then
+              psa2_sst_son = psa2_sst_son*-1.
+           end if
+        end if     
      end if
      sam_son@pcvar = tofloat(sprintf("%4.1f", evecv@pcvar(0)))
      psa1_son@pcvar = tofloat(sprintf("%4.1f", evecv@pcvar(1)))
@@ -763,26 +802,32 @@ begin
         psa2_sst_ann = sst_ann(0,:,:)
         psa2_sst_ann = (/ regCoef(psa2_pc_ann,sst_ann(lat|:,lon|:,time|:)) /)
      end if  
-     if (sam_ann({-85},{5}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
-        sam_ann = sam_ann*-1.
-        sam_pc_ann = sam_pc_ann*-1.
-        if (sstreg_plot_flag.eq.0) then
-           sam_sst_ann = sam_sst_ann*-1.
+     if (.not.ismissing(sam_ann({-85},{5}))) then
+        if (sam_ann({-85},{5}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
+           sam_ann = sam_ann*-1.
+           sam_pc_ann = sam_pc_ann*-1.
+           if (sstreg_plot_flag.eq.0) then
+              sam_sst_ann = sam_sst_ann*-1.
+           end if
         end if
      end if
-     if (psa1_ann({-62},{270}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
-        psa1_ann = psa1_ann*-1.
-        psa1_pc_ann = psa1_pc_ann*-1.
-        if (sstreg_plot_flag.eq.0) then
-           psa1_sst_ann = psa1_sst_ann*-1.
+     if (.not.ismissing(psa1_ann({-62},{270}))) then
+        if (psa1_ann({-62},{270}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
+           psa1_ann = psa1_ann*-1.
+           psa1_pc_ann = psa1_pc_ann*-1.
+           if (sstreg_plot_flag.eq.0) then
+              psa1_sst_ann = psa1_sst_ann*-1.
+           end if
         end if
      end if
-     if (psa2_ann({-52},{150}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
-        psa2_ann = psa2_ann*-1.
-        psa2_pc_ann = psa2_pc_ann*-1.
-        if (sstreg_plot_flag.eq.0) then
-           psa2_sst_ann = psa2_sst_ann*-1.
-        end if
+     if (.not.ismissing(psa2_ann({-52},{150}))) then
+        if (psa2_ann({-52},{150}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
+           psa2_ann = psa2_ann*-1.
+           psa2_pc_ann = psa2_pc_ann*-1.
+           if (sstreg_plot_flag.eq.0) then
+              psa2_sst_ann = psa2_sst_ann*-1.
+           end if
+        end if     
      end if
      sam_ann@pcvar = tofloat(sprintf("%4.1f", evecv@pcvar(0)))
      psa1_ann@pcvar = tofloat(sprintf("%4.1f", evecv@pcvar(1)))
@@ -812,26 +857,32 @@ begin
            psa2_sst_mon = sst(0,:,:)
            psa2_sst_mon = (/ regCoef(psa2_pc_mon,sst(lat|:,lon|:,time|:)) /)
         end if  
-        if (sam_mon({-85},{5}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
-           sam_mon = sam_mon*-1.
-           sam_pc_mon = sam_pc_mon*-1.
-           if (sstreg_plot_flag.eq.0) then
-              sam_sst_mon = sam_sst_mon*-1.
+        if (.not.ismissing(sam_mon({-85},{5}))) then
+           if (sam_mon({-85},{5}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
+              sam_mon = sam_mon*-1.
+              sam_pc_mon = sam_pc_mon*-1.
+              if (sstreg_plot_flag.eq.0) then
+                 sam_sst_mon = sam_sst_mon*-1.
+              end if
            end if
         end if
-        if (psa1_mon({-62},{270}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
-           psa1_mon = psa1_mon*-1.
-           psa1_pc_mon = psa1_pc_mon*-1.
-           if (sstreg_plot_flag.eq.0) then
-              psa1_sst_mon = psa1_sst_mon*-1.
+        if (.not.ismissing(psa1_mon({-62},{270}))) then
+           if (psa1_mon({-62},{270}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
+              psa1_mon = psa1_mon*-1.
+              psa1_pc_mon = psa1_pc_mon*-1.
+              if (sstreg_plot_flag.eq.0) then
+                 psa1_sst_mon = psa1_sst_mon*-1.
+              end if
            end if
         end if
-        if (psa2_mon({-52},{150}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
-           psa2_mon = psa2_mon*-1.
-           psa2_pc_mon = psa2_pc_mon*-1.
-           if (sstreg_plot_flag.eq.0) then
-              psa2_sst_mon = psa2_sst_mon*-1.
-           end if
+        if (.not.ismissing(psa2_mon({-52},{150}))) then
+           if (psa2_mon({-52},{150}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
+              psa2_mon = psa2_mon*-1.
+              psa2_pc_mon = psa2_pc_mon*-1.
+              if (sstreg_plot_flag.eq.0) then
+                 psa2_sst_mon = psa2_sst_mon*-1.
+              end if
+           end if     
         end if
         sam_mon@pcvar = tofloat(sprintf("%4.1f", evecv@pcvar(0)))
         psa1_mon@pcvar = tofloat(sprintf("%4.1f", evecv@pcvar(1)))
@@ -859,18 +910,22 @@ begin
         npo_sst_djf = sst_djf(0,:,:)
         npo_sst_djf = (/ regCoef(npo_pc_djf,sst_djf(lat|:,lon|:,time|:)) /)
      end if     
-     if (pna_djf({50},{185}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
-        pna_djf = pna_djf*-1.
-        pna_pc_djf = pna_pc_djf*-1.
-        if (sstreg_plot_flag.eq.0) then
-           pna_sst_djf = pna_sst_djf*-1.
+     if (.not.ismissing(pna_djf({50},{185}))) then
+        if (pna_djf({50},{185}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
+           pna_djf = pna_djf*-1.
+           pna_pc_djf = pna_pc_djf*-1.
+           if (sstreg_plot_flag.eq.0) then
+              pna_sst_djf = pna_sst_djf*-1.
+           end if
         end if
      end if
-     if (npo_djf({65},{185}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
-        npo_djf = npo_djf*-1.
-        npo_pc_djf = npo_pc_djf*-1.
-        if (sstreg_plot_flag.eq.0) then
-           npo_sst_djf = npo_sst_djf*-1.
+     if (.not.ismissing(npo_djf({65},{185}))) then
+        if (npo_djf({65},{185}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
+           npo_djf = npo_djf*-1.
+           npo_pc_djf = npo_pc_djf*-1.
+           if (sstreg_plot_flag.eq.0) then
+              npo_sst_djf = npo_sst_djf*-1.
+           end if
         end if
      end if
      pna_djf@pcvar = tofloat(sprintf("%4.1f", evecv@pcvar(0)))
@@ -893,18 +948,22 @@ begin
         npo_sst_mam = sst_mam(0,:,:)
         npo_sst_mam = (/ regCoef(npo_pc_mam,sst_mam(lat|:,lon|:,time|:)) /)
      end if   
-     if (pna_mam({50},{185}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
-        pna_mam = pna_mam*-1.
-        pna_pc_mam = pna_pc_mam*-1.
-        if (sstreg_plot_flag.eq.0) then
-           pna_sst_mam = pna_sst_mam*-1.
+     if (.not.ismissing(pna_mam({50},{185}))) then
+        if (pna_mam({50},{185}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
+           pna_mam = pna_mam*-1.
+           pna_pc_mam = pna_pc_mam*-1.
+           if (sstreg_plot_flag.eq.0) then
+              pna_sst_mam = pna_sst_mam*-1.
+           end if
         end if
      end if
-     if (npo_mam({65},{185}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
-        npo_mam = npo_mam*-1.
-        npo_pc_mam = npo_pc_mam*-1.
-        if (sstreg_plot_flag.eq.0) then
-           npo_sst_mam = npo_sst_mam*-1.
+     if (.not.ismissing(npo_mam({65},{185}))) then
+        if (npo_mam({65},{185}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
+           npo_mam = npo_mam*-1.
+           npo_pc_mam = npo_pc_mam*-1.
+           if (sstreg_plot_flag.eq.0) then
+              npo_sst_mam = npo_sst_mam*-1.
+           end if
         end if
      end if
      pna_mam@pcvar = tofloat(sprintf("%4.1f", evecv@pcvar(0)))
@@ -927,18 +986,22 @@ begin
         npo_sst_jja = sst_jja(0,:,:)
         npo_sst_jja = (/ regCoef(npo_pc_jja,sst_jja(lat|:,lon|:,time|:)) /)
      end if   
-     if (pna_jja({50},{185}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
-        pna_jja = pna_jja*-1.
-        pna_pc_jja = pna_pc_jja*-1.
-        if (sstreg_plot_flag.eq.0) then
-           pna_sst_jja = pna_sst_jja*-1.
+     if (.not.ismissing(pna_jja({50},{185}))) then
+        if (pna_jja({50},{185}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
+           pna_jja = pna_jja*-1.
+           pna_pc_jja = pna_pc_jja*-1.
+           if (sstreg_plot_flag.eq.0) then
+              pna_sst_jja = pna_sst_jja*-1.
+           end if
         end if
      end if
-     if (npo_jja({65},{185}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
-        npo_jja = npo_jja*-1.
-        npo_pc_jja = npo_pc_jja*-1.
-        if (sstreg_plot_flag.eq.0) then
-           npo_sst_jja = npo_sst_jja*-1.
+     if (.not.ismissing(npo_jja({65},{185}))) then
+        if (npo_jja({65},{185}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
+           npo_jja = npo_jja*-1.
+           npo_pc_jja = npo_pc_jja*-1.
+           if (sstreg_plot_flag.eq.0) then
+              npo_sst_jja = npo_sst_jja*-1.
+           end if
         end if
      end if
      pna_jja@pcvar = tofloat(sprintf("%4.1f", evecv@pcvar(0)))
@@ -961,18 +1024,22 @@ begin
         npo_sst_son = sst_son(0,:,:)
         npo_sst_son = (/ regCoef(npo_pc_son,sst_son(lat|:,lon|:,time|:)) /)
      end if      
-     if (pna_son({50},{185}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
-        pna_son = pna_son*-1.
-        pna_pc_son = pna_pc_son*-1.
-        if (sstreg_plot_flag.eq.0) then
-           pna_sst_son = pna_sst_son*-1.
+     if (.not.ismissing(pna_son({50},{185}))) then
+        if (pna_son({50},{185}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
+           pna_son = pna_son*-1.
+           pna_pc_son = pna_pc_son*-1.
+           if (sstreg_plot_flag.eq.0) then
+              pna_sst_son = pna_sst_son*-1.
+           end if
         end if
      end if
-     if (npo_son({65},{185}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
-        npo_son = npo_son*-1.
-        npo_pc_son = npo_pc_son*-1.
-        if (sstreg_plot_flag.eq.0) then
-           npo_sst_son = npo_sst_son*-1.
+     if (.not.ismissing(npo_son({65},{185}))) then
+        if (npo_son({65},{185}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
+           npo_son = npo_son*-1.
+           npo_pc_son = npo_pc_son*-1.
+           if (sstreg_plot_flag.eq.0) then
+              npo_sst_son = npo_sst_son*-1.
+           end if
         end if
      end if
      pna_son@pcvar = tofloat(sprintf("%4.1f", evecv@pcvar(0)))
@@ -995,18 +1062,22 @@ begin
         npo_sst_ann = sst_ann(0,:,:)
         npo_sst_ann = (/ regCoef(npo_pc_ann,sst_ann(lat|:,lon|:,time|:)) /)
      end if 
-     if (pna_ann({50},{185}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
-        pna_ann = pna_ann*-1.
-        pna_pc_ann = pna_pc_ann*-1.
-        if (sstreg_plot_flag.eq.0) then
-           pna_sst_ann = pna_sst_ann*-1.
+     if (.not.ismissing(pna_ann({50},{185}))) then
+        if (pna_ann({50},{185}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
+           pna_ann = pna_ann*-1.
+           pna_pc_ann = pna_pc_ann*-1.
+           if (sstreg_plot_flag.eq.0) then
+              pna_sst_ann = pna_sst_ann*-1.
+           end if
         end if
      end if
-     if (npo_ann({65},{185}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
-        npo_ann = npo_ann*-1.
-        npo_pc_ann = npo_pc_ann*-1.
-        if (sstreg_plot_flag.eq.0) then
-           npo_sst_ann = npo_sst_ann*-1.
+     if (.not.ismissing(npo_ann({65},{185}))) then
+        if (npo_ann({65},{185}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
+           npo_ann = npo_ann*-1.
+           npo_pc_ann = npo_pc_ann*-1.
+           if (sstreg_plot_flag.eq.0) then
+              npo_sst_ann = npo_sst_ann*-1.
+           end if
         end if
      end if
      pna_ann@pcvar = tofloat(sprintf("%4.1f", evecv@pcvar(0)))
@@ -1030,18 +1101,22 @@ begin
            npo_sst_mon = sst(0,:,:)
            npo_sst_mon = (/ regCoef(npo_pc_mon,sst(lat|:,lon|:,time|:)) /)
         end if 
-        if (pna_mon({50},{185}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
-           pna_mon = pna_mon*-1.
-           pna_pc_mon = pna_pc_mon*-1.
-           if (sstreg_plot_flag.eq.0) then
-              pna_sst_mon = pna_sst_mon*-1.
+        if (.not.ismissing(pna_mon({50},{185}))) then
+           if (pna_mon({50},{185}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
+              pna_mon = pna_mon*-1.
+              pna_pc_mon = pna_pc_mon*-1.
+              if (sstreg_plot_flag.eq.0) then
+                 pna_sst_mon = pna_sst_mon*-1.
+              end if
            end if
         end if
-        if (npo_mon({65},{185}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
-           npo_mon = npo_mon*-1.
-           npo_pc_mon = npo_pc_mon*-1.
-           if (sstreg_plot_flag.eq.0) then
-              npo_sst_mon = npo_sst_mon*-1.
+        if (.not.ismissing(npo_mon({65},{185}))) then
+           if (npo_mon({65},{185}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
+              npo_mon = npo_mon*-1.
+              npo_pc_mon = npo_pc_mon*-1.
+              if (sstreg_plot_flag.eq.0) then
+                 npo_sst_mon = npo_sst_mon*-1.
+              end if
            end if
         end if
         pna_mon@pcvar = tofloat(sprintf("%4.1f", evecv@pcvar(0)))
@@ -1074,11 +1149,13 @@ begin
         nao_sst_djf = (/ regCoef(nao_pc_djf,sst_djf(lat|:,lon|:,time|:)) /)
         delete(sst_djf)
      end if
-     if (nao_djf({70},{350}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
-        nao_djf = nao_djf*-1.
-        nao_pc_djf = nao_pc_djf*-1.
-        if (sstreg_plot_flag.eq.0) then
-           nao_sst_djf = nao_sst_djf*-1.
+     if (.not.ismissing(nao_djf({70},{350}))) then
+        if (nao_djf({70},{350}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
+           nao_djf = nao_djf*-1.
+           nao_pc_djf = nao_pc_djf*-1.
+           if (sstreg_plot_flag.eq.0) then
+              nao_sst_djf = nao_sst_djf*-1.
+           end if
         end if
      end if
      nao_djf@pcvar = tofloat(sprintf("%4.1f", evecv@pcvar(0)))
@@ -1095,11 +1172,13 @@ begin
         nao_sst_mam = (/ regCoef(nao_pc_mam,sst_mam(lat|:,lon|:,time|:)) /)
         delete(sst_mam)
      end if
-     if (nao_mam({70},{350}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
-        nao_mam = nao_mam*-1.
-        nao_pc_mam = nao_pc_mam*-1.
-        if (sstreg_plot_flag.eq.0) then
-           nao_sst_mam = nao_sst_mam*-1.
+     if (.not.ismissing(nao_mam({70},{350}))) then
+        if (nao_mam({70},{350}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
+           nao_mam = nao_mam*-1.
+           nao_pc_mam = nao_pc_mam*-1.
+           if (sstreg_plot_flag.eq.0) then
+              nao_sst_mam = nao_sst_mam*-1.
+           end if
         end if
      end if
      nao_mam@pcvar = tofloat(sprintf("%4.1f", evecv@pcvar(0)))
@@ -1116,11 +1195,13 @@ begin
         nao_sst_jja = (/ regCoef(nao_pc_jja,sst_jja(lat|:,lon|:,time|:)) /)
         delete(sst_jja)
      end if
-     if (nao_jja({70},{350}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
-        nao_jja = nao_jja*-1.
-        nao_pc_jja = nao_pc_jja*-1.
-        if (sstreg_plot_flag.eq.0) then
-           nao_sst_jja = nao_sst_jja*-1.
+     if (.not.ismissing(nao_jja({70},{350}))) then
+        if (nao_jja({70},{350}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
+           nao_jja = nao_jja*-1.
+           nao_pc_jja = nao_pc_jja*-1.
+           if (sstreg_plot_flag.eq.0) then
+              nao_sst_jja = nao_sst_jja*-1.
+           end if
         end if
      end if
      nao_jja@pcvar = tofloat(sprintf("%4.1f", evecv@pcvar(0)))
@@ -1137,11 +1218,13 @@ begin
         nao_sst_son = (/ regCoef(nao_pc_son,sst_son(lat|:,lon|:,time|:)) /)
         delete(sst_son)
      end if
-     if (nao_son({70},{350}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
-        nao_son = nao_son*-1.
-        nao_pc_son = nao_pc_son*-1.
-        if (sstreg_plot_flag.eq.0) then
-           nao_sst_son = nao_sst_son*-1.
+     if (.not.ismissing(nao_son({70},{350}))) then
+        if (nao_son({70},{350}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
+           nao_son = nao_son*-1.
+           nao_pc_son = nao_pc_son*-1.
+           if (sstreg_plot_flag.eq.0) then
+              nao_sst_son = nao_sst_son*-1.
+           end if
         end if
      end if
      nao_son@pcvar = tofloat(sprintf("%4.1f", evecv@pcvar(0)))
@@ -1158,11 +1241,13 @@ begin
         nao_sst_ann = (/ regCoef(nao_pc_ann,sst_ann(lat|:,lon|:,time|:)) /)
         delete(sst_ann)
      end if
-     if (nao_ann({70},{350}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
-        nao_ann = nao_ann*-1.
-        nao_pc_ann = nao_pc_ann*-1.
-        if (sstreg_plot_flag.eq.0) then
-           nao_sst_ann = nao_sst_ann*-1.
+     if (.not.ismissing(nao_ann({70},{350}))) then
+        if (nao_ann({70},{350}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
+           nao_ann = nao_ann*-1.
+           nao_pc_ann = nao_pc_ann*-1.
+           if (sstreg_plot_flag.eq.0) then
+              nao_sst_ann = nao_sst_ann*-1.
+           end if
         end if
      end if
      nao_ann@pcvar = tofloat(sprintf("%4.1f", evecv@pcvar(0)))
@@ -1180,11 +1265,13 @@ begin
            nao_sst_mon = (/ regCoef(nao_pc_mon,sst(lat|:,lon|:,time|:)) /)
            delete(sst)
         end if
-        if (nao_mon({70},{350}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
-           nao_mon = nao_mon*-1.
-           nao_pc_mon = nao_pc_mon*-1.
-           if (sstreg_plot_flag.eq.0) then
-              nao_sst_mon = nao_sst_mon*-1.
+        if (.not.ismissing(nao_mon({70},{350}))) then
+           if (nao_mon({70},{350}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
+              nao_mon = nao_mon*-1.
+              nao_pc_mon = nao_pc_mon*-1.
+              if (sstreg_plot_flag.eq.0) then
+                 nao_sst_mon = nao_sst_mon*-1.
+              end if
            end if
         end if
         nao_mon@pcvar = tofloat(sprintf("%4.1f", evecv@pcvar(0)))
@@ -1883,16 +1970,19 @@ begin
         end if        
      end do
 ;     
-     if (.not.isfilepresent2(getenv("OUTDIR")+"metrics_orig.txt")) then
-        header = (/"","Pattern Correlations   Observations vs. Model(s)",""/)
-        write_table(getenv("OUTDIR")+"metrics_orig.txt","w",[/header/],"%s")
-        write_table(getenv("OUTDIR")+"metrics_orig.txt","a",[/line3/],"%s")
-        write_table(getenv("OUTDIR")+"metrics_orig.txt","a",[/line4/],"%s")
-        delete(header)
-     end if    
-     write_table(getenv("OUTDIR")+"metrics_orig.txt","a",[/finpr_nam_djf/],"%s")
-     write_table(getenv("OUTDIR")+"metrics_orig.txt","a",[/finpr_sam_djf/],"%s")
-
+     if (dimsizes(tochar(line4)).ge.8190) then   ; system or fortran compiler limit
+        print("Metrics table warning: Not creating metrics table as size of comparison results in a invalid ascii row size.")   
+     else
+        if (.not.isfilepresent2(getenv("OUTDIR")+"metrics_orig.txt")) then
+           header = (/"","Pattern Correlations   Observations vs. Model(s)",""/)
+           write_table(getenv("OUTDIR")+"metrics_orig.txt","w",[/header/],"%s")
+           write_table(getenv("OUTDIR")+"metrics_orig.txt","a",[/line3/],"%s")
+           write_table(getenv("OUTDIR")+"metrics_orig.txt","a",[/line4/],"%s")
+           delete(header)
+        end if    
+        write_table(getenv("OUTDIR")+"metrics_orig.txt","a",[/finpr_nam_djf/],"%s")
+        write_table(getenv("OUTDIR")+"metrics_orig.txt","a",[/finpr_sam_djf/],"%s")
+     end if
      delete([/line3,line4,format2,format3,nchar,ntc,clat,patcor_nam_djf,patcor_nam_jja,patcor_nam_ann,patcor_sam_djf,patcor_sam_jja,patcor_sam_ann/])
      delete([/patcor_nao_djf,patcor_nao_jja,patcor_nao_ann,patcor_npo_djf,patcor_npo_jja,patcor_npo_ann,patcor_pna_djf,patcor_pna_jja,patcor_pna_ann/])
      delete([/patcor_psa1_djf,patcor_psa1_jja,patcor_psa1_ann,patcor_psa2_djf,patcor_psa2_jja,patcor_psa2_ann,dimY,ntb/])

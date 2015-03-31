@@ -29,19 +29,12 @@ begin
   
   blankrow = ind(na.eq."")
   if (.not.any(ismissing(blankrow))) then
-;     print("Extra blank row(s) detected in namelist. Check the namelist and make sure there is only one blank line at the end of namelist. Attempting to remove extra blank rows.")
-;     print("-----Original namelist---")
-;     print(""+na)
-;     print("-------------------------")
      goodrows = ind(na.ne."")
      na2 = na(goodrows)
      delete(na)
      na = na2
      delete(na2)
      nsim = dimsizes(na)
-;     print("-----Corrected namelist--")
-;     print(""+na)
-;     print("-------------------------")
   end if     
 
   system("   export NSIM="+nsim)
@@ -271,7 +264,33 @@ begin
      delete(fsst)
   end do  
   asciiwrite("namelist_byvar/namelist_snowdp",namelist_snowdp)
-   
+;------- MOC section----------------------------  
+  if (obsflag) then
+     if (.not.ismissing(pathsB(5))) then
+        namelist_moc = new(nsim+1,string)
+        incr = 1
+        namelist_moc(0) = namesB(5)+" | "+pathsB(5)+" | "+syearB(5)+" | "+eyearB(5)   ; grab 2nd OBS file, which = moc
+        asciiwrite("obs_moc",namelist_moc(0))    ; write file signaling that observational moc file is specified
+     else
+        namelist_moc = new(nsim,string)
+        incr = 0
+     end if
+  else
+     namelist_moc = new(nsim,string)
+     incr = 0
+  end if
+  do gg = 0,nsim-1
+     fsst = systemfunc("ls "+paths(gg)+"*{MOC_,MOC.,msftmyz.,msftmyz_,stfmmc.,stfmmc_}*.nc 2> /dev/null")   ; /dev/null suppresses all standard error output
+     if (dimsizes(fsst).eq.1) then
+        namelist_moc(gg+incr) =  names(gg)+" | "+fsst(0)+" | "+syear(gg)+" | "+eyear(gg)   ; grab first file
+     else
+        tpath = str_sub_str(paths(gg),"/*/","/{MOC,msftmyz,stfmmc}/")
+        namelist_moc(gg+incr) =  names(gg)+" | "+tpath+"*{MOC_,MOC.,msftmyz.,msftmyz_,stfmmc.,stfmmc_}*.nc | "+syear(gg)+" | "+eyear(gg)
+        delete(tpath)
+     end if
+     delete(fsst)
+  end do  
+  asciiwrite("namelist_byvar/namelist_moc",namelist_moc) 
   if (obsflag) then
      delete([/vnamesB,namesB,pathsB,syearB,eyearB/])
   end if

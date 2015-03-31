@@ -399,14 +399,18 @@ begin
            finpr = finpr+sprintf(format2,(pattern_cor(patcor(0,:,:),patcor(hh,:,:),clat,0)))+"/"+sprintf(format3,(dim_rmsd(ndtooned(NewCosWeight(patcor(0,:,:))),ndtooned(NewCosWeight(patcor(hh,:,:))))))
         end if
      end do
-     if (.not.isfilepresent2(getenv("OUTDIR")+"metrics_orig.txt")) then
-        header = (/"","Pattern Correlations/RMS Differences   Observations vs. Model(s)",""/)
-        write_table(getenv("OUTDIR")+"metrics_orig.txt","w",[/header/],"%s")
-        write_table(getenv("OUTDIR")+"metrics_orig.txt","a",[/line3/],"%s")
-        write_table(getenv("OUTDIR")+"metrics_orig.txt","a",[/line4/],"%s")
-        delete(header)
+     if (dimsizes(tochar(line4)).ge.8190) then   ; system or fortran compiler limit
+        print("Metrics table warning: Not creating metrics table as size of comparison results in a invalid ascii row size.")   
+     else
+        if (.not.isfilepresent2(getenv("OUTDIR")+"metrics_orig.txt")) then
+           header = (/"","Pattern Correlations/RMS Differences   Observations vs. Model(s)",""/)
+           write_table(getenv("OUTDIR")+"metrics_orig.txt","w",[/header/],"%s")
+           write_table(getenv("OUTDIR")+"metrics_orig.txt","a",[/line3/],"%s")
+           write_table(getenv("OUTDIR")+"metrics_orig.txt","a",[/line4/],"%s")
+           delete(header)
+        end if
+        write_table(getenv("OUTDIR")+"metrics_orig.txt","a",[/finpr/],"%s")
      end if
-     write_table(getenv("OUTDIR")+"metrics_orig.txt","a",[/finpr/],"%s")
      delete([/finpr,line3,line4,format2,format3,nchar,ntc,clat,patcor,ntb,dimY/])
   end if
   

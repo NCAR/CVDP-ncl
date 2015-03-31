@@ -31,8 +31,9 @@
 
   output_type       = "png"           ; "ps" or "png".  Note that for output_type = "ps",  png's are created from the .ps files for web use.
   
-  png_scale         = 1.5             ; Will be used if output_type = "png". Value between .1->5.  Any value > 1 (< 1) increases (decreases) png page size. 
-                                      ; Default = 1, which = 1500 (H) x 1500 (W) before automatic cropping of white space
+  png_scale         = 1.5             ; Value between .1->5.  Any value > 1 (< 1) increases (decreases) png page size. 
+                                      ; When output_type = "png" a value of 1 will result in a png sized 1500 (H) x 1500 (W) before automatic cropping of white space
+                                      ; When output_type = "ps"  a value of 1 will result in a png density setting of 144 before automatic cropping of white space
   webpage_title     = "Title goes here"          ; Webpage title   
   
   tar_output        = "False"                 ; tar up all output in outdir and remove individual files?                                      
@@ -47,7 +48,7 @@
   ncl_exec = "ncl"       ; this can be changed to a different path if a different version of NCL needs to be used, 
                          ; such as "/different/path/to/bin/ncl"                                             
 ;========END USER MODIFICATIONS===========================================================
-  version = "3.3.1"
+  version = "3.7.0"
   
   loadscript(zp+"functions.ncl")
   variables = (/"ts","trefht","psl","prect","snowdp"/)
@@ -95,12 +96,12 @@
          "export OUTPUT_DATA="+output_data+";   export VERSION="+version+";   export PNG_SCALE="+png_scale+";   "+\
          "export OPT_CLIMO="+opt_climo+";   export CLIMO_SYEAR="+climo_syear+";   export CLIMO_EYEAR="+climo_eyear+";   "+\
          "export COMPUTE_MODES_MON="+compute_modes_mon+";   export OUTPUT_TYPE="+output_type+";   "+\
-         "export COLORMAP="+colormap+";   export CVDP_SCRIPTS="+zp+";"+\    
+         "export COLORMAP="+colormap+";   export CVDP_SCRIPTS="+zp+";"+\     
          " "+str_sub_str(ncl_exec," -Q","")+" "+zp+"namelist.ncl; "+ncl_exec+" "+zp+"sst.indices.ncl; "+ncl_exec+" "+zp+"amo.ncl;"+\         
          " "+ncl_exec+" "+zp+"pdo.ncl; "+ncl_exec+" "+zp+"psl.modes_indices.ncl; "+ncl_exec+" "+zp+"tas.trends_timeseries.ncl;"+\
          " "+ncl_exec+" "+zp+"psl.trends.ncl; "+ncl_exec+" "+zp+"pr.trends_timeseries.ncl; "+ncl_exec+" "+zp+"sst.mean_stddev.ncl;"+\ 
          " "+ncl_exec+" "+zp+"snd.trends.ncl; "+ncl_exec+" "+zp+"psl.mean_stddev.ncl; "+ncl_exec+" "+zp+"tas.mean_stddev.ncl;"+\
-         " "+ncl_exec+" "+zp+"pr.mean_stddev.ncl; "+ncl_exec+" "+zp+"sst.trends_timeseries.ncl")       
+         " "+ncl_exec+" "+zp+"pr.mean_stddev.ncl; "+ncl_exec+" "+zp+"sst.trends_timeseries.ncl; "+ncl_exec+" "+zp+"amoc.ncl")                
          
   if (output_type.eq."png") then
      ofiles = systemfunc("ls "+outdir+"*.png")
