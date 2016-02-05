@@ -72,32 +72,21 @@ begin
   delete(na_trefht)
   nyr_trefht = eyear_trefht-syear_trefht+1  
 
-  if (isfilepresent2("obs_ts")) then
-     if (nsim.eq.nsim_psl.and.nsim.eq.nsim_trefht.and.nsim_psl.eq.nsim_trefht) then
-        ; print("Total number of simulations/obs are equal between psl/trefht/ts namelists, proceeding")
-        n34sc_obs = 0
-     else
-        print("Total number of simulations/obs between psl/trefht/ts do not match, skipping observational nino3.4 spatial composite.")
-        n34sc_obs = 1
-        ; delete([/nsim_psl,na_psl,names_psl,paths_psl,syear_psl,eyear_psl,nyr_psl,nsim_trefht,na_trefht,names_trefht,paths_trefht,syear_trefht,eyear_trefht,nyr_trefht/])
-     end if  
-  else
-     n34sc_obs = 1
-  end if
-  if (n34sc_obs.eq.0) then
-     if (syear(0).eq.syear_psl(0).and.syear(0).eq.syear_trefht(0).and.syear_psl(0).eq.syear_trefht(0)) then
-        if (eyear(0).eq.eyear_psl(0).and.eyear(0).eq.eyear_trefht(0).and.eyear_psl(0).eq.eyear_trefht(0)) then
-;           print("Obs years match")
-           n34sc_obs = 0
-        else
-           print("Observational end years do not match, skipping nino3.4 spatial composite")
-           n34sc_obs = 1
-        end if
-     else
-        print("Observational start years do not match, skipping nino3.4 spatial composite")
-        n34sc_obs = 1
-     end if
-  end if
+  nsim_prect = numAsciiRow("namelist_byvar/namelist_prect")
+  na_prect = asciiread("namelist_byvar/namelist_prect",(/nsim_prect/),"string")
+  names_prect = new(nsim_prect,"string")
+  paths_prect = new(nsim_prect,"string")
+  syear_prect = new(nsim_prect,"integer",-999)
+  eyear_prect = new(nsim_prect,"integer",-999)
+
+  do gg = 0,nsim_prect-1
+     names_prect(gg) = str_strip(str_get_field(na_prect(gg),1,delim))
+     paths_prect(gg) = str_strip(str_get_field(na_prect(gg),2,delim))
+     syear_prect(gg) = stringtointeger(str_strip(str_get_field(na_prect(gg),3,delim)))
+     eyear_prect(gg) = stringtointeger(str_strip(str_get_field(na_prect(gg),4,delim)))
+  end do
+  delete(na_prect)
+  nyr_prect = eyear_prect-syear_prect+1  
 ;-------------------------------------------------------------------------------------------------
         
   wks_type = OUTPUT_TYPE
@@ -123,6 +112,8 @@ begin
   wks_n34_mst = gsn_open_wks(wks_type,getenv("OUTDIR")+"nino34.monstddev")
   
   wks_n34sc = gsn_open_wks(wks_type,getenv("OUTDIR")+"nino34.spatialcomp")
+
+  wks_n34sc_ppt = gsn_open_wks(wks_type,getenv("OUTDIR")+"nino34.spatialcomp.ppt")
   
   if (COLORMAP.eq.0) then
      gsn_define_colormap(wks_n34,"ncl_default")    
@@ -138,6 +129,7 @@ begin
      gsn_define_colormap(wks_n34_rst,"ncl_default")   
      gsn_define_colormap(wks_n34_mst,"ncl_default")   
      gsn_define_colormap(wks_n34sc,"ncl_default")   
+     gsn_define_colormap(wks_n34sc_ppt,"MPL_BrBG")  
   end if
   if (COLORMAP.eq.1) then
      gsn_define_colormap(wks_n34,"ncl_default")    
@@ -153,6 +145,7 @@ begin
      gsn_define_colormap(wks_n34_rst,"ncl_default")   
      gsn_define_colormap(wks_n34_mst,"ncl_default")   
      gsn_define_colormap(wks_n34sc,"BlueDarkRed18")   
+     gsn_define_colormap(wks_n34sc_ppt,"BrownBlue12")    
   end if
 
   xyn34 = new(nsim,"graphic")  
@@ -163,6 +156,7 @@ begin
   xytsa = new(nsim,"graphic") 
   xytio = new(nsim,"graphic")  
   xyiod = new(nsim,"graphic")  
+  xysocn = new(nsim,"graphic")  
   
   plot_n34hi = new(nsim,"graphic")  
   plot_n34lo = new(nsim,"graphic")  
@@ -171,6 +165,11 @@ begin
   map_n34sc_son0 = new(nsim,"graphic")  
   map_n34sc_djf1 = new(nsim,"graphic")  
   map_n34sc_mam1 = new(nsim,"graphic")  
+
+  map_n34sc_ppt_jja0 = new(nsim,"graphic")  
+  map_n34sc_ppt_son0 = new(nsim,"graphic")  
+  map_n34sc_ppt_djf1 = new(nsim,"graphic")  
+  map_n34sc_ppt_mam1 = new(nsim,"graphic")  
 
   xyn34_rst = new(nsim,"graphic")  
   xyn34_mst = new(nsim,"graphic")  
@@ -184,32 +183,23 @@ begin
   wgt = wgt/sum(wgt)
   pi=4.*atan(1.0)
   rad=(pi/180.)
-  
-  n34sc_frame = 1     ; n34sc_frame = flag to create regressions .ps/.png files. Created/used instead of n34sc_plot_flag
-                      ; so that if sst regressions are not created for the last simulation listed that .ps/png files are created
+
   do ee = 0,nsim-1
-;     print(paths(ee)+" ee = "+ee)
      sst = data_read_in(paths(ee),"TS",syear(ee),eyear(ee))    ; read in data, orient lats/lons correctly, set time coordinate variable up
      
      if (isatt(sst,"is_all_missing")) then
         delete(sst)
         continue
      end if
-       
-     if (isfilepresent2("obs_ts").and.ee.eq.0) then   ; mask out land in array going into EOF functions
-        n34sc_flag = 1     ; this flag MAY be overruled by n34sc_obs
-     else
-        n34sc_flag = 0     ; flag set to trigger nino3.4 composite
-        
-        sst = where(sst.le.-1.8,-1.8,sst)
-        d = addfile("$NCARG_ROOT/lib/ncarg/data/cdf/landsea.nc","r")   
-        basemap = d->LSMASK
-        lsm = landsea_mask(basemap,sst&lat,sst&lon)
-        sst = mask(sst,conform(sst,lsm,(/1,2/)).ge.1,False)
-;        printStatInfo(sst)
-        delete([/lsm,basemap/])
-        delete(d)
-     end if    
+
+     sst = where(sst.le.-1.8,-1.8,sst)    ; set all values below -1.8 to -1.8
+     d = addfile("$NCARG_ROOT/lib/ncarg/data/cdf/landsea.nc","r")   ; mask out land (this is redundant for data that is already masked)
+     basemap = d->LSMASK
+     lsm = landsea_mask(basemap,sst&lat,sst&lon)
+     sst = mask(sst,conform(sst,lsm,(/1,2/)).ge.1,False)
+     delete([/lsm,basemap/])
+     delete(d)  
+
      if (OPT_CLIMO.eq."Full") then
         sst = rmMonAnnCycTLL(sst)
      else
@@ -223,7 +213,6 @@ begin
         delete(climo)
      end if
      
-
      coswgt=cos(rad*sst&lat)
      coswgt!0 = "lat" 
      coswgt&lat= sst&lat        
@@ -267,7 +256,7 @@ begin
      nino12@long_name = "nino1+2 timeseries"
 
      ssttemp = lonFlip(sst)
-     llats = 20.    ;  Tropical Southern Atlantic Index
+     llats = -20.    ;  Tropical Southern Atlantic Index
      llatn = 0.
      llonw = -30.
      llone = 10.
@@ -303,11 +292,21 @@ begin
      iod@area = "(-10:10N, 50:70E) - (-10:0N, 90:110E)"
      copy_VarCoords(nino34,iod)
      iod@units = sst@units
-     iod@long_name = "Indian Ocean Dipole Index"    
+     iod@long_name = "Indian Ocean Dipole Index"
+
+     socn = wgt_areaave(sst(:,{-70.:-50.},:),coswgt({-70.:-50.}),1.0,0) 
+     socn@area = "(-70:-50N, 0:360E)"
+     copy_VarCoords(nino34,socn)
+     socn@units = sst@units
+     socn@long_name = "Southern Ocean Index"       
 ;---------------------------------------------------------------------------------------------     
      if (OUTPUT_DATA.eq."True") then
         modname = str_sub_str(names(ee)," ","_")
-        fn = getenv("OUTDIR")+modname+".cvdp_data."+syear(ee)+"-"+eyear(ee)+".nc"
+        bc = (/"/","'","(",")"/)
+        do gg = 0,dimsizes(bc)-1
+           modname = str_sub_str(modname,bc(gg),"_")
+        end do
+        fn = getenv("OUTDIR")+modname+".cvdp_data.sst.indices."+syear(ee)+"-"+eyear(ee)+".nc"
         if (.not.isfilepresent2(fn)) then
            z = addfile(fn,"c")
            z@source = "NCAR Climate Analysis Section's Climate Variability Diagnostics Package v"+getenv("VERSION")
@@ -335,6 +334,7 @@ begin
         z->south_tropical_atlantic = tsa
         z->tropical_indian_ocean = tio
         z->indian_ocean_dipole = iod
+        z->southern_ocean = socn
         delete([/modname,fn/])
      end if
 ;---------------------------------------------------------------------------------------------
@@ -417,40 +417,23 @@ begin
         delete([/hov_hi,hov_lo/])
      end if     
 ;- - - - - -nino3.4 spatial composite section- - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-     n34sc_plot_flag = 0   
-     if (ee.eq.0.and.n34sc_obs.eq.1) then    ; first time thru, and obs = False
-        n34sc_plot_flag = 1                  ; do not plot
-        if (.not.isfilepresent2("obs_ts")) then  ; however, if there are no TS obs whatsoever, the 1st iteration of the
-           n34sc_plot_flag = 0                  ; ee do loop will be the first model, so turn it on.
+     if (any(ismissing((/syear(ee),syear_trefht(ee),syear_psl(ee),eyear(ee),eyear_trefht(ee),eyear_psl(ee)/)))) then
+        taspslreg_plot_flag = 1
+     else 
+        if (syear(ee).eq.syear_trefht(ee).and.syear(ee).eq.syear_psl(ee)) then     ; check that the start and end years match for ts, trefht, and psl
+           if (eyear(ee).eq.eyear_trefht(ee).and.eyear(ee).eq.eyear_psl(ee)) then
+              taspslreg_plot_flag = 0
+           else
+              taspslreg_plot_flag = 1
+           end if
+        else
+           taspslreg_plot_flag = 1
         end if
      end if
-     
-     if (n34sc_plot_flag.eq.0) then        
-        psl_offset    = 0
-        trefht_offset = 0
-        if (ee.eq.0.and.n34sc_obs.eq.0) then
-        else
-           if (isfilepresent2("obs_ts")) then
-              if (.not.isfilepresent2("obs_psl")) then
-                 psl_offset = -1
-              end if
-              if (.not.isfilepresent2("obs_trefht")) then
-                 trefht_offset = -1
-              end if
-           else
-              if (isfilepresent2("obs_psl")) then
-                 psl_offset = 1
-              end if
-              if (isfilepresent2("obs_trefht")) then
-                 trefht_offset = 1
-              end if
-           end if
-        end if
-        
-        ; print("Data to be read in: "+paths_trefht(ee+trefht_offset)+" from "+syear_trefht(ee+trefht_offset)+":"+eyear_trefht(ee+trefht_offset))
-        tas = data_read_in(paths_trefht(ee+trefht_offset),"TREFHT",syear_trefht(ee+trefht_offset),eyear_trefht(ee+trefht_offset))
-        ; print("Data to be read in: "+paths_psl(ee+psl_offset)+" from "+syear_psl(ee+psl_offset)+":"+eyear_psl(ee+psl_offset))
-        psl = data_read_in(paths_psl(ee+psl_offset),"PSL",syear_psl(ee+psl_offset),eyear_psl(ee+psl_offset))
+
+     if (taspslreg_plot_flag.eq.0) then
+        tas = data_read_in(paths_trefht(ee),"TREFHT",syear_trefht(ee),eyear_trefht(ee))
+        psl = data_read_in(paths_psl(ee),"PSL",syear_psl(ee),eyear_psl(ee))
 
         TIME = sst&time
         yyyymm = cd_calendar(sst&time,-1)  ; convert tas, ts, and sst from CF-conforming time to YYYYMM for coding below
@@ -469,15 +452,15 @@ begin
         delete(yyyymm)
 
         if (isatt(tas,"is_all_missing").or.isatt(psl,"is_all_missing")) then
-           n34sc_plot_flag = 1
+           taspslreg_plot_flag = 1
            delete([/tas,psl/])
         end if
         
         if (nyr(ee).lt.15) then   ; 15+ years needed for composites
-           n34sc_plot_flag = 1
+           taspslreg_plot_flag = 1
         end if
 
-        if (n34sc_plot_flag.eq.0) then     ; only continue if all 3 fields are present
+        if (taspslreg_plot_flag.eq.0) then     ; only continue if all 3 fields are present
          ;  d = addfile("$NCARG_ROOT/lib/ncarg/data/cdf/landsea.nc","r")     ; mask ocean for TAS array
          ;  basemap = d->LSMASK                                              ; This is now done right before plotting.
          ;  lsm = landsea_mask(basemap,tas&lat,tas&lon)                      ; so that the entire TAS array is used
@@ -489,12 +472,12 @@ begin
               tas = rmMonAnnCycTLL(tas)
               psl = rmMonAnnCycTLL(psl)           
            else
-              check_custom_climo(names_trefht(ee+trefht_offset),syear_trefht(ee+trefht_offset),eyear_trefht(ee+trefht_offset),CLIMO_SYEAR,CLIMO_EYEAR)
+              check_custom_climo(names_trefht(ee),syear_trefht(ee),eyear_trefht(ee),CLIMO_SYEAR,CLIMO_EYEAR)
               climo = clmMonTLL(tas({CLIMO_SYEAR*100+1:CLIMO_EYEAR*100+12},:,:))                 
               tas   = calcMonAnomTLL(tas,climo) 
               delete(climo)
            
-              check_custom_climo(names_psl(ee+psl_offset),syear_psl(ee+psl_offset),eyear_psl(ee+psl_offset),CLIMO_SYEAR,CLIMO_EYEAR)
+              check_custom_climo(names_psl(ee),syear_psl(ee),eyear_psl(ee),CLIMO_SYEAR,CLIMO_EYEAR)
               climo = clmMonTLL(psl({CLIMO_SYEAR*100+1:CLIMO_EYEAR*100+12},:,:))                 
               psl   = calcMonAnomTLL(psl,climo) 
               delete(climo)
@@ -521,9 +504,7 @@ begin
            locntr = 0
            hiyr = new(dimsizes(nino34_ndj&time),integer)
            loyr = hiyr
-  
-;           print(nino34_ndj)
-  
+
            do hh = 0,dimsizes(nino34_ndj)-1
               if (nino34_ndj(hh).ge.1) then
                  ; print("High year = "+nino34_ndj&time(hh))
@@ -603,7 +584,7 @@ begin
                  sc_sst_lo(gg,:,:) = (/ dim_avg_n(sst({lowyr+tt},:,:),0) /)     
                  sc_tas_lo(gg,:,:) = (/ dim_avg_n(tas({lowyr+tt},:,:),0) /)
               end do
-              delete([/tt,tas,psl,lowyr/])
+              delete([/tt,lowyr/])
            end if
            
            n34sc_psl = sc_psl_hi
@@ -624,28 +605,226 @@ begin
               z->nino34spacomp_sst_son0 = n34sc_sst(9,:,:)
               z->nino34spacomp_sst_djf1 = n34sc_sst(12,:,:)
               z->nino34spacomp_sst_mam1 = n34sc_sst(15,:,:)
-              if (isfilepresent2("obs_ts").and.ee.eq.0) then   ; will not write out PSL/TAS  to OBS SST files due to different
-              else                                             ; variable going into SST OBS file..
-                 z->nino34spacomp_psl_jja0 = n34sc_psl(6,:,:)    
-                 z->nino34spacomp_psl_son0 = n34sc_psl(9,:,:)
-                 z->nino34spacomp_psl_djf1 = n34sc_psl(12,:,:)
-                 z->nino34spacomp_psl_mam1 = n34sc_psl(15,:,:)
-                 z->nino34spacomp_tas_jja0 = n34sc_tas(6,:,:)    
-                 z->nino34spacomp_tas_son0 = n34sc_tas(9,:,:)
-                 z->nino34spacomp_tas_djf1 = n34sc_tas(12,:,:)
-                 z->nino34spacomp_tas_mam1 = n34sc_tas(15,:,:)
+
+              modname = str_sub_str(names_trefht(ee)," ","_")
+              bc = (/"/","'","(",")"/)
+              do gg = 0,dimsizes(bc)-1
+                 modname = str_sub_str(modname,bc(gg),"_")
+              end do
+              fn = getenv("OUTDIR")+modname+".cvdp_data.psl.sst.indices.tas."+syear_trefht(ee)+"-"+eyear_trefht(ee)+".nc"
+              if (.not.isfilepresent2(fn)) then
+                 z_tas = addfile(fn,"c")
+                 z_tas@source = "NCAR Climate Analysis Section's Climate Variability Diagnostics Package v"+getenv("VERSION")
+                 z_tas@notes = "Data from "+names_trefht(ee)+" from "+syear_trefht(ee)+"-"+eyear_trefht(ee)
+                 if (OPT_CLIMO.eq."Full") then
+                    z_tas@climatology = syear_trefht(ee)+"-"+eyear_trefht(ee)+" climatology removed prior to all calculations (other than means)"
+                 else
+                    z_tas@climatology = CLIMO_SYEAR+"-"+CLIMO_EYEAR+" climatology removed prior to all calculations (other than means)"
+                 end if
+              else
+                 z_tas = addfile(fn,"w")
               end if
+              z_tas->nino34spacomp_tas_jja0 = n34sc_tas(6,:,:)    
+              z_tas->nino34spacomp_tas_son0 = n34sc_tas(9,:,:)
+              z_tas->nino34spacomp_tas_djf1 = n34sc_tas(12,:,:)
+              z_tas->nino34spacomp_tas_mam1 = n34sc_tas(15,:,:)
+              delete(z_tas)
+              delete(modname)
+              
+              modname = str_sub_str(names_psl(ee)," ","_")
+              bc = (/"/","'","(",")"/)
+              do gg = 0,dimsizes(bc)-1
+                 modname = str_sub_str(modname,bc(gg),"_")
+              end do
+              fn = getenv("OUTDIR")+modname+".cvdp_data.sst.indices.psl."+syear_trefht(ee)+"-"+eyear_trefht(ee)+".nc"
+              if (.not.isfilepresent2(fn)) then
+                 z_psl = addfile(fn,"c")
+                 z_psl@source = "NCAR Climate Analysis Section's Climate Variability Diagnostics Package v"+getenv("VERSION")
+                 z_psl@notes = "Data from "+names_trefht(ee)+" from "+syear_trefht(ee)+"-"+eyear_trefht(ee)
+                 if (OPT_CLIMO.eq."Full") then
+                    z_psl@climatology = syear_trefht(ee)+"-"+eyear_trefht(ee)+" climatology removed prior to all calculations (other than means)"
+                 else
+                    z_psl@climatology = CLIMO_SYEAR+"-"+CLIMO_EYEAR+" climatology removed prior to all calculations (other than means)"
+                 end if
+              else
+                 z_psl = addfile(fn,"w")
+              end if
+              z_psl->nino34spacomp_psl_jja0 = n34sc_psl(6,:,:)    
+              z_psl->nino34spacomp_psl_son0 = n34sc_psl(9,:,:)
+              z_psl->nino34spacomp_psl_djf1 = n34sc_psl(12,:,:)
+              z_psl->nino34spacomp_psl_mam1 = n34sc_psl(15,:,:)
+              delete(z_psl)
+              delete(modname)
            end if
         end if
      end if
      if (isvar("TIME")) then
         delete(TIME)
      end if
-     delete([/sst,nino34_ndj/])
+     if (isvar("psl")) then
+        delete(psl)
+     end if
+     if (isvar("tas")) then
+        delete(tas)
+     end if
+;-------------nino3.4 composite (precipitation)-----------------------------------------------------
+     if (any(ismissing((/syear(ee),syear_prect(ee),eyear(ee),eyear_prect(ee)/)))) then
+        pptreg_plot_flag = 1
+     else
+        if (syear(ee).eq.syear_prect(ee)) then     ; check that the start and end years match for ts, trefht, and psl
+           if (eyear(ee).eq.eyear_prect(ee)) then
+              pptreg_plot_flag = 0
+           else
+              pptreg_plot_flag = 1
+           end if
+        else
+           pptreg_plot_flag = 1
+        end if
+     end if
 
-     if (n34sc_frame.eq.1.and.n34sc_plot_flag.eq.0) then    ; n34sc_frame = flag to create composites .ps/.png files 
-        n34sc_frame = 0
-     end if   
+     if (pptreg_plot_flag.eq.0) then
+        ppt = data_read_in(paths_prect(ee),"PRECT",syear_prect(ee),eyear_prect(ee))
+
+        yyyymm = cd_calendar(ppt&time,-1) ; convert ppt from CF-conforming time to YYYYMM for coding below
+        delete(ppt&time)
+        ppt&time = yyyymm 
+        delete(yyyymm)
+
+        if (isatt(ppt,"is_all_missing")) then
+           pptreg_plot_flag = 1
+           delete(ppt)
+        end if
+        
+        if (nyr(ee).lt.15) then   ; 15+ years needed for composites
+           pptreg_plot_flag = 1
+        end if
+
+        if (pptreg_plot_flag.eq.0) then     ; only continue if all 3 fields are present
+         ;  d = addfile("$NCARG_ROOT/lib/ncarg/data/cdf/landsea.nc","r")     ; mask ocean for TAS array
+         ;  basemap = d->LSMASK                                              ; This is now done right before plotting.
+         ;  lsm = landsea_mask(basemap,tas&lat,tas&lon)                      ; so that the entire TAS array is used
+         ;  tas = mask(tas,conform(tas,lsm,(/1,2/)).eq.0,False)              ; in the nino3.4 pattern correlations
+         ;  delete([/lsm,basemap/])                                          ; (Even if the land portion of TAS is the
+         ;  delete(d)                                                        ; only portion plotted as SST shown over oceans.)
+
+           if (OPT_CLIMO.eq."Full") then
+              ppt = rmMonAnnCycTLL(ppt)           
+           else
+              check_custom_climo(names_prect(ee),syear_prect(ee),eyear_prect(ee),CLIMO_SYEAR,CLIMO_EYEAR)
+              climo = clmMonTLL(ppt({CLIMO_SYEAR*100+1:CLIMO_EYEAR*100+12},:,:))                 
+              ppt   = calcMonAnomTLL(ppt,climo) 
+              delete(climo)
+           end if
+           ppt = (/ dtrend_msg_n(ispan(0,dimsizes(ppt&time)-1,1),ppt,False,False,0) /)  
+
+           ta = dim_avg_n(ppt(:1,:,:),0)
+           ppt = runave_n_Wrap(ppt,3,0,0)
+           ppt(0,:,:) = (/ ta /)
+           delete(ta)
+        
+           hicntr = 0
+           locntr = 0
+           hiyr = new(dimsizes(nino34_ndj&time),integer)
+           loyr = hiyr
+
+           do hh = 0,dimsizes(nino34_ndj)-1
+              if (nino34_ndj(hh).ge.1) then
+                 ; print("High year = "+nino34_ndj&time(hh))
+                 hiyr(hicntr) = nino34_ndj&time(hh)
+                 hicntr = hicntr+1
+              end if
+              if (nino34_ndj(hh).le.-1) then
+                 ; print("Low year = "+nino34_ndj&time(hh))
+                 loyr(locntr) = nino34_ndj&time(hh)
+                 locntr = locntr+1
+              end if
+           end do
+ 
+           if (hicntr.eq.0) then     ; for simulations with climatological SSTs
+              highyr = hiyr(0)
+           else
+              highyr = hiyr(:hicntr-1)
+           end if
+           delete([/hiyr,hicntr/])
+           if (locntr.eq.0) then
+              lowyr = loyr(0)
+           else
+              lowyr = loyr(:locntr-1)
+           end if
+           delete([/loyr,locntr/])
+        
+           dimS = dimsizes(ppt&time)    ; change time from YYYYMM->YYYY.frac
+           tmin = ppt&time(0)/100
+           tmax = ppt&time(dimS-1)/100
+           delete(ppt&time)
+           ppt&time = fspan(tmin*1.,(tmax*1.)+(11/12.),dimS)
+           delete([/dimS,tmin,tmax/])
+        
+           sc_ppt_hi = ppt(:23,:,:)
+           sc_ppt_lo = ppt(:23,:,:)  
+        
+           sc_ppt_hi = sc_ppt_hi@_FillValue
+           sc_ppt_lo = sc_ppt_lo@_FillValue
+           
+           if (dimsizes(highyr).le.1) then
+              print("For "+names(ee)+", 1 or less (normalized) nino3.4 value greater than one standard deviation found, setting nino3.4 spatial composites to missing")  ; sc_*_hi arrays left to _FillValue
+              sc_ppt_hi@is_all_missing = True
+           else           
+              do gg = 0,23
+                 tt = gg/12.
+                 sc_ppt_hi(gg,:,:) = (/ dim_avg_n(ppt({highyr+tt},:,:),0) /)
+              end do
+              delete([/tt,highyr/])
+           end if
+           if (dimsizes(lowyr).le.1) then
+              print("For "+names(ee)+", 1 or less (normalized) nino3.4 value less than -1 standard deviation found, setting nino3.4 spatial composites to missing")   ; sc_*_lo arrays left to _FillValue
+           else           
+              do gg = 0,23
+                 tt = gg/12.
+                 sc_ppt_lo(gg,:,:) = (/ dim_avg_n(ppt({lowyr+tt},:,:),0) /)
+              end do
+              delete([/tt,lowyr/])
+           end if
+           
+           n34sc_ppt = sc_ppt_hi
+           n34sc_ppt = (/ sc_ppt_hi - sc_ppt_lo /)
+           delete([/sc_ppt_hi,sc_ppt_lo/])     
+                      
+           if (OUTPUT_DATA.eq."True") then
+              modname = str_sub_str(names_prect(ee)," ","_")
+              bc = (/"/","'","(",")"/)
+              do gg = 0,dimsizes(bc)-1
+                 modname = str_sub_str(modname,bc(gg),"_")
+              end do
+              fn = getenv("OUTDIR")+modname+".cvdp_data.sst.indices.ppt."+syear_trefht(ee)+"-"+eyear_trefht(ee)+".nc"
+              if (.not.isfilepresent2(fn)) then
+                 z_ppt = addfile(fn,"c")
+                 z_ppt@source = "NCAR Climate Analysis Section's Climate Variability Diagnostics Package v"+getenv("VERSION")
+                 z_ppt@notes = "Data from "+names_trefht(ee)+" from "+syear_trefht(ee)+"-"+eyear_trefht(ee)
+                 if (OPT_CLIMO.eq."Full") then
+                    z_ppt@climatology = syear_trefht(ee)+"-"+eyear_trefht(ee)+" climatology removed prior to all calculations (other than means)"
+                 else
+                    z_ppt@climatology = CLIMO_SYEAR+"-"+CLIMO_EYEAR+" climatology removed prior to all calculations (other than means)"
+                 end if
+              else
+                 z_ppt = addfile(fn,"w")
+              end if
+              z_ppt->nino34spacomp_ppt_jja0 = n34sc_ppt(6,:,:)    
+              z_ppt->nino34spacomp_ppt_son0 = n34sc_ppt(9,:,:)
+              z_ppt->nino34spacomp_ppt_djf1 = n34sc_ppt(12,:,:)
+              z_ppt->nino34spacomp_ppt_mam1 = n34sc_ppt(15,:,:)
+              delete(z_ppt)
+              delete(modname)
+           end if
+        end if
+     end if
+     if (isvar("TIME")) then
+        delete(TIME)
+     end if
+     if (isvar("ppt")) then
+        delete(ppt)
+     end if
+     delete([/sst,nino34_ndj/])
 ;-----------------------------------------------------------------------------------------     
      if (nyr(ee).ge.35) then    ; need a minimum number of years to compute running nino3.4 standard deviations
         nino34T = dtrend_msg(ispan(0,dimsizes(nino34T)-1,1),nino34T,True,False)
@@ -670,7 +849,7 @@ begin
      val2 = .99
      pct = 0.1 
      spectra_mvf = False        ; missing value flag for nino3.4
-     if (any(ismissing(nino34)).or.isatt(n34sc_tas,"is_all_missing")) then     ; n34sc_tas@is_all_missing results from there being no standardized nino34 values above 1 std dev, and that                                                             
+     if (any(ismissing(nino34)).or.max(abs(nino34)).lt.1) then     ; n34sc_tas@is_all_missing results from there being no standardized nino34 values above 1 std dev, and that                                                             
         print("Missing data detected for "+names(ee)+", power spectra function does not allow missing data, not creating spectra in sst.indices.ncl")  ; likely occurred due to climatological SSTs being present. Climatological SSTs may cause specx_ci to fail.
         spectra_mvf = True
         if (isfilepresent2("obs_ts").and.ee.eq.0) then
@@ -865,6 +1044,13 @@ begin
      arr(1,:) = (/  (ispan(0,dimsizes(iod)-1,1)*tttt@slope)+tttt@y_intercept /)
      xyres@gsnRightString = decimalPlaces(tttt@slope*dimsizes(iod),2,True)+iod@units+" "+nyr(ee)+"yr~S~-1~N~"
      xyiod(ee) = gsn_csm_xy(wks_tio,fspan(syear(ee),eyear(ee)+.91667,dimsizes(iod)),arr,xyres)
+     delete([/tttt/])
+
+     tttt = dtrend_msg(ispan(0,dimsizes(socn)-1,1),socn,False,True)
+     arr(0,:) = (/ socn /)
+     arr(1,:) = (/  (ispan(0,dimsizes(socn)-1,1)*tttt@slope)+tttt@y_intercept /)
+     xyres@gsnRightString = decimalPlaces(tttt@slope*dimsizes(socn),2,True)+socn@units+" "+nyr(ee)+"yr~S~-1~N~"
+     xysocn(ee) = gsn_csm_xy(wks_tio,fspan(syear(ee),eyear(ee)+.91667,dimsizes(socn)),arr,xyres)
      delete([/arr,tttt/])
      
      xyres2@gsnLeftString = names(ee)
@@ -963,7 +1149,7 @@ begin
      
      res@gsnRightString = cntr_lo
      plot_n34lo(ee) = gsn_csm_hov(wks_n34_tlon_lo,finsst_lo,res)
-     delete([/finsst_hi,finsst_lo,finsst_mid,cntr_hi,cntr_lo,cntr_mid/])
+     delete([/finsst_hi,finsst_lo,finsst_mid/])
      delete(res)
 ;- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
      pres = True
@@ -1007,6 +1193,7 @@ begin
      pres@tiXAxisFontHeightF = 0.025
      pres@tiYAxisFontHeightF = 0.025
      pres@tiMainFontHeightF = 0.03
+     pres@gsnRightStringOrthogonalPosF = -0.05
      
      if (spectra_mvf.eq.False) then
         if (isfilepresent2("obs_ts").and.ee.ge.1.and.spectra_mvf_obs.eq.False) then
@@ -1023,7 +1210,7 @@ begin
      pres@tiMainOn = False
      pres@gsnCenterString = "Period (years)"
      pres@gsnCenterStringFontHeightF =    pres@tiYAxisFontHeightF
-     pres@gsnRightString = ""
+     pres@gsnRightString = syear(ee)+"-"+eyear(ee)
      pres@gsnLeftString = "" 
      if (wks_type.eq."png") then
         pres@xyLineThicknessF   = 3.5    
@@ -1042,20 +1229,18 @@ begin
         delete([/sdof,splt1/])
      end if     
 ;- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -       
-;     if (ee.eq.0) then
-;     if (.not.isvar("title_n34")) then
-        title_n34 = nino34@area
-        title_n4  = nino4@area
-        title_n3  = nino3@area
-        title_n12 = nino12@area
+     title_n34 = nino34@area
+     title_n4  = nino4@area
+     title_n3  = nino3@area
+     title_n12 = nino12@area
 
-        title_tna = tna@area
-        title_tsa = tsa@area
+     title_tna = tna@area
+     title_tsa = tsa@area
         
-        title_tio = tio@area
-        title_iod = iod@area
-;     end if
-     delete([/nino34,nino3,nino4,nino12,tsa,tna,tio,iod,val1,val2,pres/])
+     title_tio = tio@area
+     title_iod = iod@area
+     title_socn = socn@area
+     delete([/nino34,nino3,nino4,nino12,tsa,tna,tio,iod,socn,val1,val2,pres/])
      if (nyr(ee).ge.35) then
         delete(sd_run)
      end if
@@ -1082,6 +1267,10 @@ begin
      scres@cnLineLabelsOn = False
      scres@cnFillOn        = True
      scres@cnLinesOn       = False
+;     scres@mpOutlineDrawOrder = "PostDraw"
+;     scres@cnFillMode = "RasterFill"
+     scres@mpOutlineDrawOrder = "PostDraw"
+     scres@cnFillMode = "AreaFill"   
      scres@lbLabelBarOn    = False
      scres@cnInfoLabelOn = False
      scres@gsnAddCyclic = True
@@ -1091,16 +1280,22 @@ begin
      scres@gsnLeftStringParallelPosF = .005
      scres@gsnRightStringOrthogonalPosF = -0.05
      scres@gsnRightStringParallelPosF = 0.96
-     scres@gsnRightString = ""
+     scres@gsnRightString = cntr_hi+"/"+cntr_lo  ; list number of El Nino / La Nina events that formed composites
      scres@gsnLeftString = ""
      scres@gsnLeftStringFontHeightF = 0.014
      scres@gsnCenterStringFontHeightF = 0.018
      scres@gsnRightStringFontHeightF = 0.014
-     scres@gsnLeftString = syear(ee)+"-"+eyear(ee)
- 
-     scres@gsnRightString = ""
-     scres@gsnCenterString = names(ee)     
-     
+
+     delete([/cntr_hi,cntr_lo,cntr_mid/])
+
+     scres4 = scres    ; scres4 = ppt composite resources     
+     delete(scres4@cnLevels)
+     if (COLORMAP.eq.0) then
+        scres4@cnLevels = (/-10,-8,-6,-4,-3,-2,-1,-.5,-.25,0,.25,.5,1,2,3,4,6,8,10/)     
+     else
+        scres4@cnLevels = (/-5,-3,-2,-1,-.5,0,.5,1,2,3,5/)     
+     end if
+
      scres2 = True
      scres2@gsnDraw      = False
      scres2@gsnFrame     = False
@@ -1110,12 +1305,14 @@ begin
      scres2@cnLineLabelsOn = False
      scres2@cnFillOn        = True
      scres2@cnLinesOn       = False
+     scres2@cnFillMode = "AreaFill"
      scres2@lbLabelBarOn    = False
      scres2@cnInfoLabelOn = False
      scres2@gsnRightString = ""
      scres2@gsnLeftString = "" 
      scres2@gsnCenterString = ""   
      scres2@gsnAddCyclic = True
+
      
      scres3 = True          ; PSL resources
      scres3@cnLineColor = "black"
@@ -1132,45 +1329,46 @@ begin
      scres3@gsnRightString = ""
      scres3@gsnCenterString = ""
      scres3@cnLevels = ispan(-16,16,2)
-     
-     if (ee.eq.0.and.n34sc_obs.eq.0) then
-        scres@mpOutlineDrawOrder = "PostDraw"
-        scres2@cnFillMode = "AreaFill"
-        scres@cnFillMode = "RasterFill"
-;        scres@cnMissingValFillColor = "white"   ; partial fix for rare weird contouring effect where some areas are not drawn?
-        scres@gsnCenterString = scres@gsnCenterString+" / "+names_trefht(ee)+" / "+names_psl(ee)
+
+     scres4@gsnLeftString = syear_prect(ee)+"-"+eyear_prect(ee)
+     scres4@gsnCenterString = names_prect(ee)     
+
+     scres@gsnLeftString = syear(ee)+"-"+eyear(ee) 
+     if (names(ee).eq.names_trefht(ee).and.names(ee).eq.names_psl(ee)) then
+        scres@gsnCenterString = names(ee)     
      else
-        scres@mpOutlineDrawOrder = "Draw"
-        scres2@cnFillMode = "AreaFill"
-        scres@cnFillMode = "AreaFill"    
+        scres@gsnCenterString = names(ee)+" / "+names_trefht(ee)+" / "+names_psl(ee)
      end if
-     
+  
      if (wks_type.eq."png") then
         scres3@cnLineThicknessF = 3.
-        scres@mpGeophysicalLineThicknessF = 2.  
+        scres@mpGeophysicalLineThicknessF = 2. 
+        scres4@mpGeophysicalLineThicknessF = 2.  
      else
         scres3@cnLineThicknessF = 1.25
         scres@mpGeophysicalLineThicknessF = 1.  
+        scres4@mpGeophysicalLineThicknessF = 1.  
      end if
-     
-     if (n34sc_plot_flag.eq.0) then
-        if (n34sc_obs.eq.0.and.ee.eq.0) then    ; for metrics table
-           patcor_tas = new((/nsim,dimsizes(n34sc_tas&lat),dimsizes(n34sc_tas&lon)/),typeof(n34sc_tas))
-           patcor_tas!1 = "lat"
-           patcor_tas&lat = n34sc_tas&lat
-           patcor_tas!2 = "lon"
-           patcor_tas&lon = n34sc_tas&lon
-           patcor_psl = new((/nsim,dimsizes(n34sc_psl&lat),dimsizes(n34sc_psl&lon)/),typeof(n34sc_psl))
-           patcor_psl!1 = "lat"
-           patcor_psl&lat = n34sc_psl&lat
-           patcor_psl!2 = "lon"
-           patcor_psl&lon = n34sc_psl&lon
-           patcor_tas(ee,:,:) = (/ n34sc_tas(12,:,:) /)
-           patcor_psl(ee,:,:) = (/ n34sc_psl(12,:,:) /)
-        end if
-        if (n34sc_obs.eq.0.and.ee.ge.1) then
+
+     if (taspslreg_plot_flag.eq.0) then
+        if (isvar("patcor_tas")) then    ; for metrics table
            patcor_tas(ee,:,:) = (/ linint2(n34sc_tas&lon,n34sc_tas&lat,n34sc_tas(12,:,:),True,patcor_tas&lon,patcor_tas&lat,0) /)
            patcor_psl(ee,:,:) = (/ linint2(n34sc_psl&lon,n34sc_psl&lat,n34sc_psl(12,:,:),True,patcor_psl&lon,patcor_psl&lat,0) /)
+        else
+           if (isfilepresent2("obs_trefht")) then
+              patcor_tas = new((/nsim,dimsizes(n34sc_tas&lat),dimsizes(n34sc_tas&lon)/),typeof(n34sc_tas))
+              patcor_tas!1 = "lat"
+              patcor_tas&lat = n34sc_tas&lat
+              patcor_tas!2 = "lon"
+              patcor_tas&lon = n34sc_tas&lon
+              patcor_psl = new((/nsim,dimsizes(n34sc_psl&lat),dimsizes(n34sc_psl&lon)/),typeof(n34sc_psl))
+              patcor_psl!1 = "lat"
+              patcor_psl&lat = n34sc_psl&lat
+              patcor_psl!2 = "lon"
+              patcor_psl&lon = n34sc_psl&lon
+              patcor_tas(ee,:,:) = (/ n34sc_tas(12,:,:) /)
+              patcor_psl(ee,:,:) = (/ n34sc_psl(12,:,:) /)
+           end if
         end if
      
         d = addfile("$NCARG_ROOT/lib/ncarg/data/cdf/landsea.nc","r")     ; mask ocean for TAS array
@@ -1210,15 +1408,23 @@ begin
         delete([/o7,o8/])       
         delete([/n34sc_sst,n34sc_tas,n34sc_psl/])
      end if
+     if (pptreg_plot_flag.eq.0) then     
+        map_n34sc_ppt_jja0(ee) = gsn_csm_contour_map(wks_n34sc_ppt,n34sc_ppt(6,:,:),scres4)    ; 6 = JJA 0            
+        map_n34sc_ppt_son0(ee) = gsn_csm_contour_map(wks_n34sc_ppt,n34sc_ppt(9,:,:),scres4)    ; 9 = SON 0              
+        map_n34sc_ppt_djf1(ee) = gsn_csm_contour_map(wks_n34sc_ppt,n34sc_ppt(12,:,:),scres4)    ; 12 = DJF+1              
+        map_n34sc_ppt_mam1(ee) = gsn_csm_contour_map(wks_n34sc_ppt,n34sc_ppt(15,:,:),scres4)    ; 15 = MAM+1      
+        delete([/n34sc_ppt/])
+     end if
   end do
   
-  if (n34sc_plot_flag.eq.0.and.n34sc_obs.eq.0.and.ee.ge.1) then    ; for pattern correlation table  
+  if (isvar("patcor_tas")) then    ; for pattern correlation table  
      clat_sst = cos(0.01745329*patcor_tas&lat)
      clat_psl = cos(0.01745329*patcor_psl&lat)
      finpr_sst = "ENSO TAS (DJF+1)  "    ; Must be 18 characters long
      finpr_psl = "ENSO PSL (DJF+1)  " 
      line3   = "                  "    ; Must be 18 characters long
      line4   = line3
+     header = (/"","Pattern Correlations/RMS Differences   Observations vs. Model(s)",""/)
      do hh = 1,nsim-1
         dimY = dimsizes(tochar(names(hh)))
         nchar = dimY
@@ -1255,33 +1461,42 @@ begin
      if (dimsizes(tochar(line4)).ge.8190) then   ; system or fortran compiler limit
         print("Metrics table warning: Not creating metrics table as size of comparison results in a invalid ascii row size.")   
      else
-        if (.not.isfilepresent2(getenv("OUTDIR")+"metrics_orig.txt")) then
-           header = (/"","Pattern Correlations/RMS Differences   Observations vs. Model(s)",""/)
-           write_table(getenv("OUTDIR")+"metrics_orig.txt","w",[/header/],"%s")
-           write_table(getenv("OUTDIR")+"metrics_orig.txt","a",[/line3/],"%s")
-           write_table(getenv("OUTDIR")+"metrics_orig.txt","a",[/line4/],"%s")
-           delete(header)
-        end if
-        write_table(getenv("OUTDIR")+"metrics_orig.txt","a",[/finpr_sst/],"%s")
-        write_table(getenv("OUTDIR")+"metrics_orig.txt","a",[/finpr_psl/],"%s")
+        write_table(getenv("OUTDIR")+"metrics.sst.indices.1.txt","w",[/header/],"%s")
+        write_table(getenv("OUTDIR")+"metrics.sst.indices.1.txt","a",[/line3/],"%s")
+        write_table(getenv("OUTDIR")+"metrics.sst.indices.1.txt","a",[/line4/],"%s")
+        write_table(getenv("OUTDIR")+"metrics.sst.indices.1.txt","a",[/finpr_sst/],"%s")
+        write_table(getenv("OUTDIR")+"metrics.sst.indices.1.txt","a",[/finpr_psl/],"%s")
      end if  
-     delete([/finpr_sst,finpr_psl,line3,line4,format2,format3,nchar,ntc,clat_sst,clat_psl,patcor_tas,patcor_psl,dimY,ntb/])
+     delete([/finpr_sst,finpr_psl,line3,line4,format2,format3,nchar,ntc,clat_sst,clat_psl,patcor_tas,patcor_psl,dimY,ntb,header/])
   end if
-  if (isfilepresent2("obs_ts").and.ee.ge.1) then           ; for pattern correlation table  
+
+  if (isvar("patcor_hov_hi")) then           ; for pattern correlation table  
      finpr_hi = "El Nino Hovmoller "    ; Must be 18 characters long
      finpr_lo = "La Nina Hovmoller " 
      line3   = "                  "    ; Must be 18 characters long                                 patcor_hov_hi
      line4   = line3
+     header = (/"","Pattern Correlations/RMS Differences   Observations vs. Model(s)",""/)
      do hh = 1,nsim-1
-        nchar = dimsizes(tochar(names(hh)))
+        dimY = dimsizes(tochar(names(hh)))
+        nchar = dimY
         nchar = where(nchar.le.10,10,nchar)
+        if (dimY.lt.10) then
+           ntb = ""
+           do ii = 0,10-dimY-1
+              ntb = ntb+" "
+           end do
+           ntb = ntb+names(hh)
+        else
+           ntb = names(hh)
+        end if
+        
         ntc = ""
         do ii = 0,nchar-1
            ntc = ntc+"-"
         end do
         format2 = "%"+(nchar-5+1)+".2f"
         format3 = "%4.2f"
-        line3 = line3+" "+names(hh)   ;
+        line3 = line3+" "+ntb   
         line4 = line4+" "+ntc 
         if (all(ismissing(patcor_hov_hi(hh,24:52,:)))) then                ; 24:52 refers to Jan+0->May+2, which is the range shown in the hovmoller plots.
            finpr_hi = finpr_hi+sprintf(format2,9.99)+"/"+sprintf(format3,9.99)
@@ -1297,17 +1512,13 @@ begin
      if (dimsizes(tochar(line4)).ge.8190) then   ; system or fortran compiler limit
         print("Metrics table warning: Not creating metrics table as size of comparison results in a invalid ascii row size.")   
      else
-        if (.not.isfilepresent2(getenv("OUTDIR")+"metrics_orig.txt")) then
-           header = (/"","Pattern Correlations/RMS Differences   Observations vs. Model(s)",""/)
-           write_table(getenv("OUTDIR")+"metrics_orig.txt","w",[/header/],"%s")
-           write_table(getenv("OUTDIR")+"metrics_orig.txt","a",[/line3/],"%s")
-           write_table(getenv("OUTDIR")+"metrics_orig.txt","a",[/line4/],"%s")
-           delete(header)
-        end if
-        write_table(getenv("OUTDIR")+"metrics_orig.txt","a",[/finpr_hi/],"%s")
-        write_table(getenv("OUTDIR")+"metrics_orig.txt","a",[/finpr_lo/],"%s")
+        write_table(getenv("OUTDIR")+"metrics.sst.indices.2.txt","w",[/header/],"%s")
+        write_table(getenv("OUTDIR")+"metrics.sst.indices.2.txt","a",[/line3/],"%s")
+        write_table(getenv("OUTDIR")+"metrics.sst.indices.2.txt","a",[/line4/],"%s")
+        write_table(getenv("OUTDIR")+"metrics.sst.indices.2.txt","a",[/finpr_hi/],"%s")
+        write_table(getenv("OUTDIR")+"metrics.sst.indices.2.txt","a",[/finpr_lo/],"%s")
      end if
-     delete([/finpr_hi,finpr_lo,line3,line4,format2,format3,nchar,ntc,patcor_hov_hi,patcor_hov_lo/])  
+     delete([/finpr_hi,finpr_lo,line3,line4,format2,format3,nchar,ntc,patcor_hov_hi,patcor_hov_lo,dimY,ntb,header/])  
   end if
   
   ncol = floattointeger(sqrt(nsim))
@@ -1335,40 +1546,43 @@ begin
   end if
 
   panres@txString = "Nino3.4 (Monthly, "+title_n34+")"
-  gsn_panel(wks_n34,xyn34,lp,panres)    
+  gsn_panel2(wks_n34,xyn34,lp,panres)    
 
   panres@txString = "Nino4 (Monthly, "+title_n4+")"
-  gsn_panel(wks_n4,xyn4,lp,panres)  
+  gsn_panel2(wks_n4,xyn4,lp,panres)  
 
   panres@txString = "Nino3 (Monthly, "+title_n3+")"
-  gsn_panel(wks_n3,xyn3,lp,panres)       
+  gsn_panel2(wks_n3,xyn3,lp,panres)       
 
   panres@txString = "Nino1+2 (Monthly, "+title_n12+")"
-  gsn_panel(wks_n12,xyn12,lp,panres)       
+  gsn_panel2(wks_n12,xyn12,lp,panres)       
    
   panres@txString = "Tropical North Atlantic (Monthly, "+title_tna+")"
-  gsn_panel(wks_tna,xytna,lp,panres)
+  gsn_panel2(wks_tna,xytna,lp,panres)
   
   panres@txString = "Tropical South Atlantic (Monthly, "+title_tsa+")"
-  gsn_panel(wks_tsa,xytsa,lp,panres)
+  gsn_panel2(wks_tsa,xytsa,lp,panres)
      
   panres@txString = "Tropical Indian Ocean (Monthly, "+title_tio+")"
-  gsn_panel(wks_tio,xytio,lp,panres)   
+  gsn_panel2(wks_tio,xytio,lp,panres)   
   
   panres@txString = "Indian Ocean Dipole (Monthly, "+title_iod+")"
-  gsn_panel(wks_tio,xyiod,lp,panres)  
+  gsn_panel2(wks_tio,xyiod,lp,panres)  
+
+  panres@txString = "Southern Ocean (Monthly, "+title_socn+")"
+  gsn_panel2(wks_tio,xysocn,lp,panres) 
   delete(wks_tio) 
 
   if (all(ismissing(xyn34_rst))) then
-     print("No valid running standard deviation plots, skipping")
+;     print("No valid running standard deviation plots, skipping")
   else
      panres@txString = "Running nino3.4 standard deviation (Monthly)"
-     gsn_panel(wks_n34_rst,xyn34_rst,lp,panres) 
+     gsn_panel2(wks_n34_rst,xyn34_rst,lp,panres) 
      delete(xyn34_rst)  
   end if
   panres@gsnPanelYWhiteSpacePercent = 0.5
   panres@txString = "nino3.4 standard deviation (Monthly)"
-  gsn_panel(wks_n34_mst,xyn34_mst,(/nrow,ncol/),panres)   
+  gsn_panel2(wks_n34_mst,xyn34_mst,(/nrow,ncol/),panres)   
   
   panres2 = True
   panres2@gsnMaximize = True
@@ -1379,69 +1593,112 @@ begin
   panres2@pmLabelBarHeightF = 0.06
   panres2@lbLabelFontHeightF = 0.013
   panres2@txString = ""   
-  if (nsim.le.5) then
-     panres2@txFontHeightF = 0.024
+  panres2@gsnPanelXWhiteSpacePercent = 8.5
+  if (nsim.le.4) then
+     if (nsim.eq.1) then
+        panres2@txFontHeightF = 0.022
+        panres2@gsnPanelBottom = 0.50
+     else
+        panres2@txFontHeightF = 0.0145
+        panres2@gsnPanelBottom = 0.50
+     end if
   else
      panres2@txFontHeightF = 0.016
+     panres2@gsnPanelBottom = 0.05
   end if
-  panres2@gsnPanelXWhiteSpacePercent = 8.5
-  panres2@gsnPanelBottom = 0.05
 
   
   panres2@txString = "El Nin~H-13V2F35~D~FV-2H3F21~o Composite (3~S~o~N~S:3~S~o~N~N)"
-  gsn_panel(wks_n34_tlon_hi,plot_n34hi,(/nrow,ncol/),panres2)   
+  gsn_panel2(wks_n34_tlon_hi,plot_n34hi,(/nrow,ncol/),panres2)   
   panres2@txString = "La Nin~H-13V2F35~D~FV-2H3F21~a Composite (3~S~o~N~S:3~S~o~N~N)"
-  gsn_panel(wks_n34_tlon_lo,plot_n34lo,(/nrow,ncol/),panres2)   
+  gsn_panel2(wks_n34_tlon_lo,plot_n34lo,(/nrow,ncol/),panres2)   
   
   panres@gsnPanelYWhiteSpacePercent = 3.0
   panres@txString = "nino3.4 (Monthly, detrended)"
-  gsn_panel(wks_n34_p,pspec,(/nrow,ncol/),panres)  
+  gsn_panel2(wks_n34_p,pspec,(/nrow,ncol/),panres)  
   delete(wks_n34_p)
   
-  if (n34sc_frame.eq.0) then
-     panres2@txString = "nino3.4 TS,TAS,PSL Spatial Composite (JJA~S~0~N~)"
-     gsn_panel(wks_n34sc,map_n34sc_jja0,(/nrow,ncol/),panres2)   
+  panres2@pmLabelBarWidthF = 0.8
+  panres2@lbLabelAutoStride = False
+  if (any(.not.ismissing(map_n34sc_jja0))) then
+     panres2@txString = "nino3.4 SST,TAS,PSL Spatial Composite (JJA~S~0~N~)"
+     gsn_panel2(wks_n34sc,map_n34sc_jja0,(/nrow,ncol/),panres2)   
   
-     panres2@txString = "nino3.4 TS,TAS,PSL Spatial Composite (SON~S~0~N~)"
-     gsn_panel(wks_n34sc,map_n34sc_son0,(/nrow,ncol/),panres2)   
+     panres2@txString = "nino3.4 SST,TAS,PSL Spatial Composite (SON~S~0~N~)"
+     gsn_panel2(wks_n34sc,map_n34sc_son0,(/nrow,ncol/),panres2)   
   
-     panres2@txString = "nino3.4 TS,TAS,PSL Spatial Composite (DJF~S~+1~N~)"
-     gsn_panel(wks_n34sc,map_n34sc_djf1,(/nrow,ncol/),panres2)   
+     panres2@txString = "nino3.4 SST,TAS,PSL Spatial Composite (DJF~S~+1~N~)"
+     gsn_panel2(wks_n34sc,map_n34sc_djf1,(/nrow,ncol/),panres2)   
   
-     panres2@txString = "nino3.4 TS,TAS,PSL Spatial Composite (MAM~S~+1~N~)"
-     gsn_panel(wks_n34sc,map_n34sc_mam1,(/nrow,ncol/),panres2)   
+     panres2@txString = "nino3.4 SST,TAS,PSL Spatial Composite (MAM~S~+1~N~)"
+     gsn_panel2(wks_n34sc,map_n34sc_mam1,(/nrow,ncol/),panres2)   
      delete(wks_n34sc)
      
      delete([/map_n34sc_djf1,map_n34sc_jja0,map_n34sc_son0,map_n34sc_mam1/])
   end if     
+  if (any(.not.ismissing(map_n34sc_ppt_jja0))) then
+     panres2@txString = "nino3.4 PR Spatial Composite (JJA~S~0~N~)"
+     gsn_panel2(wks_n34sc_ppt,map_n34sc_ppt_jja0,(/nrow,ncol/),panres2)   
+  
+     panres2@txString = "nino3.4 PR Spatial Composite (SON~S~0~N~)"
+     gsn_panel2(wks_n34sc_ppt,map_n34sc_ppt_son0,(/nrow,ncol/),panres2)   
+  
+     panres2@txString = "nino3.4 PR Spatial Composite (DJF~S~+1~N~)"
+     gsn_panel2(wks_n34sc_ppt,map_n34sc_ppt_djf1,(/nrow,ncol/),panres2)   
+  
+     panres2@txString = "nino3.4 PR Spatial Composite (MAM~S~+1~N~)"
+     gsn_panel2(wks_n34sc_ppt,map_n34sc_ppt_mam1,(/nrow,ncol/),panres2)   
+     delete(wks_n34sc_ppt)
+     
+     delete([/map_n34sc_ppt_djf1,map_n34sc_ppt_jja0,map_n34sc_ppt_son0,map_n34sc_ppt_mam1/])
+  end if   
+
   delete([/xyn34,xyn4,xyn3,xyn12,xytna,xytsa,xytio,xyiod,plot_n34hi,plot_n34lo,pspec,pi,rad,wgt,lp/])     
 
   OUTDIR = getenv("OUTDIR")
   
-  if (n34sc_frame.eq.0) then
-     if (wks_type.eq."png") then  
+  if (wks_type.eq."png") then  
+     if (isfilepresent2(OUTDIR+"nino34.spatialcomp.000001.png")) then
         system("mv "+OUTDIR+"nino34.spatialcomp.000001.png "+OUTDIR+"nino34.spatialcomp.jja0.png")
         system("mv "+OUTDIR+"nino34.spatialcomp.000002.png "+OUTDIR+"nino34.spatialcomp.son0.png")
         system("mv "+OUTDIR+"nino34.spatialcomp.000003.png "+OUTDIR+"nino34.spatialcomp.djf1.png")
         system("mv "+OUTDIR+"nino34.spatialcomp.000004.png "+OUTDIR+"nino34.spatialcomp.mam1.png")
-     else
-        system("psplit "+OUTDIR+"nino34.spatialcomp.ps "+OUTDIR+"pict")
-        system("mv "+OUTDIR+"pict0001.ps "+OUTDIR+"nino34.spatialcomp.jja0.ps")
-        system("mv "+OUTDIR+"pict0002.ps "+OUTDIR+"nino34.spatialcomp.son0.ps")
-        system("mv "+OUTDIR+"pict0003.ps "+OUTDIR+"nino34.spatialcomp.djf1.ps")
-        system("mv "+OUTDIR+"pict0004.ps "+OUTDIR+"nino34.spatialcomp.mam1.ps")
+     end if
+     if (isfilepresent2(OUTDIR+"nino34.spatialcomp.ppt.000001.png")) then
+        system("mv "+OUTDIR+"nino34.spatialcomp.ppt.000001.png "+OUTDIR+"nino34.spatialcomp.pr.jja0.png")
+        system("mv "+OUTDIR+"nino34.spatialcomp.ppt.000002.png "+OUTDIR+"nino34.spatialcomp.pr.son0.png")
+        system("mv "+OUTDIR+"nino34.spatialcomp.ppt.000003.png "+OUTDIR+"nino34.spatialcomp.pr.djf1.png")
+        system("mv "+OUTDIR+"nino34.spatialcomp.ppt.000004.png "+OUTDIR+"nino34.spatialcomp.pr.mam1.png")
+     end if
+  else
+     if (isfilepresent2(OUTDIR+"nino34.spatialcomp.ps")) then
+        system("psplit "+OUTDIR+"nino34.spatialcomp.ps "+OUTDIR+"sst_ind")
+        system("mv "+OUTDIR+"sst_ind0001.ps "+OUTDIR+"nino34.spatialcomp.jja0.ps")
+        system("mv "+OUTDIR+"sst_ind0002.ps "+OUTDIR+"nino34.spatialcomp.son0.ps")
+        system("mv "+OUTDIR+"sst_ind0003.ps "+OUTDIR+"nino34.spatialcomp.djf1.ps")
+        system("mv "+OUTDIR+"sst_ind0004.ps "+OUTDIR+"nino34.spatialcomp.mam1.ps")
         system("rm "+OUTDIR+"nino34.spatialcomp.ps")
+     end if
+     if (isfilepresent2(OUTDIR+"nino34.spatialcomp.ppt.ps")) then
+        system("psplit "+OUTDIR+"nino34.spatialcomp.ppt.ps "+OUTDIR+"sst_ind")
+        system("mv "+OUTDIR+"sst_ind0001.ps "+OUTDIR+"nino34.spatialcomp.pr.jja0.ps")
+        system("mv "+OUTDIR+"sst_ind0002.ps "+OUTDIR+"nino34.spatialcomp.pr.son0.ps")
+        system("mv "+OUTDIR+"sst_ind0003.ps "+OUTDIR+"nino34.spatialcomp.pr.djf1.ps")
+        system("mv "+OUTDIR+"sst_ind0004.ps "+OUTDIR+"nino34.spatialcomp.pr.mam1.ps")
+        system("rm "+OUTDIR+"nino34.spatialcomp.ppt.ps")
      end if
   end if
   
   if (wks_type.eq."png") then  
      system("mv "+OUTDIR+"tio.timeseries.000001.png "+OUTDIR+"tio.timeseries.png")
      system("mv "+OUTDIR+"tio.timeseries.000002.png "+OUTDIR+"iod.timeseries.png")
+     system("mv "+OUTDIR+"tio.timeseries.000003.png "+OUTDIR+"socn.timeseries.png")
   else
-     system("psplit "+OUTDIR+"tio.timeseries.ps "+OUTDIR+"pict")
+     system("psplit "+OUTDIR+"tio.timeseries.ps "+OUTDIR+"sst_ind")
+     system("mv "+OUTDIR+"sst_ind0001.ps "+OUTDIR+"tio.timeseries.ps")
+     system("mv "+OUTDIR+"sst_ind0002.ps "+OUTDIR+"iod.timeseries.ps")
+     system("mv "+OUTDIR+"sst_ind0003.ps "+OUTDIR+"socn.timeseries.ps")
      system("rm "+OUTDIR+"tio.timeseries.ps")
-     system("mv "+OUTDIR+"pict0001.ps "+OUTDIR+"tio.timeseries.ps")
-     system("mv "+OUTDIR+"pict0002.ps "+OUTDIR+"iod.timeseries.ps")
   end if
   print("Finished: sst.indices.ncl")
 end

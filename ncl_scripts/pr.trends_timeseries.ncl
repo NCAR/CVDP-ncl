@@ -204,7 +204,11 @@ begin
 
      if (OUTPUT_DATA.eq."True") then
         modname = str_sub_str(names(ee)," ","_")
-        fn = getenv("OUTDIR")+modname+".cvdp_data."+syear(ee)+"-"+eyear(ee)+".nc"
+        bc = (/"/","'","(",")"/)
+        do gg = 0,dimsizes(bc)-1
+           modname = str_sub_str(modname,bc(gg),"_")
+        end do
+        fn = getenv("OUTDIR")+modname+".cvdp_data.pr.trends_timeseries."+syear(ee)+"-"+eyear(ee)+".nc"
         if (.not.isfilepresent2(fn)) then
            z = addfile(fn,"c")
            z@source = "NCAR Climate Analysis Section's Climate Variability Diagnostics Package v"+getenv("VERSION")
@@ -242,6 +246,7 @@ begin
         delete(z)
         delete(ppt_aa_seas2)
         delete(ppt_aa_ann2)
+        delete([/modname,fn/])
      end if    
 ;========================================================================
      res = True
@@ -430,7 +435,6 @@ begin
   end if 
   panres = True
   panres@gsnMaximize = True  
-  panres@gsnPanelBottom = 0.05
   panres@gsnPaperOrientation = "portrait"
   panres@gsnPanelLabelBar = True
   panres@gsnPanelYWhiteSpacePercent = 3.0
@@ -438,10 +442,17 @@ begin
   panres@pmLabelBarWidthF = 0.65
   panres@lbTitleOn = False
   panres@lbBoxLineColor = "gray70"
-  if (nsim.le.5) then
-     panres@txFontHeightF = 0.024
+  if (nsim.le.4) then
+     if (nsim.eq.1) then
+        panres@txFontHeightF = 0.022
+        panres@gsnPanelBottom = 0.50
+     else
+        panres@txFontHeightF = 0.0145
+        panres@gsnPanelBottom = 0.50
+     end if
   else
      panres@txFontHeightF = 0.016
+     panres@gsnPanelBottom = 0.05
   end if
   panres@lbLabelStride = 1
   
@@ -449,27 +460,27 @@ begin
   panres@txString = "PPT Trends (DJF)"
   ncol = floattointeger(sqrt(nsim))
   nrow = (nsim/ncol)+mod(nsim,ncol)  
-  gsn_panel(wks_trends_djf,map_djf,(/nrow,ncol/),panres)
+  gsn_panel2(wks_trends_djf,map_djf,(/nrow,ncol/),panres)
   delete(wks_trends_djf)
   
   panres@txString = "PPT Trends (MAM)"
-  gsn_panel(wks_trends_mam,map_mam,(/nrow,ncol/),panres)
+  gsn_panel2(wks_trends_mam,map_mam,(/nrow,ncol/),panres)
   delete(wks_trends_mam)
 
   panres@txString = "PPT Trends (JJA)"
-  gsn_panel(wks_trends_jja,map_jja,(/nrow,ncol/),panres)
+  gsn_panel2(wks_trends_jja,map_jja,(/nrow,ncol/),panres)
   delete(wks_trends_jja)
 
   panres@txString = "PPT Trends (SON)"
-  gsn_panel(wks_trends_son,map_son,(/nrow,ncol/),panres)
+  gsn_panel2(wks_trends_son,map_son,(/nrow,ncol/),panres)
   delete(wks_trends_son)
 
   panres@txString = "PPT Trends (Annual)"
-  gsn_panel(wks_trends_ann,map_ann,(/nrow,ncol/),panres)
+  gsn_panel2(wks_trends_ann,map_ann,(/nrow,ncol/),panres)
   delete(wks_trends_ann)
 
   panres@txString = "PPT Trends (Monthly)"
-  gsn_panel(wks_trends_mon,map_mon,(/nrow,ncol/),panres)
+  gsn_panel2(wks_trends_mon,map_mon,(/nrow,ncol/),panres)
   delete(wks_trends_mon)  
   
   panres2 = True
@@ -492,27 +503,27 @@ begin
      lp = (/nrow,ncol/)  ;(/nsim/2+1,nsim/8+1/)  
   end if
   panres2@txString = "PR Global Average (DJF)"
-  gsn_panel(wks_aa_djf,xy_djf,lp,panres2)  
+  gsn_panel2(wks_aa_djf,xy_djf,lp,panres2)  
   delete(wks_aa_djf)
   
   panres2@txString = "PR Global Average (MAM)"
-  gsn_panel(wks_aa_mam,xy_mam,lp,panres2)  
+  gsn_panel2(wks_aa_mam,xy_mam,lp,panres2)  
   delete(wks_aa_mam)
   
   panres2@txString = "PR Global Average (JJA)"
-  gsn_panel(wks_aa_jja,xy_jja,lp,panres2)  
+  gsn_panel2(wks_aa_jja,xy_jja,lp,panres2)  
   delete(wks_aa_jja)
   
   panres2@txString = "PR Global Average (SON)"
-  gsn_panel(wks_aa_son,xy_son,lp,panres2)  
+  gsn_panel2(wks_aa_son,xy_son,lp,panres2)  
   delete(wks_aa_son)
   
   panres2@txString = "PR Global Average (Annual)"
-  gsn_panel(wks_aa_ann,xy_ann,lp,panres2)  
+  gsn_panel2(wks_aa_ann,xy_ann,lp,panres2)  
   delete(wks_aa_ann)
   
   panres2@txString = "PR Global Average (Monthly)"
-  gsn_panel(wks_aa_mon,xy_mon,lp,panres2)  
+  gsn_panel2(wks_aa_mon,xy_mon,lp,panres2)  
   delete(wks_aa_mon)
   
   delete([/nrow,ncol,lp,map_djf,map_mam,map_jja,map_son,map_ann,map_mon,xy_djf,xy_mam,xy_jja,xy_son,xy_ann,xy_mon/])

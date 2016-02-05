@@ -136,7 +136,11 @@ begin
      
      if (OUTPUT_DATA.eq."True") then
         modname = str_sub_str(names(ee)," ","_")
-        fn = getenv("OUTDIR")+modname+".cvdp_data."+syear(ee)+"-"+eyear(ee)+".nc"
+        bc = (/"/","'","(",")"/)
+        do gg = 0,dimsizes(bc)-1
+           modname = str_sub_str(modname,bc(gg),"_")
+        end do
+        fn = getenv("OUTDIR")+modname+".cvdp_data.psl.trends."+syear(ee)+"-"+eyear(ee)+".nc"
         if (.not.isfilepresent2(fn)) then
            z = addfile(fn,"c")
            z@source = "NCAR Climate Analysis Section's Climate Variability Diagnostics Package v"+getenv("VERSION")
@@ -156,6 +160,7 @@ begin
         z->psl_trends_ann     = psl_trends_ann
         z->psl_trends_mon     = psl_trends_mon
         delete(z)
+        delete([/modname,fn/])
      end if
      
 ;========================================================================
@@ -206,7 +211,6 @@ begin
   end do  
   panres = True
   panres@gsnMaximize = True  
-  panres@gsnPanelBottom = 0.05
   panres@gsnPaperOrientation = "portrait"
   panres@gsnPanelLabelBar = True
   panres@gsnPanelYWhiteSpacePercent = 3.0
@@ -214,37 +218,44 @@ begin
   panres@pmLabelBarWidthF = 0.65
   panres@lbTitleOn = False
   panres@lbBoxLineColor = "gray70"
-  if (nsim.le.5) then
-     panres@txFontHeightF = 0.024
+  if (nsim.le.4) then
+     if (nsim.eq.1) then
+        panres@txFontHeightF = 0.022
+        panres@gsnPanelBottom = 0.50
+     else
+        panres@txFontHeightF = 0.0145
+        panres@gsnPanelBottom = 0.50
+     end if
   else
      panres@txFontHeightF = 0.016
+     panres@gsnPanelBottom = 0.05
   end if
   panres@lbLabelStride = 1
   
   panres@txString = "PSL Trends (DJF)"
   ncol = floattointeger(sqrt(nsim))
   nrow = (nsim/ncol)+mod(nsim,ncol)  
-  gsn_panel(wks_trends_djf,map_djf,(/nrow,ncol/),panres)
+  gsn_panel2(wks_trends_djf,map_djf,(/nrow,ncol/),panres)
   delete(wks_trends_djf)
   
   panres@txString = "PSL Trends (MAM)"
-  gsn_panel(wks_trends_mam,map_mam,(/nrow,ncol/),panres)
+  gsn_panel2(wks_trends_mam,map_mam,(/nrow,ncol/),panres)
   delete(wks_trends_mam)
   
   panres@txString = "PSL Trends (JJA)"
-  gsn_panel(wks_trends_jja,map_jja,(/nrow,ncol/),panres)
+  gsn_panel2(wks_trends_jja,map_jja,(/nrow,ncol/),panres)
   delete(wks_trends_jja)
   
   panres@txString = "PSL Trends (SON)"
-  gsn_panel(wks_trends_son,map_son,(/nrow,ncol/),panres)
+  gsn_panel2(wks_trends_son,map_son,(/nrow,ncol/),panres)
   delete(wks_trends_son)
   
   panres@txString = "PSL Trends (Annual)"
-  gsn_panel(wks_trends_ann,map_ann,(/nrow,ncol/),panres)
+  gsn_panel2(wks_trends_ann,map_ann,(/nrow,ncol/),panres)
   delete(wks_trends_ann)
   
   panres@txString = "PSL Trends (Monthly)"
-  gsn_panel(wks_trends_mon,map_mon,(/nrow,ncol/),panres)
+  gsn_panel2(wks_trends_mon,map_mon,(/nrow,ncol/),panres)
   delete(wks_trends_mon)  
   delete([/nrow,ncol,map_djf,map_mam,map_jja,map_son,map_ann,map_mon,panres/])
   print("Finished: psl.trends.ncl")

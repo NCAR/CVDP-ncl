@@ -128,18 +128,13 @@ begin
      lev = tofloat(mocT&lev)
      ny = dimsizes(lat)
      nz = dimsizes(lev)
-         
-     moc_ann = runave_n_Wrap(mocT,12,0,0)                             ; compute annual means and standard deviations
-     moc_mean_ann = dim_avg_n_Wrap(moc_ann(5::12,:,:),0)
-     moc_sd_ann = dim_stddev_n_Wrap(dtrend_msg_n(ispan(0,nyr(ee)-1,1),moc_ann(5::12,:,:),False,False,0),0)         
-     copy_VarMeta(moc_mean_ann,moc_sd_ann)     
-     delete(moc_ann)
-     moc_sd_ann = where(moc_sd_ann.lt.0.001,moc_sd_ann@_FillValue,moc_sd_ann)
-     moc_mean_ann = where(ismissing(moc_sd_ann),moc_mean_ann@_FillValue,moc_mean_ann) 
-     
 ;-----------------------------------------------------------------------------------
-;-----Calculate AMOC EOF1
-;-----------------------------------------------------------------------------------     
+;    compute annual means and standard deviations
+;-----------------------------------------------------------------------------------         
+     moc_ann = runave_n_Wrap(mocT,12,0,0)                             
+     moc_mean_ann = dim_avg_n_Wrap(moc_ann(5::12,:,:),0)
+     delete(moc_ann)     
+
      if (OPT_CLIMO.eq."Full") then
         mocT = rmMonAnnCycTLL(mocT)
      else
@@ -152,7 +147,16 @@ begin
         mocT   = calcMonAnomTLL(mocT,climo) 
         delete(climo)
      end if
+     moc_ann2 = runave_n_Wrap(mocT,12,0,0)
+     moc_sd_ann = dim_stddev_n_Wrap(dtrend_msg_n(ispan(0,nyr(ee)-1,1),moc_ann2(5::12,:,:),False,False,0),0)         
+     copy_VarMeta(moc_mean_ann,moc_sd_ann)     
+     delete(moc_ann2)
 
+     moc_sd_ann = where(moc_sd_ann.lt.0.001,moc_sd_ann@_FillValue,moc_sd_ann)
+     moc_mean_ann = where(ismissing(moc_sd_ann),moc_mean_ann@_FillValue,moc_mean_ann) 
+;-----------------------------------------------------------------------------------
+;-----calculate AMOC EOF1
+;-----------------------------------------------------------------------------------     
      temp = runave_n_Wrap(mocT,12,0,0)   ; form annual averages
      amoc = temp(5::12,:,:)
      delete([/temp,mocT/])
@@ -219,7 +223,14 @@ begin
      amoc_pc_ann = dim_standardize(workeof_ts(0,:),0)
      moc_reg_ann = amoc(0,:,:)
      moc_reg_ann = (/ regCoef(amoc_pc_ann,amoc(lev|:,lat|:,time|:)) /)
-     moc_reg_ann@pcvari = tofloat(sprintf("%4.1f", workeof@pcvar(0)))
+     sig_pcv = eofunc_north2(workeof@pcvar,dimsizes(amoc_pc_ann),False)
+     if (sig_pcv(0)) then    ; if True then significant
+        moc_reg_ann@pcvar = tofloat(sprintf("%4.1f", workeof@pcvar(0)))+"%*"
+     else
+        moc_reg_ann@pcvar = tofloat(sprintf("%4.1f", workeof@pcvar(0)))+"%"
+     end if
+     delete(sig_pcv)
+
      delete([/atl_begin,lat,lev,dz,dlat,amoc,workeof,workeof_ts,ny,nz/])
      if (max(moc_reg_ann&lev).ge.2000) then
         if (.not.ismissing(moc_reg_ann({2000.},{38}))) then
@@ -262,78 +273,103 @@ begin
         delete([/iopt,jave,pct/])
      end if
 ;-------------------Read in TS and TAS for regressions onto PC1 and for AMO calculation----------------------------------------     
-     trefht_offset = 0
-     ts_offset = 0
-     if (isfilepresent2("obs_ts")) then
-        ts_offset = 1
-     end if
-     if (isfilepresent2("obs_trefht")) then
-        trefht_offset = 1
-     end if
-     tas = data_read_in(paths_trefht(ee+trefht_offset),"TREFHT",syear_trefht(ee+trefht_offset),eyear_trefht(ee+trefht_offset))
-     sst = data_read_in(paths_ts(ee+ts_offset),"TS",syear_ts(ee+ts_offset),eyear_ts(ee+ts_offset))
-     delete([/ts_offset,trefht_offset/])
-     
-     sst = where(sst.le.-1.8,-1.8,sst)
-     d = addfile("$NCARG_ROOT/lib/ncarg/data/cdf/landsea.nc","r")   
-     basemap = d->LSMASK
-     lsm = landsea_mask(basemap,sst&lat,sst&lon)
-     sst = mask(sst,conform(sst,lsm,(/1,2/)).ge.1,False)
-     delete([/lsm,basemap/])
-     delete(d)
-     
-     if (OPT_CLIMO.eq."Full") then
-        sst = rmMonAnnCycTLL(sst)
-        tas = rmMonAnnCycTLL(tas)
+     if (syear(ee).eq.syear_ts(ee)) then
+        if (eyear(ee).eq.eyear_ts(ee)) then
+;           print("Years match")
+           sstreg_plot_flag = 0
+        else
+;           print("End years do not match, skipping SST regressions in psl.nam_nao.ncl.")
+           sstreg_plot_flag = 1
+        end if
      else
-        check_custom_climo(names_ts(ee),syear_ts(ee),eyear_ts(ee),CLIMO_SYEAR,CLIMO_EYEAR)
-        temp_arr = sst
-        delete(temp_arr&time)
-        temp_arr&time = cd_calendar(sst&time,-1)
-        climo = clmMonTLL(temp_arr({CLIMO_SYEAR*100+1:CLIMO_EYEAR*100+12},:,:))                 
-        delete(temp_arr)
-        sst   = calcMonAnomTLL(sst,climo) 
-        delete(climo)
-        
-        check_custom_climo(names_trefht(ee),syear(ee),eyear(ee),CLIMO_SYEAR,CLIMO_EYEAR)
-        temp_arr = tas
-        delete(temp_arr&time)
-        temp_arr&time = cd_calendar(tas&time,-1)
-        climo = clmMonTLL(temp_arr({CLIMO_SYEAR*100+1:CLIMO_EYEAR*100+12},:,:))                 
-        delete(temp_arr)
-        tas   = calcMonAnomTLL(tas,climo) 
-        delete(climo)
+;        print("Start years do not match, skipping SST regressions in psl.nam_nao.ncl.")
+        sstreg_plot_flag = 1
      end if
-     
-     temp = runave_n_Wrap(tas,12,0,0)   ; form annual averages
-     tas_ann = temp(5::12,:,:)
-     delete([/temp,tas/])
 
-     temp = runave_n_Wrap(sst,12,0,0)   ; form annual averages
-     sst_ann = temp(5::12,:,:)
-     delete([/temp,sst/])
+     if (sstreg_plot_flag.eq.0) then
+        sst = data_read_in(paths_ts(ee),"TS",syear_ts(ee),eyear_ts(ee))
+        
+        sst = where(sst.le.-1.8,-1.8,sst)
+        d = addfile("$NCARG_ROOT/lib/ncarg/data/cdf/landsea.nc","r")   
+        basemap = d->LSMASK
+        lsm = landsea_mask(basemap,sst&lat,sst&lon)
+        sst = mask(sst,conform(sst,lsm,(/1,2/)).ge.1,False)
+        delete([/lsm,basemap/])
+        delete(d)
 
-     sst_reg_ann = sst_ann(0,:,:)                                                 ; SST regression onto AMOC PC1
-     sst_reg_ann = (/ regCoef(amoc_pc_ann,sst_ann(lat|:,lon|:,time|:)) /)
+        if (OPT_CLIMO.eq."Full") then
+           sst = rmMonAnnCycTLL(sst)
+
+        else
+           check_custom_climo(names_ts(ee),syear_ts(ee),eyear_ts(ee),CLIMO_SYEAR,CLIMO_EYEAR)
+           temp_arr = sst
+           delete(temp_arr&time)
+           temp_arr&time = cd_calendar(sst&time,-1)
+           climo = clmMonTLL(temp_arr({CLIMO_SYEAR*100+1:CLIMO_EYEAR*100+12},:,:))                 
+           delete(temp_arr)
+           sst   = calcMonAnomTLL(sst,climo) 
+           delete(climo)
+        end if
+        temp = runave_n_Wrap(sst,12,0,0)   ; form annual averages
+        sst_ann = temp(5::12,:,:)
+        delete([/temp,sst/])
+
+        sst_reg_ann = sst_ann(0,:,:)                                                 ; SST regression onto AMOC PC1
+        sst_reg_ann = (/ regCoef(amoc_pc_ann,sst_ann(lat|:,lon|:,time|:)) /)
+
+;        Compute AMO timeseries
+        sst_ann = lonFlip(sst_ann)   ; orient longitudes from -180:180 (set to 0:360 in data_read_in function) for AMO calculation
+        coswgt=cos(rad*sst_ann&lat)
+        coswgt!0 = "lat"
+        coswgt&lat= sst_ann&lat
+        natl_aa =   wgt_areaave(sst_ann(:,{0:60},{-80:0}),coswgt({0.:60.}),1.0,0)
+        global_aa = wgt_areaave(sst_ann(:,{-60:60},:),coswgt({-60.:60.}),1.0,0)
      
-     tas_reg_ann = tas_ann(0,:,:)                                                 ; TAS regression onto AMOC PC1
-     tas_reg_ann = (/ regCoef(amoc_pc_ann,tas_ann(lat|:,lon|:,time|:)) /)
-     delete(tas_ann)     
-;-------------Compute AMO timeseries----------------------------------------------------------------------------------
-     sst_ann = lonFlip(sst_ann)   ; orient longitudes from -180:180 (set to 0:360 in data_read_in function) for AMO calculation
-     coswgt=cos(rad*sst_ann&lat)
-     coswgt!0 = "lat"
-     coswgt&lat= sst_ann&lat
-     natl_aa =   wgt_areaave(sst_ann(:,{0:60},{-80:0}),coswgt({0.:60.}),1.0,0)
-     global_aa = wgt_areaave(sst_ann(:,{-60:60},:),coswgt({-60.:60.}),1.0,0)
+        AMO = new((/dimsizes(natl_aa)/),"float",-999.)    ; timeseries plot
+        AMO!0 = "time"
+        AMO&time = sst_ann&time
+        AMO = (/ natl_aa - global_aa /)
+        delete([/coswgt,natl_aa,global_aa,sst_ann/])
+     end if
+;-------------------------------------------------------------------------------------------------------------
+     if (syear(ee).eq.syear_trefht(ee)) then
+        if (eyear(ee).eq.eyear_trefht(ee)) then
+;           print("Years match")
+           tasreg_plot_flag = 0
+        else
+;           print("End years do not match, skipping SST regressions in psl.nam_nao.ncl.")
+           tasreg_plot_flag = 1
+        end if
+     else
+;        print("Start years do not match, skipping SST regressions in psl.nam_nao.ncl.")
+        tasreg_plot_flag = 1
+     end if
+
+     if (tasreg_plot_flag.eq.0) then
+        tas = data_read_in(paths_trefht(ee),"TREFHT",syear_trefht(ee),eyear_trefht(ee))     
+        if (OPT_CLIMO.eq."Full") then
+           tas = rmMonAnnCycTLL(tas)
+        else        
+           check_custom_climo(names_trefht(ee),syear(ee),eyear(ee),CLIMO_SYEAR,CLIMO_EYEAR)
+           temp_arr = tas
+           delete(temp_arr&time)
+           temp_arr&time = cd_calendar(tas&time,-1)
+           climo = clmMonTLL(temp_arr({CLIMO_SYEAR*100+1:CLIMO_EYEAR*100+12},:,:))                 
+           delete(temp_arr)
+           tas   = calcMonAnomTLL(tas,climo) 
+           delete(climo)
+        end if
      
-     AMO = new((/dimsizes(natl_aa)/),"float",-999.)    ; timeseries plot
-     AMO!0 = "time"
-     AMO&time = sst_ann&time
-     AMO = (/ natl_aa - global_aa /)
-     delete([/coswgt,natl_aa,global_aa,sst_ann/])
+        temp = runave_n_Wrap(tas,12,0,0)   ; form annual averages
+        tas_ann = temp(5::12,:,:)
+        delete([/temp,tas/])
+
+        tas_reg_ann = tas_ann(0,:,:)                                                 ; TAS regression onto AMOC PC1
+        tas_reg_ann = (/ regCoef(amoc_pc_ann,tas_ann(lat|:,lon|:,time|:)) /)
+        delete(tas_ann)
+     end if     
 ;---------------compute AMOC/AMO lead/lags----------------------------------------------------------------------------- 
-     if (nyr(ee).ge.90) then    ; need a minimum number of years to compute lead/lag correlations
+     if (nyr(ee).ge.90.and.isvar("AMO")) then    ; need a minimum number of years to compute lead/lag correlations
         nwt = 51
         pda = 15            ; longest period
         pdb = 1            ; shortest period
@@ -358,7 +394,11 @@ begin
 ;---------------------------------------------------------------------------------------------     
      if (OUTPUT_DATA.eq."True") then
         modname = str_sub_str(names(ee)," ","_")
-        fn = getenv("OUTDIR")+modname+".cvdp_data."+syear(ee)+"-"+eyear(ee)+".nc"
+        bc = (/"/","'","(",")"/)
+        do gg = 0,dimsizes(bc)-1
+           modname = str_sub_str(modname,bc(gg),"_")
+        end do
+        fn = getenv("OUTDIR")+modname+".cvdp_data.amoc."+syear(ee)+"-"+eyear(ee)+".nc"
         if (.not.isfilepresent2(fn)) then
            z = addfile(fn,"c")
            z@source = "NCAR Climate Analysis Section's Climate Variability Diagnostics Package v"+getenv("VERSION")
@@ -375,8 +415,6 @@ begin
         if (spectra_mvf.eq.False) then
            z->amoc_spectra_ann = splt1
         end if
-        z->amoc_sst_regression_ann = sst_reg_ann
-        z->amoc_tas_regression_ann = tas_reg_ann
         if (nyr(ee).ge.90) then
            time_lag_cor = ispan(mxlag*-1,mxlag,1)
            time_lag_cor@units = "months since 0000-01-01 00:00:00"
@@ -387,6 +425,7 @@ begin
            time_lag_cor&time_lag_cor = time_lag_cor
            ccr!0 = "time_lag_cor"
            ccr&time_lag_cor = time_lag_cor
+           ccr@long_name = "AMOC_AMO_lead_lag_correlation"
            z->amoc_amo_lag_cor = ccr
            delete(time_lag_cor)
         end if
@@ -399,6 +438,7 @@ begin
         TIME&TIME = TIME
         amoc_pc_ann!0 = "TIME"
         amoc_pc_ann&TIME = TIME
+        amoc_pc_ann@long_name = "AMOC PC1 timeseries"
         z->amoc_timeseries_ann = amoc_pc_ann
         lat_amoc = moc_reg_ann&lat
         lat_amoc!0 = "lat_amoc"
@@ -414,8 +454,54 @@ begin
         moc_sd_ann&lat_amoc = lat_amoc
         z->amoc_mean_ann   = moc_mean_ann
         z->amoc_stddev_ann = moc_sd_ann
-        z->amoc_ann        = moc_reg_ann 
+        z->amoc_pc1_ann        = moc_reg_ann 
         delete([/modname,fn,TIME,lat_amoc/])
+        delete(z)
+        
+        if (sstreg_plot_flag.eq.0) then
+           modname = str_sub_str(names_ts(ee)," ","_")
+           bc = (/"/","'","(",")"/)
+           do gg = 0,dimsizes(bc)-1
+              modname = str_sub_str(modname,bc(gg),"_")
+           end do
+           fn = getenv("OUTDIR")+modname+".cvdp_data.amoc.ts."+syear_ts(ee)+"-"+eyear_ts(ee)+".nc"
+           if (.not.isfilepresent2(fn)) then
+              z = addfile(fn,"c")
+              z@source = "NCAR Climate Analysis Section's Climate Variability Diagnostics Package v"+getenv("VERSION")
+              z@notes = "Data from "+names_ts(ee)+" from "+syear_ts(ee)+"-"+eyear_ts(ee)
+              if (OPT_CLIMO.eq."Full") then
+                 z@climatology = syear_ts(ee)+"-"+eyear_ts(ee)+" climatology removed prior to all calculations (other than means)"
+              else
+                 z@climatology = CLIMO_SYEAR+"-"+CLIMO_EYEAR+" climatology removed prior to all calculations (other than means)"
+              end if
+           else
+              z = addfile(fn,"w")
+           end if
+           z->amoc_sst_regression_ann = sst_reg_ann
+           delete(z)           
+        end if
+        if (tasreg_plot_flag.eq.0) then
+           modname = str_sub_str(names_trefht(ee)," ","_")
+           bc = (/"/","'","(",")"/)
+           do gg = 0,dimsizes(bc)-1
+              modname = str_sub_str(modname,bc(gg),"_")
+           end do
+           fn = getenv("OUTDIR")+modname+".cvdp_data.amoc.tas."+syear_trefht(ee)+"-"+eyear_trefht(ee)+".nc"
+           if (.not.isfilepresent2(fn)) then
+              z = addfile(fn,"c")
+              z@source = "NCAR Climate Analysis Section's Climate Variability Diagnostics Package v"+getenv("VERSION")
+              z@notes = "Data from "+names_trefht(ee)+" from "+syear_trefht(ee)+"-"+eyear_trefht(ee)
+              if (OPT_CLIMO.eq."Full") then
+                 z@climatology = syear_trefht(ee)+"-"+eyear_trefht(ee)+" climatology removed prior to all calculations (other than means)"
+              else
+                 z@climatology = CLIMO_SYEAR+"-"+CLIMO_EYEAR+" climatology removed prior to all calculations (other than means)"
+              end if
+           else
+              z = addfile(fn,"w")
+           end if
+           z->amoc_tas_regression_ann = tas_reg_ann
+           delete(z)
+        end if
      end if     
 
      moc_mean_ann&lev = moc_mean_ann&lev/1000.
@@ -509,7 +595,7 @@ begin
      mocres@cnMonoLineDashPattern = True
      mocres@cnLineDashPattern = 0
      mocres@gsnCenterString = syear(ee)+"-"+eyear(ee) 
-     mocres@gsnRightString = moc_reg_ann@pcvari+"%"
+     mocres@gsnRightString = moc_reg_ann@pcvar
      mocres@gsnLeftString = names(ee)
      plot_amoc_ann(ee) = gsn_csm_contour(wks_amoc,moc_reg_ann,mocres)  
      delete(moc_reg_ann)  
@@ -658,10 +744,14 @@ begin
      res@gsnCenterString = names(ee)
      res@gsnRightString = ""
 
-     plot_amoc_sstreg_ann(ee) = gsn_csm_contour_map(wks_amoc_sstreg,sst_reg_ann,res)
-     delete(sst_reg_ann)
-     plot_amoc_tasreg_ann(ee) = gsn_csm_contour_map(wks_amoc_tasreg,tas_reg_ann,res)
-     delete(tas_reg_ann)
+     if (sstreg_plot_flag.eq.0) then
+        plot_amoc_sstreg_ann(ee) = gsn_csm_contour_map(wks_amoc_sstreg,sst_reg_ann,res)
+        delete(sst_reg_ann)
+     end if
+     if (tasreg_plot_flag.eq.0) then
+        plot_amoc_tasreg_ann(ee) = gsn_csm_contour_map(wks_amoc_tasreg,tas_reg_ann,res)
+        delete(tas_reg_ann)
+     end if
      delete(res)
      
      res2 = True
@@ -713,7 +803,6 @@ begin
 
   panres = True
   panres@gsnMaximize = True  
-  panres@gsnPanelBottom = 0.05
   panres@gsnPaperOrientation = "portrait"
   panres@gsnPanelLabelBar = True
   panres@gsnPanelYWhiteSpacePercent = 3.0
@@ -721,10 +810,17 @@ begin
   panres@pmLabelBarWidthF = 0.65
   panres@lbTitleOn = False
   panres@lbBoxLineColor = "gray70"
-  if (nsim.le.5) then
-     panres@txFontHeightF = 0.024
+  if (nsim.le.4) then
+     if (nsim.eq.1) then
+        panres@txFontHeightF = 0.022
+        panres@gsnPanelBottom = 0.50
+     else
+        panres@txFontHeightF = 0.0145
+        panres@gsnPanelBottom = 0.50
+     end if
   else
      panres@txFontHeightF = 0.016
+     panres@gsnPanelBottom = 0.05
   end if
   panres@lbLabelFontHeightF = 0.013
   panres@lbLabelStride = 1
@@ -732,24 +828,23 @@ begin
   nrow = (nsim/ncol)+mod(nsim,ncol)  
   
   panres@txString = "AMOC Means (Annual)"
-  gsn_panel(wks_mean,plot_mean_ann,(/nrow,ncol/),panres)
+  gsn_panel2(wks_mean,plot_mean_ann,(/nrow,ncol/),panres)
   delete(wks_mean)
 
   panres@txString = "AMOC Standard Deviations (Annual)"
-  gsn_panel(wks_stddev,plot_stddev_ann,(/nrow,ncol/),panres)
+  gsn_panel2(wks_stddev,plot_stddev_ann,(/nrow,ncol/),panres)
   delete(wks_stddev)
 
-
-  panres@txString = "AMOC (Annual)"
-  gsn_panel(wks_amoc,plot_amoc_ann,(/nrow,ncol/),panres)
+  panres@txString = "AMOC EOF1 (Annual)"
+  gsn_panel2(wks_amoc,plot_amoc_ann,(/nrow,ncol/),panres)
   delete(wks_amoc)
 
   panres@txString = "AMOC TAS Regressions (Annual)"
-  gsn_panel(wks_amoc_tasreg,plot_amoc_tasreg_ann,(/nrow,ncol/),panres)
+  gsn_panel2(wks_amoc_tasreg,plot_amoc_tasreg_ann,(/nrow,ncol/),panres)
   delete(wks_amoc_tasreg)
 
   panres@txString = "AMOC SST Regressions (Annual)"
-  gsn_panel(wks_amoc_sstreg,plot_amoc_sstreg_ann,(/nrow,ncol/),panres)
+  gsn_panel2(wks_amoc_sstreg,plot_amoc_sstreg_ann,(/nrow,ncol/),panres)
   delete(wks_amoc_sstreg)
   delete(panres)
 
@@ -773,19 +868,19 @@ begin
      delete(tt)
   end if
   panres2@txString = "AMOC PC1 (Annual)"
-  gsn_panel(wks_amoc_ts,plot_amoc_ts_ann,(/nrow,ncol/),panres2)
+  gsn_panel2(wks_amoc_ts,plot_amoc_ts_ann,(/nrow,ncol/),panres2)
   delete(wks_amoc_ts)
 
   if (isatt(panres2,"gsnPanelScalePlotIndex")) then
      delete(panres2@gsnPanelScalePlotIndex)
   end if
   panres2@txString = "AMOC PC1 (Annual, detrended)"
-  gsn_panel(wks_amoc_powspec,plot_amoc_powspec_ann,(/nrow,ncol/),panres2)
+  gsn_panel2(wks_amoc_powspec,plot_amoc_powspec_ann,(/nrow,ncol/),panres2)
   delete(wks_amoc_powspec)
 
 
   panres2@txString = "AMO / AMOC PC1 Lag Correlation (Annual)"
-  gsn_panel(wks_amoc_amo,plot_amoc_amo_ann,(/nrow,ncol/),panres2)
+  gsn_panel2(wks_amoc_amo,plot_amoc_amo_ann,(/nrow,ncol/),panres2)
   delete(wks_amoc_amo)
   delete(panres2)
   print("Finished: amoc.ncl")
