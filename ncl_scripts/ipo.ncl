@@ -1,4 +1,4 @@
-; Calculates the AMO pattern, timeseries, and spectra.
+; Calculates the IPO pattern, timeseries, and spectra.
 ;
 ; Variables used: ts
 ;
@@ -9,7 +9,7 @@ load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/shea_util.ncl"
 load "$CVDP_SCRIPTS/functions.ncl"
 
 begin
-  print("Starting: amo.ncl")
+  print("Starting: ipo.ncl")
   
   SCALE_TIMESERIES = getenv("SCALE_TIMESERIES")  
   OUTPUT_DATA      = getenv("OUTPUT_DATA")  
@@ -18,7 +18,7 @@ begin
   CLIMO_SYEAR      = toint(getenv("CLIMO_SYEAR"))
   CLIMO_EYEAR      = toint(getenv("CLIMO_EYEAR"))
   OUTPUT_TYPE      = getenv("OUTPUT_TYPE") 
-  COLORMAP         = getenv("COLORMAP")
+  COLORMAP         = getenv("COLORMAP")  
   
   nsim = numAsciiRow("namelist_byvar/namelist_ts")
   na = asciiread("namelist_byvar/namelist_ts",(/nsim/),"string")
@@ -45,9 +45,9 @@ begin
      wks_type@wkWidth = 1500*PNG_SCALE
      wks_type@wkHeight = 1500*PNG_SCALE
   end if
-  wks = gsn_open_wks(wks_type,getenv("OUTDIR")+"amo")
-  wks2 = gsn_open_wks(wks_type,getenv("OUTDIR")+"amo.powspec")
-  wks3 = gsn_open_wks(wks_type,getenv("OUTDIR")+"amo.timeseries")  
+  wks = gsn_open_wks(wks_type,getenv("OUTDIR")+"ipo")
+  wks2 = gsn_open_wks(wks_type,getenv("OUTDIR")+"ipo.powspec")
+  wks3 = gsn_open_wks(wks_type,getenv("OUTDIR")+"ipo.timeseries")  
   if (COLORMAP.eq."0") then
      gsn_define_colormap(wks,"ncl_default")   
      gsn_define_colormap(wks2,"cb_9step")
@@ -58,7 +58,6 @@ begin
      gsn_define_colormap(wks2,"cb_9step")
      gsn_define_colormap(wks3,"ncl_default")
   end if
-  
   map = new(nsim,"graphic")  
   pspec = new(nsim,"graphic")
   xyplot = new(nsim,"graphic")
@@ -66,58 +65,86 @@ begin
   if (isfilepresent2("obs_ts")) then
      pspec_obs = new(nsim,"graphic")
   end if
- 
+
+  fca = 1./157.       
+  fcb = 0.
+  ihp = 0
+  nsigma = 1
+  nwgt = 217         
+
+  wgt = new(nwgt,float)
+  wgt = filwgts_lancos(nwgt,ihp,fca,fcb,nsigma)   ; create low pass filter
+
   do ee = 0,nsim-1
-     sstT = data_read_in(paths(ee),"TS",syear(ee),eyear(ee))    ; read in data, orient lats/lons correctly, set time coordinate variable up
-     if (isatt(sstT,"is_all_missing")) then
-        delete(sstT)
+     sst = data_read_in(paths(ee),"TS",syear(ee),eyear(ee))    ; read in data, orient lats/lons correctly, set time coordinate variable up
+     if (isatt(sst,"is_all_missing").or.nyr(ee).lt.40) then
+        delete(sst)
         continue
-     end if  
-     sstT = where(sstT.le.-1.8,-1.8,sstT)    ; set all values below -1.8 to -1.8
+     end if
+     sst = where(sst.le.-1.8,-1.8,sst)    ; set all values below -1.8 to -1.8
      d = addfile("$NCARG_ROOT/lib/ncarg/data/cdf/landsea.nc","r")   ; mask out land (this is redundant for data that is already masked)
      basemap = d->LSMASK
-     lsm = landsea_mask(basemap,sstT&lat,sstT&lon)
-     sstT = mask(sstT,conform(sstT,lsm,(/1,2/)).ge.1,False)
+     lsm = landsea_mask(basemap,sst&lat,sst&lon)
+     sst = mask(sst,conform(sst,lsm,(/1,2/)).ge.1,False)
      delete([/lsm,basemap/])
-     delete(d)
-     
-     sstT = lonFlip(sstT)   ; orient longitudes from -180:180 (set to 0:360 in data_read_in function)
+     delete(d)  
+
      if (OPT_CLIMO.eq."Full") then
-        sstT = rmMonAnnCycTLL(sstT)
+        sst = rmMonAnnCycTLL(sst)
      else
         check_custom_climo(names(ee),syear(ee),eyear(ee),CLIMO_SYEAR,CLIMO_EYEAR)
-        temp_arr = sstT
+        temp_arr = sst
         delete(temp_arr&time)
-        temp_arr&time = cd_calendar(sstT&time,-1)
+        temp_arr&time = cd_calendar(sst&time,-1)
         climo = clmMonTLL(temp_arr({CLIMO_SYEAR*100+1:CLIMO_EYEAR*100+12},:,:))                 
         delete(temp_arr)
-        sstT   = calcMonAnomTLL(sstT,climo) 
+        sst   = calcMonAnomTLL(sst,climo) 
         delete(climo)
      end if
-          
-     coswgt=cos(rad*sstT&lat)
-     coswgt!0 = "lat"
-     coswgt&lat= sstT&lat
-     natl_aa =   wgt_areaave(sstT(:,{0:60},{-80:0}),coswgt({0.:60.}),1.0,0)
-     global_aa = wgt_areaave(sstT(:,{-60:60},:),coswgt({-60.:60.}),1.0,0)
-     
-     finarr = new((/2,dimsizes(natl_aa)/),"float",-999.)    ; timeseries plot
-     finarr!1 = "time"
-     finarr&time = sstT&time
-     finarr(0,:) = (/ natl_aa - global_aa /)
-     finarr(1,:) = (/ runave(finarr(0,:),61,0) /)
-     delete(natl_aa)
-     delete(global_aa)  
 
-     finreg = sstT(0,:,:)
-     finreg = (/ regCoef(finarr(0,:),sstT(lat|:,lon|:,time|:))  /) 
-     delete([/sstT/])     
-     do gg = 0,2
-        finreg = (/ smth9(finreg,0.5,0.25,True) /)
+     sst = wgt_runave_n_Wrap(sst,wgt,1,0)   ; apply low pass filter
+
+     coswgt=cos(rad*sst&lat)
+     coswgt!0 = "lat"
+     coswgt&lat= sst&lat    
+     do ff = 0,dimsizes(sst&time)-1
+        sst(ff,:,:) = (/ sst(ff,:,:) - wgt_areaave(sst(ff,{-60:70},:),coswgt({-60.:70.}),1.0,0) /)
      end do
-     delete([/coswgt/])
-     finreg@syear = syear(ee)
-     finreg@eyear = eyear(ee) 
+     delete(coswgt)
+
+     sst_CW = sst
+     sst_CW = SqrtCosWeight(sst)  
+     evecv = eofunc(sst_CW({lat|-40:60},{lon|110:290},time|:),2,75)
+     delete(sst_CW)
+     pcts = eofunc_ts(sst({lat|-40:60},{lon|110:290},time|:),evecv,False)
+     pctsS = dim_standardize(pcts(0,:),0)
+     delete([/pcts/])
+
+     ipo = sst(0,:,:)
+     ipo = ipo@_FillValue
+     ipo = (/ regCoef(pctsS,sst(lat|:,lon|:,time|:)) /)
+     ipo@syear = syear(ee)
+     ipo@eyear = eyear(ee)
+
+     pc1 = pctsS
+     pc1!0 = "time"
+     pc1&time = sst&time
+     pc1@units = "1"
+     sig_pcv = eofunc_north2(evecv@pcvar,dimsizes(pc1),False)
+     if (sig_pcv(0)) then    ; if True then significant
+        ipo@pcvar = tofloat(sprintf("%4.1f", evecv@pcvar(0)))+"%*"
+     else
+        ipo@pcvar = tofloat(sprintf("%4.1f", evecv@pcvar(0)))+"%"
+     end if
+     delete([/sig_pcv,evecv/])
+    
+     if (.not.ismissing(ipo({35},{160}))) then
+        if (ipo({35},{160}).ge.0) then   ; arbitrary attempt to make all plots have the same sign..
+           ipo = ipo*-1.
+           pc1 = pc1*-1.
+        end if
+     end if
+     delete([/sst,pctsS/])
 ;---------------------------------------------------------------------------------------------     
      if (OUTPUT_DATA.eq."True") then
         modname = str_sub_str(names(ee)," ","_")
@@ -125,7 +152,7 @@ begin
         do gg = 0,dimsizes(bc)-1
            modname = str_sub_str(modname,bc(gg),"_")
         end do
-        fn = getenv("OUTDIR")+modname+".cvdp_data.amo."+syear(ee)+"-"+eyear(ee)+".nc"
+        fn = getenv("OUTDIR")+modname+".cvdp_data.ipo."+syear(ee)+"-"+eyear(ee)+".nc"
         if (.not.isfilepresent2(fn)) then
            z = addfile(fn,"c")
            z@source = "NCAR Climate Analysis Section's Climate Variability Diagnostics Package v"+getenv("VERSION")
@@ -135,28 +162,27 @@ begin
            else
               z@climatology = CLIMO_SYEAR+"-"+CLIMO_EYEAR+" climatology removed prior to all calculations (other than means)"
            end if
-           z@Conventions = "CF-1.6"           
+           z@Conventions = "CF-1.6"
         else
            z = addfile(fn,"w")
         end if
-        z->amo_pattern_mon = set_varAtts(lonFlip(finreg),"AMO regression pattern (monthly)","","")   ; flip longitudes back to running from 0:360.
-        amo_ts = finarr(0,:)
-        amo_ts@units = "C"
-        z->amo_timeseries_mon = set_varAtts(amo_ts,"AMO timeseries (monthly)","","")
-        delete([/modname,fn,amo_ts/])
-     end if     
+        z->ipo_pattern_mon = set_varAtts(ipo,"IPO spatial pattern (monthly)","","")
+        z->ipo_timeseries_mon = set_varAtts(pc1,"IPO normalized principal component timeseries (monthly)","1","")
+        delete([/modname,fn/])
+     end if              
 ;------------------------------------------------------------------------
      iopt = 0
-     jave = (7*nyr(ee))/100
+     jave = (3*nyr(ee))/100
      val1 = .95
      val2 = .99
      if (jave.eq.0) then
        jave = 1
      end if
-     pct = 0.1     
+     pct = 0.1    
      spectra_mvf = False        ; missing value flag for nino3.4
-     if (any(ismissing(finarr(0,:)))) then
-        print("Missing data detected for "+names(ee)+", power spectra function does not allow missing data, not creating AMO spectra")
+     spectra_mvf_obs = True     ; missing value flag for observational nino3.4 default
+     if (any(ismissing(pc1))) then
+        print("Missing data detected for "+names(ee)+", power spectra function does not allow missing data, not creating IPO spectra")
         spectra_mvf = True
         if (isfilepresent2("obs_ts").and.ee.eq.0) then
            spectra_mvf_obs = True    ; missing value flag for obs nino3.4
@@ -164,8 +190,8 @@ begin
      else
         if (isfilepresent2("obs_ts").and.ee.eq.0) then
            spectra_mvf_obs = False   ; missing value flag for obs nino3.4
-        end if
-        sdof = specx_anal(dim_standardize(finarr(0,:),0),iopt,jave,pct)
+        end if 
+        sdof = specx_anal(pc1,iopt,jave,pct)   ; pc1 already standardized
         splt1 = specx_ci(sdof,val1,val2)
         if (OUTPUT_DATA.eq."True") then
            splt1!0 = "ncurves"
@@ -178,7 +204,7 @@ begin
            splt1@units_info = "df refers to frequency interval; data are standardized so there are no physical units"
            splt1@units = "1/df"
            splt1@info = "(0,:)=spectrum,(1,:)=Markov red noise spectrum, (2,:)="+val1+"% confidence bound for Markhov, (3,:)="+val2+"% confidence bound for Markhov"
-           z->amo_spectra = set_varAtts(splt1,"AMO (monthly) power spectra, Markov spectrum and confidence curves","","")   
+           z->ipo_spectra = set_varAtts(splt1,"IPO (monthly) power spectra, Markov spectrum and confidence curves","","") 
         end if
         if (isfilepresent2("obs_ts").and.ee.eq.0) then
            sdof_obs = sdof
@@ -188,7 +214,7 @@ begin
      if (isvar("z")) then
         delete(z)
      end if
-;=========================================================================          
+;========================================================================
      res = True
      res@mpProjection = "WinkelTripel"
      res@mpGeophysicalLineColor = "gray42"
@@ -198,7 +224,7 @@ begin
      res@mpGridLineColor   = "transparent"  ; trick ncl into drawing perimeter
      res@mpGridAndLimbOn   = True           ; turn on lat/lon lines  
      res@mpFillOn = False
-     res@mpCenterLonF = 0.
+     res@mpCenterLonF = 210.
      res@mpOutlineOn = True  
      res@gsnDraw      = False
      res@gsnFrame     = False
@@ -209,11 +235,12 @@ begin
   
 ;     res@cnFillMode = "RasterFill"
      res@cnLevelSelectionMode = "ExplicitLevels"
+     
      if (COLORMAP.eq."0") then
-        res@cnLevels = fspan(-4.,4.,21)
+        res@cnLevels = fspan(-.65,.65,27)
      end if
      if (COLORMAP.eq."1") then
-        res@cnLevels = fspan(-3.2,3.2,17)
+        res@cnLevels = fspan(-.8,.8,17)
      end if
 
      res@cnLineLabelsOn = False
@@ -221,37 +248,39 @@ begin
      res@cnLinesOn       = False
      res@lbLabelBarOn    = False
 
+     res@gsnLeftStringOrthogonalPosF = -0.05
+     res@gsnLeftStringParallelPosF = .005
      res@gsnRightStringOrthogonalPosF = -0.05
      res@gsnRightStringParallelPosF = 0.96
-     res@gsnLeftStringOrthogonalPosF = -0.05
-     res@gsnLeftStringParallelPosF = 0.005
+     res@gsnRightString = ""
+     res@gsnLeftString = ""
      res@gsnLeftStringFontHeightF = 0.014
      res@gsnCenterStringFontHeightF = 0.018
-     res@gsnRightStringFontHeightF = 0.014   
+     res@gsnRightStringFontHeightF = 0.014
      res@gsnLeftString = syear(ee)+"-"+eyear(ee)
+ 
+     res@gsnRightString = ipo@pcvar
      res@gsnCenterString = names(ee)
-     res@gsnRightString = ""
-     
-     if (isfilepresent2("obs_ts").and.ee.eq.0) then    ; for pattern correlation table
-        patcor = new((/nsim,dimsizes(finreg&lat),dimsizes(finreg&lon)/),typeof(finreg))
-        patcor!1 = "lat"
-        patcor&lat = finreg&lat
-        patcor!2 = "lon"
-        patcor&lon = finreg&lon
-        patcor(ee,:,:) = (/ finreg /)
-     end if
-     if (isfilepresent2("obs_ts").and.ee.ge.1) then
-        patcor(ee,:,:) = (/ linint2(finreg&lon,finreg&lat,finreg,True,patcor&lon,patcor&lat,0) /)
-     end if
-
-     map(ee) = gsn_csm_contour_map(wks,finreg,res)
-     delete([/finreg/])
+     map(ee) = gsn_csm_contour_map(wks,ipo,res)
+     delete([/ipo/])
      
      pres = True
      pres@vpXF = 0.07
      pres@trYMinF = 0.
      pres@trXMinF = 0.0
-;     pres@trYMaxF = 82.
+     if (isfilepresent2("obs_ts").and.ee.ge.1.and.spectra_mvf_obs.eq.False) then   
+        if (max((/max(splt1(0,:)),max(sdof_obs@spcx)/)).lt.235) then
+           pres@trYMaxF = 250.
+        else
+           pres@trYMaxF = max((/max(splt1(0,:)),max(sdof_obs@spcx)/))+(.1*max((/max(splt1(0,:)),max(sdof_obs@spcx)/)))
+        end if
+     else
+        if (max(splt1(0,:)).lt.235) then
+           pres@trYMaxF = 250.
+        else
+           pres@trYMaxF = max(splt1(0,:))+(.1*max(splt1(0,:)))
+        end if
+     end if
      pres@trXMaxF = 0.0832
      pres@tiYAxisString = "Power"              ; yaxis
      pres@xyLineColor   =  "black"         
@@ -293,7 +322,7 @@ begin
      pres@tiMainOn = False
      pres@gsnCenterString = "Period (years)"
      pres@gsnCenterStringFontHeightF =    pres@tiYAxisFontHeightF
-     pres@gsnRightStringFontHeightF =    pres@tiYAxisFontHeightF - 0.005
+     pres@gsnRightStringFontHeightF  =    pres@tiYAxisFontHeightF - 0.005
      pres@gsnRightString = syear(ee)+"-"+eyear(ee)+"  "
      pres@gsnLeftString = "" 
      if (wks_type.eq."png") then
@@ -315,7 +344,7 @@ begin
            pspec_obs(ee) = gsn_csm_xy(wks2,sdof_obs@frq,sdof_obs@spcx,pres)
            overlay(pspec(ee),pspec_obs(ee)) 
            delete(pres@xyCurveDrawOrder)
-        end if 
+        end if     
         delete([/sdof,splt1/])
      end if 
      
@@ -324,6 +353,7 @@ begin
      xyres@gsnFrame = False
      xyres@gsnRightString = ""
      xyres@gsnLeftString = ""
+     xyres@gsnFrame = False
      xyres@gsnYRefLine = 0.0
      xyres@gsnYRefLineColor = "gray42"
      xyres@gsnXYBarChart = False
@@ -331,7 +361,6 @@ begin
      xyres@gsnBelowYRefLineColor = 35
      xyres@xyLineThicknessF = 0.1
      xyres@xyLineColor = "gray70"
-;     xyres@xyLineColors = (/   xyres@gsnAboveYRefLineColor,   xyres@gsnBelowYRefLineColor/)
      xyres@tiYAxisString = ""
      if (nsim.le.5) then
         xyres@tmXBLabelFontHeightF = 0.0125
@@ -342,86 +371,39 @@ begin
         xyres@tmYLLabelFontHeightF = 0.018
         xyres@gsnStringFontHeightF = 0.024
      end if
-
      xyres@vpXF = 0.05
      xyres@vpHeightF = 0.15
      if (SCALE_TIMESERIES.eq."True") then
         xyres@vpWidthF = 0.9*((nyr(ee)*1.)/nyr_max)
      else
         xyres@vpWidthF = 0.9
-     end if    
+     end if
      xyres@gsnCenterString = ""
+     
      xyres@trXMinF = syear(ee)-.5
      xyres@trXMaxF = eyear(ee)+1.5
      
-     xyres2 =    xyres
-     delete(xyres2@gsnXYBarChart)
-     delete(xyres2@gsnAboveYRefLineColor)
-     delete(xyres2@gsnBelowYRefLineColor)
-;     delete(xyres2@xyLineColors)
-     xyres2@xyLineColor = "black"
-     if (wks_type.eq."png") then
-        xyres2@xyLineThicknessF = 3.5
-     else
-        xyres2@xyLineThicknessF = 2.5
-     end if
-     
+;     xyres2 =    xyres
+;     delete(xyres2@gsnXYBarChart)
+;     delete(xyres2@gsnAboveYRefLineColor)
+;     delete(xyres2@gsnBelowYRefLineColor)
+;     xyres2@xyLineColor = "black"
+;     if (wks_type.eq."png") then
+;        xyres2@xyLineThicknessF = 3.5
+;     else
+;        xyres2@xyLineThicknessF = 2.5
+;     end if
+
      xyres@gsnCenterString = names(ee)
-     xyplot(ee) = gsn_csm_xy(wks3,fspan(syear(ee),eyear(ee)+.91667,dimsizes(finarr&time)),finarr(0,:),xyres)   ; use standardized timeseries  
-     xyplot2(ee) = gsn_csm_xy(wks3,fspan(syear(ee),eyear(ee)+.91667,dimsizes(finarr&time)),finarr(1,:),xyres2)
-     overlay(xyplot(ee),xyplot2(ee))
-     delete([/val1,val2,finarr/])
+     xyplot(ee) = gsn_csm_xy(wks3,fspan(syear(ee),eyear(ee)+.91667,dimsizes(pc1)),pc1,xyres)   ; use standardized timeseries  
+;     xyplot2(ee) = gsn_csm_xy(wks3,fspan(syear(ee),eyear(ee)+.91667,dimsizes(pc1)),runave(pc1,61,0),xyres2)
+;     overlay(xyplot(ee),xyplot2(ee))
+     
+     delete([/val1,val2,pc1/])
   end do
 
-  if (isfilepresent2("obs_ts")) then    ; for pattern correlation table  
-     clat = cos(0.01745329*patcor&lat)
-;     finpaco = "AMO (Monthly)     "    ; Must be 18 characters long
-;     finrms  = finpaco
-     finpr   = "AMO (Monthly)     "    ; Must be 18 characters long
-     line3   = "                  "    ; Must be 18 characters long
-     line4   = line3
-     header = (/"","Pattern Correlations/RMS Differences   Observations vs. Model(s)",""/)
-     do hh = 1,nsim-1
-        dimY = dimsizes(tochar(names(hh)))
-        nchar = dimY
-        nchar = where(nchar.le.10,10,nchar)
-        if (dimY.lt.10) then
-           ntb = ""
-           do ii = 0,10-dimY-1
-              ntb = ntb+" "
-           end do
-           ntb = ntb+names(hh)
-        else
-           ntb = names(hh)
-        end if
-        
-        ntc = ""
-        do ii = 0,nchar-1
-           ntc = ntc+"-"
-        end do
-        format2 = "%"+(nchar-5+1)+".2f"
-        format3 = "%4.2f"
-        line3 = line3+" "+ntb   
-        line4 = line4+" "+ntc 
-        if (all(ismissing(patcor(hh,:,:)))) then
-           finpr = finpr+sprintf(format2,9.99)+"/"+sprintf(format3,9.99)
-        else
-           finpr = finpr+sprintf(format2,(pattern_cor(patcor(0,:,:),patcor(hh,:,:),clat,0)))+"/"+sprintf(format3,(dim_rmsd(ndtooned(NewCosWeight(patcor(0,:,:))),ndtooned(NewCosWeight(patcor(hh,:,:))))))
-        end if
-     end do
-     if (dimsizes(tochar(line4)).ge.8190) then   ; system or fortran compiler limit
-        print("Metrics table warning: Not creating metrics table as size of comparison results in a invalid ascii row size.")   
-     else
-        write_table(getenv("OUTDIR")+"metrics.amo.txt","w",[/header/],"%s")
-        write_table(getenv("OUTDIR")+"metrics.amo.txt","a",[/line3/],"%s")
-        write_table(getenv("OUTDIR")+"metrics.amo.txt","a",[/line4/],"%s")
-        write_table(getenv("OUTDIR")+"metrics.amo.txt","a",[/finpr/],"%s")
-     end if
-     delete([/finpr,line3,line4,format2,format3,nchar,ntc,clat,patcor,ntb,dimY,header/])
-  end if
-  
   panres = True
-  panres@gsnMaximize = True  
+  panres@gsnMaximize = True
   panres@gsnPaperOrientation = "portrait"
   panres@gsnPanelLabelBar = True
   panres@gsnPanelYWhiteSpacePercent = 3.0
@@ -441,15 +423,14 @@ begin
      panres@txFontHeightF = 0.016
      panres@gsnPanelBottom = 0.05
   end if
-  
-  panres@txString = "AMO (Monthly)"
+  panres@txString = "IPO (Monthly)"
   ncol = floattointeger(sqrt(nsim))
   nrow = (nsim/ncol)+mod(nsim,ncol)  
   gsn_panel2(wks,map,(/nrow,ncol/),panres)
   delete(wks)
 
   delete(panres@gsnPanelLabelBar)
-  panres@txString = "AMO (Monthly)"
+  panres@txString = "IPO (Monthly)"
   gsn_panel2(wks2,pspec,(/nrow,ncol/),panres)  
   delete(wks2)
   
@@ -458,15 +439,15 @@ begin
      panres@gsnPanelScalePlotIndex = tt(0)
      delete(tt)
   end if
-  panres@txString = "AMO (Monthly)"
   if (nsim.le.12) then
      lp = (/nsim,1/)
   else
-     lp = (/nrow,ncol/)   ;(/nsim/2+1,nsim/8+1/)  
+     lp = (/nrow,ncol/)  ;(/nsim/2+1,nsim/8+1/)  
   end if
+  panres@txString = "IPO (Monthly)"
   gsn_panel2(wks3,xyplot,lp,panres)  
   delete(wks3)
-  delete([/map,pspec,syear,eyear,nyr,nyr_max,SCALE_TIMESERIES,lp/])
-  print("Finished: amo.ncl")
+  delete([/map,pspec,syear,eyear,nyr,nyr_max,lp/])
+  print("Finished: ipo.ncl")
 end
     

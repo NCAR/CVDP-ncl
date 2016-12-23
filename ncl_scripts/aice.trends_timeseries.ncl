@@ -1,6 +1,6 @@
-; Calculates SIC hemispheric trends and sea ice extent
+; Calculates SIC hemispheric trends and extent
 ;
-; Variables used: SIC
+; Variables used: sic
 ;
 load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/gsn_code.ncl"
 load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/gsn_csm.ncl"
@@ -133,6 +133,14 @@ begin
      plot_iceext_sh_obs = new((/6,nsim/),"graphic")  
   end if
 
+  time_mon2 = ispan(0,11,1)
+  time_mon2@units = "months since 0000-01-01 00:00:00"
+  time_mon2@long_name = "Time"
+  time_mon2@standard_name = "time"
+  time_mon2@calendar = "standard"
+  time_mon2!0 = "time_mon2"
+  time_mon2&time_mon2 = time_mon2
+
   do ee = 0,nsim-1
      aice_nh_flag = 0
      aice_nh = data_read_in_ice(paths(ee),"aice_nh",syear(ee),eyear(ee))    ; read in data, orient lats/lons correctly, set time coordinate variable up
@@ -220,19 +228,11 @@ begin
            aice_nh_sum_climo = new(12,typeof(aice_nh_sum_mon))
            copy_VarAtts(aice_nh_sum_mon,aice_nh_sum_climo)
            aice_nh_sum_climo@long_name = "climatological_sea_ice_extent"
-           time_mon2 = ispan(0,11,1)
-           time_mon2@units = "months since 0000-01-01 00:00:00"
-           time_mon2@long_name = "Time"
-           time_mon2@standard_name = "time"
-           time_mon2@calendar = "standard"
-           time_mon2!0 = "time_mon2"
-           time_mon2&time_mon2 = time_mon2
            aice_nh_sum_climo!0 = "time_mon2"
            aice_nh_sum_climo&time_mon2 = time_mon2
            do gg = 0,11
               aice_nh_sum_climo(gg) = (/ avg(aice_nh_sum_mon(gg::12)) /)
            end do    
-           delete(time_mon2)
 
            temp = runave_Wrap(aice_nh_sum_mon,3,0)
            aice_nh_sum_djf = temp(0::12)
@@ -377,19 +377,11 @@ begin
            aice_sh_sum_climo = new(12,typeof(aice_sh_sum_mon))
            copy_VarAtts(aice_sh_sum_mon,aice_sh_sum_climo)
            aice_sh_sum_climo@long_name = "climatological_sea_ice_extent"
-           time_mon2 = ispan(0,11,1)
-           time_mon2@units = "months since 0000-01-01 00:00:00"
-           time_mon2@long_name = "Time"
-           time_mon2@standard_name = "time"
-           time_mon2@calendar = "standard"
-           time_mon2!0 = "time_mon2"
-           time_mon2&time_mon2 = time_mon2
            aice_sh_sum_climo!0 = "time_mon2"
            aice_sh_sum_climo&time_mon2 = time_mon2
            do gg = 0,11
               aice_sh_sum_climo(gg) = (/ avg(aice_sh_sum_mon(gg::12)) /)
            end do    
-           delete(time_mon2)
 
            temp = runave_Wrap(aice_sh_sum_mon,3,0)
            aice_sh_sum_djf = temp(0::12)
@@ -483,6 +475,7 @@ begin
            else
               z@climatology = CLIMO_SYEAR+"-"+CLIMO_EYEAR+" climatology removed prior to all calculations (other than means)"
            end if
+           z@Conventions = "CF-1.6"
         else
            z = addfile(fn,"w")
         end if
@@ -495,28 +488,30 @@ begin
            lat2d_ice_nh!0 = "j"
            lat2d_ice_nh!1 = "i"
            copy_VarMeta(lat2d_ice_nh,lon2d_ice_nh)
-           z->lat2d_ice_nh = lat2d_ice_nh
-           z->lon2d_ice_nh = lon2d_ice_nh
+           z->lat2d_ice_nh = set_varAtts(lat2d_ice_nh,"Northern Hemisphere ice grid 2-dimensional latitudes","","")
+           z->lon2d_ice_nh = set_varAtts(lat2d_ice_nh,"Northern Hemisphere ice grid 2-dimensional longitudes","","")
            delete([/lat2d_ice_nh,lon2d_ice_nh/])
            nh_trends_seas@coordinates ="lat2d_ice_nh lon2d_ice_nh"
         end if           
         if (isatt(nh_trends_seas,"area")) then
            delete(nh_trends_seas@area)
         end if
-        nh_trends_seas@long_name = nh_trends_seas@long_name+" trends"
         nh_trends_ann = (/ aice_nh_trends_ann /)
         copy_VarMeta(nh_trends_seas(0,:,:),nh_trends_ann)
         nh_trends_mon = (/ aice_nh_trends_mon /)
         copy_VarMeta(nh_trends_seas(0,:,:),nh_trends_mon)
-        z->aice_nh_trends_djf = nh_trends_seas(0,:,:)
-        z->aice_nh_trends_mam = nh_trends_seas(1,:,:)
-        z->aice_nh_trends_jja = nh_trends_seas(2,:,:)
-        z->aice_nh_trends_son = nh_trends_seas(3,:,:)
-        z->aice_nh_trends_ann = nh_trends_ann
-        z->aice_nh_trends_mon = nh_trends_mon
+        z->sic_nh_trends_djf = set_varAtts(nh_trends_seas(0,:,:),"Northern Hemisphere sic trends (DJF)","","")
+        z->sic_nh_trends_mam = set_varAtts(nh_trends_seas(1,:,:),"Northern Hemisphere sic trends (MAM)","","")
+        z->sic_nh_trends_jja = set_varAtts(nh_trends_seas(2,:,:),"Northern Hemisphere sic trends (JJA)","","")
+        z->sic_nh_trends_son = set_varAtts(nh_trends_seas(3,:,:),"Northern Hemisphere sic trends (SON)","","")
+        z->sic_nh_trends_ann = set_varAtts(nh_trends_ann,"Northern Hemisphere sic trends (annual)","","")
+        z->sic_nh_trends_mon = set_varAtts(nh_trends_mon,"Northern Hemisphere sic trends (monthly)","","")
         
         if (isvar("aice_nh_sum_djf")) then
-           nh_sum_climo = aice_nh_sum_climo
+           nh_sum_climo = (/ aice_nh_sum_climo /)
+           copy_VarAtts(aice_nh_sum_djf,nh_sum_climo)
+           nh_sum_climo!0 = "time_mon2"
+           nh_sum_climo&time_mon2 = time_mon2
            if (isatt(nh_sum_climo,"lat2d")) then
               delete(nh_sum_climo@lat2d)
               delete(nh_sum_climo@lon2d)
@@ -524,7 +519,7 @@ begin
            if (isatt(nh_sum_climo,"area")) then
               delete(nh_sum_climo@area)
            end if
-           z->aice_nh_extent_climo = nh_sum_climo
+           z->sic_nh_extent_climo = set_varAtts(nh_sum_climo,"Northern Hemisphere sic extent climatology","","")
            nh_sum_djf = aice_nh_sum_djf
            if (isatt(nh_sum_djf,"lat2d")) then
               delete(nh_sum_djf@lat2d)
@@ -559,16 +554,16 @@ begin
               delete(nh_sum_mon@area)
               delete(nh_sum_mon_anom@area)
            end if
-           z->aice_nh_extent_djf = nh_sum_djf
-           z->aice_nh_extent_mam = nh_sum_mam
-           z->aice_nh_extent_jja = nh_sum_jja
-           z->aice_nh_extent_son = nh_sum_son
-           z->aice_nh_extent_ann = nh_sum_ann
-           z->aice_nh_extent_mon = nh_sum_mon
-           z->aice_nh_extent_mon_anom = nh_sum_mon_anom
-           z->aice_nh_extent_feb = nh_sum_feb
-           z->aice_nh_extent_mar = nh_sum_mar
-           z->aice_nh_extent_sep = nh_sum_sep
+           z->sic_nh_extent_djf = set_varAtts(nh_sum_djf,"Northern Hemisphere sic extent timeseries (DJF)","","")
+           z->sic_nh_extent_mam = set_varAtts(nh_sum_mam,"Northern Hemisphere sic extent timeseries (MAM)","","")
+           z->sic_nh_extent_jja = set_varAtts(nh_sum_jja,"Northern Hemisphere sic extent timeseries (JJA)","","")
+           z->sic_nh_extent_son = set_varAtts(nh_sum_son,"Northern Hemisphere sic extent timeseries (SON)","","")
+           z->sic_nh_extent_ann = set_varAtts(nh_sum_ann,"Northern Hemisphere sic extent timeseries (annual)","","")
+           z->sic_nh_extent_mon = set_varAtts(nh_sum_mon,"Northern Hemisphere sic extent timeseries (monthly)","","")
+           z->sic_nh_extent_mon_anom = set_varAtts(nh_sum_mon_anom,"Northern Hemisphere sic extent anomaly timeseries (monthly)","","")
+           z->sic_nh_extent_feb = set_varAtts(nh_sum_feb,"Northern Hemisphere sic extent timeseries (February)","","")
+           z->sic_nh_extent_mar = set_varAtts(nh_sum_mar,"Northern Hemisphere sic extent timeseries (March)","","")
+           z->sic_nh_extent_sep = set_varAtts(nh_sum_sep,"Northern Hemisphere sic extent timeseries (September)","","")
            delete([/nh_sum_djf,nh_sum_mam,nh_sum_jja,nh_sum_son,nh_sum_ann,nh_sum_feb,nh_sum_mar,nh_sum_sep,nh_sum_mon,nh_sum_mon_anom/])
         end if
         delete([/nh_trends_seas,nh_trends_ann,nh_trends_mon/])
@@ -590,6 +585,7 @@ begin
            else
               z@climatology = CLIMO_SYEAR+"-"+CLIMO_EYEAR+" climatology removed prior to all calculations (other than means)"
            end if
+           z@Conventions = "CF-1.6"
         else
            z = addfile(fn,"w")
         end if
@@ -602,8 +598,8 @@ begin
            lat2d_ice_sh!0 = "j2"
            lat2d_ice_sh!1 = "i2"
            copy_VarMeta(lat2d_ice_sh,lon2d_ice_sh)
-           z->lat2d_ice_sh = lat2d_ice_sh
-           z->lon2d_ice_sh = lon2d_ice_sh
+           z->lat2d_ice_sh = set_varAtts(lat2d_ice_sh,"Southern Hemisphere ice grid 2-dimensional latitudes","","")
+           z->lon2d_ice_sh = set_varAtts(lat2d_ice_sh,"Southern Hemisphere ice grid 2-dimensional longitudes","","")
            delete([/lat2d_ice_sh,lon2d_ice_sh/])
            sh_trends_seas@coordinates ="lat2d_ice_sh lon2d_ice_sh"
         end if  
@@ -617,15 +613,18 @@ begin
         copy_VarMeta(sh_trends_seas(0,:,:),sh_trends_ann)
         sh_trends_mon = (/ aice_sh_trends_mon /)
         copy_VarMeta(sh_trends_seas(0,:,:),sh_trends_mon)
-        z->aice_sh_trends_djf = sh_trends_seas(0,:,:)
-        z->aice_sh_trends_mam = sh_trends_seas(1,:,:)
-        z->aice_sh_trends_jja = sh_trends_seas(2,:,:)
-        z->aice_sh_trends_son = sh_trends_seas(3,:,:)
-        z->aice_sh_trends_ann = sh_trends_ann
-        z->aice_sh_trends_mon = sh_trends_mon
+        z->sic_sh_trends_djf = set_varAtts(sh_trends_seas(0,:,:),"Southern Hemisphere sic trends (DJF)","","")
+        z->sic_sh_trends_mam = set_varAtts(sh_trends_seas(1,:,:),"Southern Hemisphere sic trends (MAM)","","")
+        z->sic_sh_trends_jja = set_varAtts(sh_trends_seas(2,:,:),"Southern Hemisphere sic trends (JJA)","","")
+        z->sic_sh_trends_son = set_varAtts(sh_trends_seas(3,:,:),"Southern Hemisphere sic trends (SON)","","")
+        z->sic_sh_trends_ann = set_varAtts(sh_trends_ann,"Southern Hemisphere sic trends (annual)","","")
+        z->sic_sh_trends_mon = set_varAtts(sh_trends_mon,"Southern Hemisphere sic trends (monthly)","","")
         
         if (isvar("aice_sh_sum_djf")) then
-           sh_sum_climo = aice_sh_sum_climo
+           sh_sum_climo = (/ aice_sh_sum_climo /)
+           copy_VarAtts(aice_sh_sum_djf,sh_sum_climo)
+           sh_sum_climo!0 = "time_mon2"
+           sh_sum_climo&time_mon2 = time_mon2
            if (isatt(sh_sum_climo,"lat2d")) then
               delete(sh_sum_climo@lat2d)
               delete(sh_sum_climo@lon2d)
@@ -633,7 +632,7 @@ begin
            if (isatt(sh_sum_climo,"area")) then
               delete(sh_sum_climo@area)
            end if
-           z->aice_sh_extent_climo = sh_sum_climo
+           z->sic_sh_extent_climo = set_varAtts(sh_sum_climo,"Southern Hemisphere sic extent climatology","","")
            sh_sum_djf = aice_sh_sum_djf
            if (isatt(sh_sum_djf,"lat2d")) then
               delete(sh_sum_djf@lat2d)
@@ -668,16 +667,16 @@ begin
               delete(sh_sum_mon@area)
               delete(sh_sum_mon_anom@area)
            end if
-           z->aice_sh_extent_djf = sh_sum_djf
-           z->aice_sh_extent_mam = sh_sum_mam
-           z->aice_sh_extent_jja = sh_sum_jja
-           z->aice_sh_extent_son = sh_sum_son
-           z->aice_sh_extent_ann = sh_sum_ann
-           z->aice_sh_extent_mon = sh_sum_mon
-           z->aice_sh_extent_mon_anom = sh_sum_mon_anom
-           z->aice_sh_extent_feb = sh_sum_feb
-           z->aice_sh_extent_mar = sh_sum_mar
-           z->aice_sh_extent_sep = sh_sum_sep
+           z->sic_sh_extent_djf = set_varAtts(sh_sum_djf,"Southern Hemisphere sic extent timeseries (DJF)","","")
+           z->sic_sh_extent_mam = set_varAtts(sh_sum_mam,"Southern Hemisphere sic extent timeseries (MAM)","","")
+           z->sic_sh_extent_jja = set_varAtts(sh_sum_jja,"Southern Hemisphere sic extent timeseries (JJA)","","")
+           z->sic_sh_extent_son = set_varAtts(sh_sum_son,"Southern Hemisphere sic extent timeseries (SON)","","")
+           z->sic_sh_extent_ann = set_varAtts(sh_sum_ann,"Southern Hemisphere sic extent timeseries (annual)","","")
+           z->sic_sh_extent_mon = set_varAtts(sh_sum_mon,"Southern Hemisphere sic extent timeseries (monthly)","","")
+           z->sic_sh_extent_mon_anom = set_varAtts(sh_sum_mon_anom,"Southern Hemisphere sic extent anomaly timeseries (monthly)","","")
+           z->sic_sh_extent_feb = set_varAtts(sh_sum_feb,"Southern Hemisphere sic extent timeseries (February)","","")
+           z->sic_sh_extent_mar = set_varAtts(sh_sum_mar,"Southern Hemisphere sic extent timeseries (March)","","")
+           z->sic_sh_extent_sep = set_varAtts(sh_sum_sep,"Southern Hemisphere sic extent timeseries (September)","","")
            delete([/sh_sum_djf,sh_sum_mam,sh_sum_jja,sh_sum_son,sh_sum_ann,sh_sum_feb,sh_sum_mar,sh_sum_sep,sh_sum_mon,sh_sum_mon_anom/])
         end if
         delete([/sh_trends_seas,sh_trends_ann,sh_trends_mon/])
@@ -710,7 +709,6 @@ begin
      res@mpPerimDrawOrder  = "PostDraw"     
 
      res@mpOutlineOn = True  
-     res@mpDataSetName = "Earth..4"
      res@gsnDraw      = False
      res@gsnFrame     = False
      res@gsnAddCyclic = True
@@ -1254,6 +1252,7 @@ begin
      delete([/res,xyres,xyres2,xyres_c,ph_s/])
 ;     print("Done with ee = "+ee)
   end do     
+  delete(time_mon2)
      
   panres = True
   panres@gsnMaximize = True  

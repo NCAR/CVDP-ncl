@@ -1,6 +1,7 @@
 ;=================================================================================================
 ; create blank array for use when something may be/is wrong.
 ;
+undef("create_empty_array")
 function create_empty_array(yS:numeric,yE:numeric,mS:numeric,mE:numeric,opttype:string)
 local yS,yE,mS,mE,opttype
 begin
@@ -50,12 +51,13 @@ end
 ;      vname = (/"TS","ts","sst","sfc_t"/)
 ;   end if
 ;
+undef("data_read_in")
 function data_read_in(zpath:string,vn:string,yearS:integer,yearE:integer)
 ; path for TS file(s), variable name, start year, and end year are read in.
 local zpath,vn,cpath0,ta,tfiles,c,arr,farr,yearS,yearE,mocheck,fils_precc,fils_precl
 begin
   if (vn.eq."TS") then
-     vname = (/"TS","ts","sst","t_surf"/)
+     vname = (/"TS","ts","sst","t_surf","skt"/)
   end if
   if (vn.eq."PSL") then
      vname = (/"PSL","psl","slp","SLP","prmsl","msl","slp_dyn"/)
@@ -222,7 +224,6 @@ begin
      
   if (yearS.lt.sydata.or.yearE.gt.eydata) then
      print("Requested "+yearS+"-"+yearE+" time span is outside the input file "+zpath+" time span of "+sydata+"-"+eydata+"")
-     print("script: data_read_in.ncl")
      print("Setting array to all missing")
      delete(arr)
      arr = create_empty_array(yearS,yearE,smdata,emdata,"time_lat_lon")
@@ -353,6 +354,7 @@ begin
   time = cd_inv_calendar(yyyy,mm,days,hms,hms,hms,"months since "+min(yyyy)+"-01-15 00:00:00",0)
   time@long_name = "Time"
   time@standard_name = "time"
+  time@actual_range = (/min(time),max(time)/)
   time!0 = "time"
   time&time = time
   farr&time = time
@@ -365,6 +367,7 @@ end
 ; assign time coordinate variables, check for issues with the array, assign _FillValue (if needed)
 ; assign dimension names (for ease-of-use), check and modify units
 ;
+undef("data_read_in_ocean_MOC")
 function data_read_in_ocean_MOC(zpath:string,vn:string,yearS:integer,yearE:integer)
 ; path for MOC file(s), variable name, start year, and end year are read in.
 local zpath,vn,cpath0,ta,tfiles,c,arr,farr,yearS,yearE,mocheck,dimC,lev
@@ -513,7 +516,6 @@ begin
      
   if (yearS.lt.sydata.or.yearE.gt.eydata) then
      print("Requested "+yearS+"-"+yearE+" time span is outside the input file "+zpath+" time span of "+sydata+"-"+eydata+"")
-     print("script: data_read_in.ncl")
      print("Setting array to all missing")
      delete(arr)
      arr = create_empty_array(yearS,yearE,smdata,emdata,"time_lev_lat")
@@ -610,6 +612,7 @@ end
 ; assign time coordinate variables, check for issues with the array, assign _FillValue (if needed)
 ; assign dimension names (for ease-of-use), check and modify units
 ;
+undef("data_read_in_ice")
 function data_read_in_ice(zpath:string,vn:string,yearS:integer,yearE:integer)
 ; path for ice file(s), variable name, start year, and end year are read in.
 local zpath,vn,cpath0,ta,tfiles,c,arr,farr,yearS,yearE,mocheck,dimC,lev
@@ -664,7 +667,7 @@ begin
               end if
               if (isatt(arr,"cell_measures").and.isfilevar(c[0],"tarea")) then    ; if an attribute named cell_measures exists, and tarea is on file(0)
                  if (arr@cell_measures.eq."area: tarea") then
-                    arr@area = c[0]->tarea      ; in units of m^2
+                    arr@area = totype(c[0]->tarea,typeof(arr))      ; in units of m^2
                  end if
               end if
            else                           ; CMIP or other file
@@ -704,7 +707,7 @@ begin
               end if
               if (.not.ismissing(ufile)) then
                  d = addfile(ufile,"r")
-                 arr@area = d->areacello
+                 arr@area = totype(d->areacello,typeof(arr))
                  dimQ = dimsizes(arr)
                  if (dimsizes(ndtooned(arr@area)).ne.(dimQ(1)*dimQ(2))) then    ; the dimension sizes of areacello 
                     delete(arr@area)                                  ; do not match sizes of area j,i dimensions 
@@ -720,15 +723,15 @@ begin
                     areaT@units = "m^2"
                  end if
                  areaT@_FillValue = 1.e20
-                 arr@area = areaT
+                 arr@area = totype(areaT,typeof(arr))
                  if (isatt(areaT,"pole_hole_area")) then    ; format of ystart, yend, value, ystart, yend, value
                     if (isvar("area_unit_km2_to_m2")) then
                        extra_area = tofloat(areaT@pole_hole_area)
                        extra_area(2::3) = extra_area(2::3)*1000000.   ; convert pole hole area from km^2->m^2
-                       arr@pole_hole_area = extra_area
+                       arr@pole_hole_area = totype(extra_area,typeof(arr))
                        delete(extra_area)
                     else
-                       arr@pole_hole_area = areaT@pole_hole_area
+                       arr@pole_hole_area = totype(areaT@pole_hole_area,typeof(arr))
                     end if
                  end if
                  delete(areaT)
@@ -828,7 +831,7 @@ begin
 		         end do
 	       end do
 ;        print("Total area = "+sum(area))
-        arr@area = area
+        arr@area = totype(area,typeof(arr))
         delete([/lat,lon,latr,lonr,area,fctr,pi,rad,dimlat,dimlon/])		
      end if
   end if
@@ -856,7 +859,6 @@ begin
      
   if (yearS.lt.sydata.or.yearE.gt.eydata) then
      print("Requested "+yearS+"-"+yearE+" time span is outside the input file "+zpath+" time span of "+sydata+"-"+eydata+"")
-     print("script: data_read_in.ncl")
      print("Setting array to all missing")
      delete(arr)
      arr = create_empty_array(yearS,yearE,smdata,emdata,"time_lat_lon")
@@ -902,7 +904,7 @@ begin
      end if
      print("Incomplete data year(s) requested for file "+zpath+", printing out time and creating blank array")
      print("Time requested: "+yearS+"-"+yearE)
-     print(farr&time)
+     print("From file: Times present from "+min(farr&time)+"-"+max(farr&time))
      delete(farr)
      farr = create_empty_array(yearS,yearE,1,12,"time_lat_lon")
   end if
@@ -934,6 +936,7 @@ end
 ;
 ;  not currently used
 ;
+undef("y_axis_check")
 function y_axis_check(temparr:numeric,tempres:logical)
 local temparr,tempres,minval,maxval
 begin
@@ -950,6 +953,7 @@ end
 ;=================================================================================================
 ; Check that the user-specified climatological period is within the time range of the data
 ;
+undef("check_custom_climo")
 procedure check_custom_climo(mn:string,startyear:numeric,endyear:numeric,climo_startyear:numeric,climo_endyear:numeric)
 local startyear,endyear,climo_startyear,climo_endyear,mn
 begin  
@@ -969,6 +973,7 @@ end
 ; did. To compensate for this, check the NCL version number, and use isfilepresent/fileexists when 
 ; appropriate.
 ;
+undef("isfilepresent2")
 function isfilepresent2(fdpres:string)
 local nclver, num0, num1, ra
 begin
@@ -1003,6 +1008,7 @@ begin
 end
 ;=================================================================================================
 ;
+undef("table_link_setup")
 function table_link_setup(ipath:string,iname:string,ltxt:string)
 ; image name, along with link text
 local ipath, iname, ltxt, otxt, quote
@@ -1017,7 +1023,7 @@ begin
   delete([/ipath,iname,ltxt,otxt,quote/])
 end
 ;=================================================================================================
-;
+undef ("gsn_panel2")
 procedure gsn_panel2(wksp:graphic,plotp:graphic,lpl:numeric,panelres:logical)
 ; checks to make sure at least one image is present in plot before paneling,
 ; thereby eliminating error message: 
@@ -1088,3 +1094,74 @@ begin
   sig@N         =  N
   return(sig)
 end
+;=================================================================================================
+; Standardize and set attributes for array. Remove NCL-added and superfluous attributes, 
+; set missing_value equal to _FillValue, provide options to set long_name, units, and comment_cvdp 
+; attributes. For last three inputs "" means leave as set and "delete" means delete the attribute.
+; This function will be used immediately prior to an array being written to a netCDF file.
+;
+undef("set_varAtts")
+function set_varAtts(zarr:numeric,loname:string,uni:string,com_cvdp:string)
+
+local zarr,loname,uni,com_cvdp
+begin
+  if (isatt(zarr,"anomaly_op_ncl")) then
+     delete(zarr@anomaly_op_ncl)
+  end if
+  if (isatt(zarr,"average_op_ncl")) then
+     delete(zarr@average_op_ncl)
+  end if
+  if (isatt(zarr,"cell_measures")) then
+     delete(zarr@cell_methods)
+  end if
+  if (isatt(zarr,"cell_methods")) then
+     delete(zarr@cell_methods)
+  end if
+  if (isatt(zarr,"lonFlip")) then
+     delete(zarr@lonFlip)
+  end if
+  if (isatt(zarr,"runave_op_ncl")) then
+     delete(zarr@runave_op_ncl)
+  end if
+  if (isatt(zarr,"stddev_op_ncl")) then
+     delete(zarr@stddev_op_ncl)
+  end if
+  if (isatt(zarr,"sum_op_ncl")) then
+     delete(zarr@sum_op_ncl)
+  end if
+  if (isatt(zarr,"time")) then
+     delete(zarr@time)
+  end if
+  if (isatt(zarr,"wgt_areaave_op_ncl")) then
+     delete(zarr@wgt_areaave_op_ncl)
+  end if
+
+  if (isatt(zarr,"_FillValue")) then      ; set missing_value = _FillValue
+     zarr@missing_value = zarr@_FillValue
+  end if
+  
+  if (loname.eq."delete") then
+     delete(zarr@long_name)
+  else
+     if (loname.ne."") then    ; "" = leave as is
+        zarr@long_name = loname
+     end if
+  end if
+  if (uni.eq."delete") then
+     delete(zarr@units)
+  else
+     if (uni.ne."") then    ; "" = leave as is
+        zarr@units = uni
+     end if
+  end if
+  if (com_cvdp.eq."delete") then
+     delete(zarr@comment_cvdp)
+  else
+     if (com_cvdp.ne."") then    ; "" = leave as is
+        zarr@comment_cvdp = com_cvdp
+     end if
+  end if
+
+  return(zarr)
+end
+

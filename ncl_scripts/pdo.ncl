@@ -1,6 +1,6 @@
 ; Calculates the PDO pattern, timeseries, and spectra.
 ;
-; Variables used: TS
+; Variables used: ts
 ;
 load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/gsn_code.ncl"
 load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/gsn_csm.ncl"
@@ -161,11 +161,12 @@ begin
            else
               z@climatology = CLIMO_SYEAR+"-"+CLIMO_EYEAR+" climatology removed prior to all calculations (other than means)"
            end if
+           z@Conventions = "CF-1.6"
         else
            z = addfile(fn,"w")
         end if
-        z->pdo_pattern_mon = pdo
-        z->pdo_timeseries_mon = pc1
+        z->pdo_pattern_mon = set_varAtts(pdo,"PDO spatial pattern (monthly)","","")
+        z->pdo_timeseries_mon = set_varAtts(pc1,"PDO normalized principal component timeseries (monthly)","1","")
         delete([/modname,fn/])
      end if              
 ;------------------------------------------------------------------------
@@ -193,12 +194,15 @@ begin
         if (OUTPUT_DATA.eq."True") then
            splt1!0 = "ncurves"
            splt1&ncurves = ispan(0,3,1)
+           splt1&ncurves@long_name = "power spectra curves"
+           splt1&ncurves@units = "1"
            splt1!1 = "frequency"
            splt1&frequency = sdof@frq
+           splt1&frequency@units = "1"
            splt1@units_info = "df refers to frequency interval; data are standardized so there are no physical units"
            splt1@units = "1/df"
            splt1@info = "(0,:)=spectrum,(1,:)=Markov red noise spectrum, (2,:)="+val1+"% confidence bound for Markhov, (3,:)="+val2+"% confidence bound for Markhov"
-           z->pdo_spectra = splt1
+           z->pdo_spectra = set_varAtts(splt1,"PDO (monthly) power spectra, Markov spectrum and confidence curves","","") 
         end if
         if (isfilepresent2("obs_ts").and.ee.eq.0) then
            sdof_obs = sdof
@@ -220,7 +224,6 @@ begin
      res@mpFillOn = False
      res@mpCenterLonF = 210.
      res@mpOutlineOn = True  
-     res@mpDataSetName = "Earth..4"
      res@gsnDraw      = False
      res@gsnFrame     = False
      res@vpYF = 0.95
@@ -312,11 +315,13 @@ begin
      pres@tiXAxisFontHeightF = 0.025
      pres@tiYAxisFontHeightF = 0.025
      pres@tiMainFontHeightF = 0.03
+     pres@gsnRightStringOrthogonalPosF = -0.115
      
      pres@tiMainOn = False
      pres@gsnCenterString = "Period (years)"
      pres@gsnCenterStringFontHeightF =    pres@tiYAxisFontHeightF
-     pres@gsnRightString = ""
+     pres@gsnRightStringFontHeightF  =    pres@tiYAxisFontHeightF - 0.005
+     pres@gsnRightString = syear(ee)+"-"+eyear(ee)+"  "
      pres@gsnLeftString = "" 
      if (wks_type.eq."png") then
         pres@xyLineThicknessF   = 3.5
@@ -331,9 +336,12 @@ begin
      
         if (isfilepresent2("obs_ts").and.ee.ge.1.and.spectra_mvf_obs.eq.False) then
            pres@xyLineColors        = (/"gray70","black","black","black"/)
+           pres@xyCurveDrawOrder = "PreDraw"
            pres@gsnCenterString = ""
+           pres@gsnRightString = ""
            pspec_obs(ee) = gsn_csm_xy(wks2,sdof_obs@frq,sdof_obs@spcx,pres)
            overlay(pspec(ee),pspec_obs(ee)) 
+           delete(pres@xyCurveDrawOrder)
         end if     
         delete([/sdof,splt1/])
      end if 

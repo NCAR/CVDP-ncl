@@ -150,15 +150,16 @@ begin
            else
               z@climatology = CLIMO_SYEAR+"-"+CLIMO_EYEAR+" climatology removed prior to all calculations (other than means)"
            end if
+           z@Conventions = "CF-1.6"
         else
            z = addfile(fn,"w")
         end if
-        z->psl_trends_djf     = psl_trends_seas(0,:,:)
-        z->psl_trends_mam     = psl_trends_seas(1,:,:)
-        z->psl_trends_jja     = psl_trends_seas(2,:,:)
-        z->psl_trends_son     = psl_trends_seas(3,:,:)
-        z->psl_trends_ann     = psl_trends_ann
-        z->psl_trends_mon     = psl_trends_mon
+        z->psl_trends_djf     = set_varAtts(psl_trends_seas(0,:,:),"psl linear trends (DJF)","","")
+        z->psl_trends_mam     = set_varAtts(psl_trends_seas(1,:,:),"psl linear trends (MAM)","","")
+        z->psl_trends_jja     = set_varAtts(psl_trends_seas(2,:,:),"psl linear trends (JJA)","","")
+        z->psl_trends_son     = set_varAtts(psl_trends_seas(3,:,:),"psl linear trends (SON)","","")
+        z->psl_trends_ann     = set_varAtts(psl_trends_ann,"psl linear trends (annual)","","")
+        z->psl_trends_mon     = set_varAtts(psl_trends_mon,"psl linear trends (monthly)","","")
         delete(z)
         delete([/modname,fn/])
      end if
@@ -176,7 +177,6 @@ begin
      res@mpFillOn = False
      res@mpCenterLonF = 210.
      res@mpOutlineOn = True  
-     res@mpDataSetName = "Earth..4"
      res@gsnDraw      = False
      res@gsnFrame     = False
   

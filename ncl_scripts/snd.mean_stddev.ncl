@@ -1,6 +1,6 @@
 ; Calculates 2m air temperature global means and standard deviations
 ;
-; Variables used: SNOWDP (SND)
+; Variables used: snd
 ;
 load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/gsn_code.ncl"
 load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/gsn_csm.ncl"
@@ -164,6 +164,7 @@ begin
            else
               z@climatology = CLIMO_SYEAR+"-"+CLIMO_EYEAR+" climatology removed prior to all calculations (other than means)"
            end if
+           z@Conventions = "CF-1.6"
         else
            z = addfile(fn,"w")
         end if
@@ -173,6 +174,7 @@ begin
         mean_djf&LAT = snd_mean_djf&lat
         mean_djf!1 = "LON"
         mean_djf&LON = snd_mean_djf&lon
+        copy_VarAtts(snd_mean_djf,mean_djf)
         mean_mam = (/ snd_mean_mam /)
         copy_VarMeta(mean_djf,mean_mam)
         mean_jja = (/ snd_mean_jja /)
@@ -187,6 +189,7 @@ begin
         sd_djf&LAT = snd_sd_djf&lat
         sd_djf!1 = "LON"
         sd_djf&LON = snd_sd_djf&lon
+        copy_VarAtts(snd_sd_djf,sd_djf)
         sd_mam = (/ snd_sd_mam /)
         copy_VarMeta(sd_djf,sd_mam)
         sd_jja = (/ snd_sd_jja /)
@@ -196,17 +199,17 @@ begin
         sd_ann = (/ snd_sd_ann /)
         copy_VarMeta(sd_djf,sd_ann)
 
-        z->snd_spatialmean_djf     = mean_djf
-        z->snd_spatialmean_mam     = mean_mam
-        z->snd_spatialmean_jja     = mean_jja
-        z->snd_spatialmean_son     = mean_son
-        z->snd_spatialmean_ann     = mean_ann
+        z->snd_spatialmean_djf     = set_varAtts(mean_djf,"snd mean (DJF)","","")
+        z->snd_spatialmean_mam     = set_varAtts(mean_mam,"snd mean (MAM)","","")
+        z->snd_spatialmean_jja     = set_varAtts(mean_jja,"snd mean (JJA)","","")
+        z->snd_spatialmean_son     = set_varAtts(mean_son,"snd mean (SON)","","")
+        z->snd_spatialmean_ann     = set_varAtts(mean_ann,"snd mean (annual)","","")
         
-        z->snd_spatialstddev_djf     = sd_djf
-        z->snd_spatialstddev_mam     = sd_mam
-        z->snd_spatialstddev_jja     = sd_jja
-        z->snd_spatialstddev_son     = sd_son
-        z->snd_spatialstddev_ann     = sd_ann
+        z->snd_spatialstddev_djf     = set_varAtts(sd_djf,"snd standard deviation (DJF)","","")
+        z->snd_spatialstddev_mam     = set_varAtts(sd_mam,"snd standard deviation (MAM)","","")
+        z->snd_spatialstddev_jja     = set_varAtts(sd_jja,"snd standard deviation (JJA)","","")
+        z->snd_spatialstddev_son     = set_varAtts(sd_son,"snd standard deviation (SON)","","")
+        z->snd_spatialstddev_ann     = set_varAtts(sd_ann,"snd standard deviation (annual)","","")
         delete(z)
         delete(modname)
         delete([/mean_djf,mean_mam,mean_jja,mean_son,mean_ann,sd_djf,sd_mam,sd_jja,sd_son,sd_ann/])
@@ -224,7 +227,6 @@ begin
      res@mpFillOn = False
      res@mpCenterLonF = 210.
      res@mpOutlineOn = True  
-     res@mpDataSetName = "Earth..4"
      if (wks_type.eq."png") then
         res@mpGeophysicalLineThicknessF = 2.  
      else
@@ -312,43 +314,43 @@ begin
   ncol = floattointeger(sqrt(nsim))
   nrow = (nsim/ncol)+mod(nsim,ncol)  
   
-  panres@txString = "SND Standard Deviations (DJF)"
+  panres@txString = "snd Standard Deviations (DJF)"
   gsn_panel2(wks_stddev_djf,plot_stddev_djf,(/nrow,ncol/),panres)
   delete(wks_stddev_djf)
   
-  panres@txString = "SND Standard Deviations (MAM)"
+  panres@txString = "snd Standard Deviations (MAM)"
   gsn_panel2(wks_stddev_mam,plot_stddev_mam,(/nrow,ncol/),panres)
   delete(wks_stddev_mam)
   
-  panres@txString = "SND Standard Deviations (JJA)"
+  panres@txString = "snd Standard Deviations (JJA)"
   gsn_panel2(wks_stddev_jja,plot_stddev_jja,(/nrow,ncol/),panres)
   delete(wks_stddev_jja)
   
-  panres@txString = "SND Standard Deviations (SON)"
+  panres@txString = "snd Standard Deviations (SON)"
   gsn_panel2(wks_stddev_son,plot_stddev_son,(/nrow,ncol/),panres)
   delete(wks_stddev_son)
   
-  panres@txString = "SND Standard Deviations (Annual)"
+  panres@txString = "snd Standard Deviations (Annual)"
   gsn_panel2(wks_stddev_ann,plot_stddev_ann,(/nrow,ncol/),panres)
   delete(wks_stddev_ann)
   
-  panres@txString = "SND Means (DJF)"
+  panres@txString = "snd Means (DJF)"
   gsn_panel2(wks_mean_djf,plot_mean_djf,(/nrow,ncol/),panres)
   delete(wks_mean_djf)
   
-  panres@txString = "SND Means (MAM)"
+  panres@txString = "snd Means (MAM)"
   gsn_panel2(wks_mean_mam,plot_mean_mam,(/nrow,ncol/),panres)
   delete(wks_mean_mam)
   
-  panres@txString = "SND Means (JJA)"
+  panres@txString = "snd Means (JJA)"
   gsn_panel2(wks_mean_jja,plot_mean_jja,(/nrow,ncol/),panres)
   delete(wks_mean_jja)
   
-  panres@txString = "SND Means (SON)"
+  panres@txString = "snd Means (SON)"
   gsn_panel2(wks_mean_son,plot_mean_son,(/nrow,ncol/),panres)
   delete(wks_mean_son)
   
-  panres@txString = "SND Means (Annual)"
+  panres@txString = "snd Means (Annual)"
   gsn_panel2(wks_mean_ann,plot_mean_ann,(/nrow,ncol/),panres)
   delete(wks_mean_ann)
   delete(panres)

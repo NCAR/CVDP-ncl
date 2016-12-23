@@ -1,6 +1,6 @@
 ; Calculates SIC hemispheric means and standard deviations
 ;
-; Variables used: SIC
+; Variables used: sic
 ;
 load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/gsn_code.ncl"
 load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/gsn_csm.ncl"
@@ -240,6 +240,7 @@ begin
            else
               z@climatology = CLIMO_SYEAR+"-"+CLIMO_EYEAR+" climatology removed prior to all calculations (other than means)"
            end if
+           z@Conventions = "CF-1.6"
         else
            z = addfile(fn,"w")
         end if
@@ -251,8 +252,8 @@ begin
            copy_VarCoords(nh_mean_djf,LAT2D)
            LON2D = aice_nh_mean_djf@lon2d
            copy_VarCoords(nh_mean_djf,LON2D)
-           z->lat2d_ice_nh = LAT2D
-           z->lon2d_ice_nh = LON2D
+           z->lat2d_ice_nh = set_varAtts(LAT2D,"Northern Hemisphere ice grid 2-dimensional latitudes","","")
+           z->lon2d_ice_nh = set_varAtts(LON2D,"Northern Hemisphere ice grid 2-dimensional longitudes","","")
            delete([/LAT2D,LON2D/])
            nh_mean_djf@coordinates ="lat2d_ice_nh lon2d_ice_nh"
         end if  
@@ -286,17 +287,17 @@ begin
         copy_VarMeta(nh_sd_djf,nh_sd_son)
         nh_sd_ann = (/ aice_nh_sd_ann /)
         copy_VarMeta(nh_sd_djf,nh_sd_ann)
-        z->aice_nh_spatialmean_djf     = nh_mean_djf
-        z->aice_nh_spatialmean_mam     = nh_mean_mam
-        z->aice_nh_spatialmean_jja     = nh_mean_jja
-        z->aice_nh_spatialmean_son     = nh_mean_son
-        z->aice_nh_spatialmean_ann     = nh_mean_ann
+        z->sic_nh_spatialmean_djf     = set_varAtts(nh_mean_djf,"Northern Hemisphere sic mean (DJF)","","")
+        z->sic_nh_spatialmean_mam     = set_varAtts(nh_mean_mam,"Northern Hemisphere sic mean (MAM)","","")
+        z->sic_nh_spatialmean_jja     = set_varAtts(nh_mean_jja,"Northern Hemisphere sic mean (JJA)","","")
+        z->sic_nh_spatialmean_son     = set_varAtts(nh_mean_son,"Northern Hemisphere sic mean (SON)","","")
+        z->sic_nh_spatialmean_ann     = set_varAtts(nh_mean_ann,"Northern Hemisphere sic mean (annual)","","")
         
-        z->aice_nh_spatialstddev_djf     = nh_sd_djf
-        z->aice_nh_spatialstddev_mam     = nh_sd_mam
-        z->aice_nh_spatialstddev_jja     = nh_sd_jja
-        z->aice_nh_spatialstddev_son     = nh_sd_son
-        z->aice_nh_spatialstddev_ann     = nh_sd_ann
+        z->sic_nh_spatialstddev_djf     = set_varAtts(nh_sd_djf,"Northern Hemisphere sic standard deviation (DJF)","","")
+        z->sic_nh_spatialstddev_mam     = set_varAtts(nh_sd_mam,"Northern Hemisphere sic standard deviation (MAM)","","")
+        z->sic_nh_spatialstddev_jja     = set_varAtts(nh_sd_jja,"Northern Hemisphere sic standard deviation (JJA)","","")
+        z->sic_nh_spatialstddev_son     = set_varAtts(nh_sd_son,"Northern Hemisphere sic standard deviation (SON)","","")
+        z->sic_nh_spatialstddev_ann     = set_varAtts(nh_sd_ann,"Northern Hemisphere sic standard deviation (annual)","","")
         delete([/nh_mean_djf,nh_mean_mam,nh_mean_jja,nh_mean_son,nh_mean_ann/])
         delete([/nh_sd_djf,nh_sd_mam,nh_sd_jja,nh_sd_son,nh_sd_ann/])
         delete(z)
@@ -317,6 +318,7 @@ begin
            else
               z@climatology = CLIMO_SYEAR+"-"+CLIMO_EYEAR+" climatology removed prior to all calculations (other than means)"
            end if
+           z@Conventions = "CF-1.6"
         else
            z = addfile(fn,"w")
         end if
@@ -329,8 +331,8 @@ begin
            lat2d_ice_sh!0 = "j2"
            lat2d_ice_sh!1 = "i2"
            copy_VarMeta(lat2d_ice_sh,lon2d_ice_sh)
-           z->lat2d_ice_sh = lat2d_ice_sh
-           z->lon2d_ice_sh = lon2d_ice_sh
+           z->lat2d_ice_sh = set_varAtts(lat2d_ice_sh,"Southern Hemisphere ice grid 2-dimensional latitudes","","")
+           z->lon2d_ice_sh = set_varAtts(lon2d_ice_sh,"Southern Hemisphere ice grid 2-dimensional longitudes","","")
            delete([/lat2d_ice_sh,lon2d_ice_sh/])
            sh_mean_djf@coordinates ="lat2d_ice_sh lon2d_ice_sh"
         end if  
@@ -368,17 +370,17 @@ begin
         copy_VarMeta(sh_sd_djf,sh_sd_son)
         sh_sd_ann = (/ aice_sh_sd_ann /)
         copy_VarMeta(sh_sd_djf,sh_sd_ann)
-        z->aice_sh_spatialmean_djf     = sh_mean_djf
-        z->aice_sh_spatialmean_mam     = sh_mean_mam
-        z->aice_sh_spatialmean_jja     = sh_mean_jja
-        z->aice_sh_spatialmean_son     = sh_mean_son
-        z->aice_sh_spatialmean_ann     = sh_mean_ann
+        z->sic_sh_spatialmean_djf     = set_varAtts(sh_mean_djf,"Southern Hemisphere sic mean (DJF)","","")
+        z->sic_sh_spatialmean_mam     = set_varAtts(sh_mean_mam,"Southern Hemisphere sic mean (MAM)","","")
+        z->sic_sh_spatialmean_jja     = set_varAtts(sh_mean_jja,"Southern Hemisphere sic mean (JJA)","","")
+        z->sic_sh_spatialmean_son     = set_varAtts(sh_mean_son,"Southern Hemisphere sic mean (SON","","")
+        z->sic_sh_spatialmean_ann     = set_varAtts(sh_mean_ann,"Southern Hemisphere sic mean (annual)","","")
         
-        z->aice_sh_spatialstddev_djf     = sh_sd_djf
-        z->aice_sh_spatialstddev_mam     = sh_sd_mam
-        z->aice_sh_spatialstddev_jja     = sh_sd_jja
-        z->aice_sh_spatialstddev_son     = sh_sd_son
-        z->aice_sh_spatialstddev_ann     = sh_sd_ann
+        z->sic_sh_spatialstddev_djf     = set_varAtts(sh_sd_djf,"Southern Hemisphere sic standard deviation (DJF)","","")
+        z->sic_sh_spatialstddev_mam     = set_varAtts(sh_sd_mam,"Southern Hemisphere sic standard deviation (MAM)","","")
+        z->sic_sh_spatialstddev_jja     = set_varAtts(sh_sd_jja,"Southern Hemisphere sic standard deviation (JJA)","","")
+        z->sic_sh_spatialstddev_son     = set_varAtts(sh_sd_son,"Southern Hemisphere sic standard deviation (SON)","","")
+        z->sic_sh_spatialstddev_ann     = set_varAtts(sh_sd_ann,"Southern Hemisphere sic standard deviation (annual)","","")
         delete([/sh_mean_djf,sh_mean_mam,sh_mean_jja,sh_mean_son,sh_mean_ann/])
         delete([/sh_sd_djf,sh_sd_mam,sh_sd_jja,sh_sd_son,sh_sd_ann/])
         delete(z)
@@ -421,7 +423,6 @@ begin
      res@mpPerimDrawOrder  = "PostDraw"     
 
      res@mpOutlineOn = True  
-     res@mpDataSetName = "Earth..4"
      res@mpMinLatF    = 40.
      res@mpCenterLonF = 0.
      res@gsnPolar = "NH"     
@@ -654,9 +655,9 @@ begin
      system("psplit "+OUTDIR+"aice.stddev.son.ps "+OUTDIR+"aice_sd")
      system("mv "+OUTDIR+"aice_sd0001.ps "+OUTDIR+"aice.stddev.nh.son.ps") 
      system("mv "+OUTDIR+"aice_sd0002.ps "+OUTDIR+"aice.stddev.sh.son.ps")
-     system("psplit "+OUTDIR+"aice.stddev.djf.ps "+OUTDIR+"aice_sd")
-     system("mv "+OUTDIR+"aice_sd0001.ps "+OUTDIR+"aice.stddev.nh.djf.ps") 
-     system("mv "+OUTDIR+"aice_sd0002.ps "+OUTDIR+"aice.stddev.sh.djf.ps")
+     system("psplit "+OUTDIR+"aice.stddev.ann.ps "+OUTDIR+"aice_sd")
+     system("mv "+OUTDIR+"aice_sd0001.ps "+OUTDIR+"aice.stddev.nh.ann.ps") 
+     system("mv "+OUTDIR+"aice_sd0002.ps "+OUTDIR+"aice.stddev.sh.ann.ps")
      system("rm "+OUTDIR+"aice_sd000?.ps "+OUTDIR+"aice.stddev.???.ps")
 
      system("psplit "+OUTDIR+"aice.mean.djf.ps "+OUTDIR+"aice_m")
@@ -671,9 +672,9 @@ begin
      system("psplit "+OUTDIR+"aice.mean.son.ps "+OUTDIR+"aice_m")
      system("mv "+OUTDIR+"aice_m0001.ps "+OUTDIR+"aice.mean.nh.son.ps") 
      system("mv "+OUTDIR+"aice_m0002.ps "+OUTDIR+"aice.mean.sh.son.ps")
-     system("psplit "+OUTDIR+"aice.mean.djf.ps "+OUTDIR+"aice_m")
-     system("mv "+OUTDIR+"aice_m0001.ps "+OUTDIR+"aice.mean.nh.djf.ps") 
-     system("mv "+OUTDIR+"aice_m0002.ps "+OUTDIR+"aice.mean.sh.djf.ps")
+     system("psplit "+OUTDIR+"aice.mean.ann.ps "+OUTDIR+"aice_m")
+     system("mv "+OUTDIR+"aice_m0001.ps "+OUTDIR+"aice.mean.nh.ann.ps") 
+     system("mv "+OUTDIR+"aice_m0002.ps "+OUTDIR+"aice.mean.sh.ann.ps")
      system("rm "+OUTDIR+"aice_m000?.ps "+OUTDIR+"aice.mean.???.ps")
   end if
   print("Finished: aice.mean_stddev.ncl")

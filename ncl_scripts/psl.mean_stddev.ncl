@@ -55,11 +55,11 @@ begin
 
   
   if (COLORMAP.eq.0) then
-     gsn_define_colormap(wks_stddev_djf,"rainbow+white") 
-     gsn_define_colormap(wks_stddev_mam,"rainbow+white")  
-     gsn_define_colormap(wks_stddev_jja,"rainbow+white") 
-     gsn_define_colormap(wks_stddev_son,"rainbow+white")  
-     gsn_define_colormap(wks_stddev_ann,"rainbow+white")
+     gsn_define_colormap(wks_stddev_djf,"precip3_16lev") 
+     gsn_define_colormap(wks_stddev_mam,"precip3_16lev")  
+     gsn_define_colormap(wks_stddev_jja,"precip3_16lev") 
+     gsn_define_colormap(wks_stddev_son,"precip3_16lev")  
+     gsn_define_colormap(wks_stddev_ann,"precip3_16lev")
      gsn_define_colormap(wks_mean_djf,"ncl_default") 
      gsn_define_colormap(wks_mean_mam,"ncl_default")  
      gsn_define_colormap(wks_mean_jja,"ncl_default") 
@@ -156,21 +156,22 @@ begin
            else
               z@climatology = CLIMO_SYEAR+"-"+CLIMO_EYEAR+" climatology removed prior to all calculations (other than means)"
            end if
+           z@Conventions = "CF-1.6"
         else
            z = addfile(fn,"w")
         end if
 
-        z->psl_spatialmean_djf     = psl_mean_djf
-        z->psl_spatialmean_mam     = psl_mean_mam
-        z->psl_spatialmean_jja     = psl_mean_jja
-        z->psl_spatialmean_son     = psl_mean_son
-        z->psl_spatialmean_ann     = psl_mean_ann
+        z->psl_spatialmean_djf     = set_varAtts(psl_mean_djf,"psl mean (DJF)","","")
+        z->psl_spatialmean_mam     = set_varAtts(psl_mean_djf,"psl mean (MAM)","","")
+        z->psl_spatialmean_jja     = set_varAtts(psl_mean_djf,"psl mean (JJA)","","")
+        z->psl_spatialmean_son     = set_varAtts(psl_mean_djf,"psl mean (SON)","","")
+        z->psl_spatialmean_ann     = set_varAtts(psl_mean_djf,"psl mean (annual)","","")
         
-        z->psl_spatialstddev_djf     = psl_sd_djf
-        z->psl_spatialstddev_mam     = psl_sd_mam
-        z->psl_spatialstddev_jja     = psl_sd_jja
-        z->psl_spatialstddev_son     = psl_sd_son
-        z->psl_spatialstddev_ann     = psl_sd_ann
+        z->psl_spatialstddev_djf     = set_varAtts(psl_sd_djf,"psl standard deviation (DJF)","","")
+        z->psl_spatialstddev_mam     = set_varAtts(psl_sd_mam,"psl standard deviation (MAM)","","")
+        z->psl_spatialstddev_jja     = set_varAtts(psl_sd_jja,"psl standard deviation (JJA)","","")
+        z->psl_spatialstddev_son     = set_varAtts(psl_sd_son,"psl standard deviation (SON)","","")
+        z->psl_spatialstddev_ann     = set_varAtts(psl_sd_ann,"psl standard deviation (annual)","","")
         delete(z)
         delete([/modname,fn/])
      end if
@@ -186,7 +187,6 @@ begin
      res@mpFillOn = False
      res@mpCenterLonF = 210.
      res@mpOutlineOn = True  
-     res@mpDataSetName = "Earth..4"
      if (wks_type.eq."png") then
         res@mpGeophysicalLineThicknessF = 2.  
      else
@@ -217,7 +217,7 @@ begin
      
      res@cnLevels = fspan(.4,6.0,8)
      if (COLORMAP.eq.0) then
-        res@cnFillColors = (/54,80,95,125,175,185,195,205,236/)
+        res@cnFillColors = (/2,4,6,8,10,12,14,16,18/)
         sres@cnLevels  = ispan(972,1044,4)
      end if
      if (COLORMAP.eq.1) then
@@ -261,7 +261,7 @@ begin
   
   if (isfilepresent2("obs_psl")) then    ; for pattern correlation table  
      clat = cos(0.01745329*patcor&lat)
-     finpr   = "PSL Std Dev (Ann) "    ; Must be 18 characters long
+     finpr   = "psl Std Dev (Ann) "    ; Must be 18 characters long
      line3   = "                  "    ; Must be 18 characters long
      line4   = line3
      header = (/"","Pattern Correlations/RMS Differences   Observations vs. Model(s)",""/)
@@ -330,43 +330,43 @@ begin
   ncol = floattointeger(sqrt(nsim))
   nrow = (nsim/ncol)+mod(nsim,ncol)  
   
-  panres@txString = "PSL Standard Deviations (DJF)"
+  panres@txString = "psl Standard Deviations (DJF)"
   gsn_panel2(wks_stddev_djf,plot_stddev_djf,(/nrow,ncol/),panres)
   delete(wks_stddev_djf)
   
-  panres@txString = "PSL Standard Deviations (MAM)"
+  panres@txString = "psl Standard Deviations (MAM)"
   gsn_panel2(wks_stddev_mam,plot_stddev_mam,(/nrow,ncol/),panres)
   delete(wks_stddev_mam)
   
-  panres@txString = "PSL Standard Deviations (JJA)"
+  panres@txString = "psl Standard Deviations (JJA)"
   gsn_panel2(wks_stddev_jja,plot_stddev_jja,(/nrow,ncol/),panres)
   delete(wks_stddev_jja)
   
-  panres@txString = "PSL Standard Deviations (SON)"
+  panres@txString = "psl Standard Deviations (SON)"
   gsn_panel2(wks_stddev_son,plot_stddev_son,(/nrow,ncol/),panres)
   delete(wks_stddev_son)
   
-  panres@txString = "PSL Standard Deviations (Annual)"
+  panres@txString = "psl Standard Deviations (Annual)"
   gsn_panel2(wks_stddev_ann,plot_stddev_ann,(/nrow,ncol/),panres)
   delete(wks_stddev_ann)
   
-  panres@txString = "PSL Means (DJF)"
+  panres@txString = "psl Means (DJF)"
   gsn_panel2(wks_mean_djf,plot_mean_djf,(/nrow,ncol/),panres)
   delete(wks_mean_djf)
   
-  panres@txString = "PSL Means (MAM)"
+  panres@txString = "psl Means (MAM)"
   gsn_panel2(wks_mean_mam,plot_mean_mam,(/nrow,ncol/),panres)
   delete(wks_mean_mam)
   
-  panres@txString = "PSL Means (JJA)"
+  panres@txString = "psl Means (JJA)"
   gsn_panel2(wks_mean_jja,plot_mean_jja,(/nrow,ncol/),panres)
   delete(wks_mean_jja)
   
-  panres@txString = "PSL Means (SON)"
+  panres@txString = "psl Means (SON)"
   gsn_panel2(wks_mean_son,plot_mean_son,(/nrow,ncol/),panres)
   delete(wks_mean_son)
   
-  panres@txString = "PSL Means (Annual)"
+  panres@txString = "psl Means (Annual)"
   gsn_panel2(wks_mean_ann,plot_mean_ann,(/nrow,ncol/),panres)
   delete(wks_mean_ann)
   delete(panres)

@@ -1,6 +1,6 @@
 ; Calculates SST global trends, running global trends and timeseries
 ;
-; Variables used: TS
+; Variables used: ts
 ;
 load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/gsn_code.ncl"
 load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/gsn_csm.ncl"
@@ -237,6 +237,7 @@ begin
            else
               z@climatology = CLIMO_SYEAR+"-"+CLIMO_EYEAR+" climatology removed prior to all calculations (other than means)"
            end if
+           z@Conventions = "CF-1.6"
         else
            z = addfile(fn,"w")
         end if
@@ -250,23 +251,23 @@ begin
         sst_aa_ann2&TIME = ispan(syear(ee),eyear(ee),1)
         sst_aa_ann2&TIME@units = "YYYY"
         sst_aa_ann2&TIME@long_name = "time"
-        z->sst_global_avg_mon = sst_aa_mon
-        z->sst_global_avg_djf = sst_aa_seas2(0,:)
-        z->sst_global_avg_mam = sst_aa_seas2(1,:)
-        z->sst_global_avg_jja = sst_aa_seas2(2,:)
-        z->sst_global_avg_son = sst_aa_seas2(3,:)
-        z->sst_global_avg_ann = sst_aa_ann2
-        z->$("sst_global_avg_runtrend_"+rt_nyr(0)+"yr")$ = sst_rt_mon(0,:)
-        z->$("sst_global_avg_runtrend_"+rt_nyr(1)+"yr")$ = sst_rt_mon(1,:)
-        z->$("sst_global_avg_runtrend_"+rt_nyr(2)+"yr")$ = sst_rt_mon(2,:)
-        z->$("sst_global_avg_runtrend_"+rt_nyr(3)+"yr")$ = sst_rt_mon(3,:)
-        z->$("sst_global_avg_runtrend_"+rt_nyr(4)+"yr")$ = sst_rt_mon(4,:)
-        z->sst_trends_djf     = sst_trends_seas(0,:,:)
-        z->sst_trends_mam     = sst_trends_seas(1,:,:)
-        z->sst_trends_jja     = sst_trends_seas(2,:,:)
-        z->sst_trends_son     = sst_trends_seas(3,:,:)
-        z->sst_trends_ann     = sst_trends_ann
-        z->sst_trends_mon     = sst_trends_mon
+        z->sst_global_avg_mon = set_varAtts(sst_aa_mon,"sst global area-average (monthly)","C","")
+        z->sst_global_avg_djf = set_varAtts(sst_aa_seas2(0,:),"sst global area-average (DJF)","C","")
+        z->sst_global_avg_mam = set_varAtts(sst_aa_seas2(1,:),"sst global area-average (MAM)","C","")
+        z->sst_global_avg_jja = set_varAtts(sst_aa_seas2(2,:),"sst global area-average (JJA)","C","")
+        z->sst_global_avg_son = set_varAtts(sst_aa_seas2(3,:),"sst global area-average (SON)","C","")
+        z->sst_global_avg_ann = set_varAtts(sst_aa_ann2,"sst global area-average (annual)","C","")
+        z->$("sst_global_avg_runtrend_"+rt_nyr(0)+"yr")$ = set_varAtts(sst_rt_mon(0,:),"sst global area-average "+rt_nyr(0)+"yr running trend","","") 
+        z->$("sst_global_avg_runtrend_"+rt_nyr(1)+"yr")$ = set_varAtts(sst_rt_mon(1,:),"sst global area-average "+rt_nyr(1)+"yr running trend","","")
+        z->$("sst_global_avg_runtrend_"+rt_nyr(2)+"yr")$ = set_varAtts(sst_rt_mon(2,:),"sst global area-average "+rt_nyr(2)+"yr running trend","","")
+        z->$("sst_global_avg_runtrend_"+rt_nyr(3)+"yr")$ = set_varAtts(sst_rt_mon(3,:),"sst global area-average "+rt_nyr(3)+"yr running trend","","")
+        z->$("sst_global_avg_runtrend_"+rt_nyr(4)+"yr")$ = set_varAtts(sst_rt_mon(4,:),"sst global area-average "+rt_nyr(4)+"yr running trend","","")
+        z->sst_trends_djf     = set_varAtts(sst_trends_seas(0,:,:),"sst linear trends (DJF)","","")
+        z->sst_trends_mam     = set_varAtts(sst_trends_seas(1,:,:),"sst linear trends (MAM)","","")
+        z->sst_trends_jja     = set_varAtts(sst_trends_seas(2,:,:),"sst linear trends (JJA)","","")
+        z->sst_trends_son     = set_varAtts(sst_trends_seas(3,:,:),"sst linear trends (SON)","","")
+        z->sst_trends_ann     = set_varAtts(sst_trends_ann,"sst linear trends (annual)","","")
+        z->sst_trends_mon     = set_varAtts(sst_trends_mon,"sst linear trends (monthly)","","")
         delete(z)
         delete([/sst_aa_seas2,sst_aa_ann2/])
      end if
@@ -287,7 +288,6 @@ begin
      res@mpFillOn = False
      res@mpCenterLonF = 210.
      res@mpOutlineOn = True  
-     res@mpDataSetName = "Earth..4"
      res@gsnDraw      = False
      res@gsnFrame     = False
   
@@ -449,7 +449,8 @@ begin
      
      xyres@gsnRightString = ""     
      do ff = 0,4
-        if (.not.all(ismissing(sst_rt_mon(ff,:))))       
+        if (.not.all(ismissing(sst_rt_mon(ff,:))))    
+           xyres@gsnRightString =  sst_rt_mon@units  
            xy_rt_mon(ff,ee)  = gsn_csm_xy(wks_rt_mon,fspan(syear(ee),eyear(ee)+.91667,dimsizes(sst_aa_mon&time)),sst_rt_mon(ff,:),xyres)
         end if
      end do         

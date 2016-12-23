@@ -1,6 +1,6 @@
 ; Calculates SST global means and standard deviations
 ;
-; Variables used: TS
+; Variables used: ts
 ;
 load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/gsn_code.ncl"
 load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/gsn_csm.ncl"
@@ -54,11 +54,11 @@ begin
   wks_mean_ann = gsn_open_wks(wks_type,getenv("OUTDIR")+"sst.mean.ann")
   
   if (COLORMAP.eq.0) then
-     gsn_define_colormap(wks_stddev_djf,"rainbow+white") 
-     gsn_define_colormap(wks_stddev_mam,"rainbow+white")  
-     gsn_define_colormap(wks_stddev_jja,"rainbow+white") 
-     gsn_define_colormap(wks_stddev_son,"rainbow+white")  
-     gsn_define_colormap(wks_stddev_ann,"rainbow+white")  
+     gsn_define_colormap(wks_stddev_djf,"precip3_16lev") 
+     gsn_define_colormap(wks_stddev_mam,"precip3_16lev")  
+     gsn_define_colormap(wks_stddev_jja,"precip3_16lev") 
+     gsn_define_colormap(wks_stddev_son,"precip3_16lev")  
+     gsn_define_colormap(wks_stddev_ann,"precip3_16lev")  
      gsn_define_colormap(wks_mean_djf,"ncl_default") 
      gsn_define_colormap(wks_mean_mam,"ncl_default")  
      gsn_define_colormap(wks_mean_jja,"ncl_default") 
@@ -163,21 +163,22 @@ begin
            else
               z@climatology = CLIMO_SYEAR+"-"+CLIMO_EYEAR+" climatology removed prior to all calculations (other than means)"
            end if
+           z@Conventions = "CF-1.6"
         else
            z = addfile(fn,"w")
         end if
 
-        z->sst_spatialmean_djf     = sst_mean_djf
-        z->sst_spatialmean_mam     = sst_mean_mam
-        z->sst_spatialmean_jja     = sst_mean_jja
-        z->sst_spatialmean_son     = sst_mean_son
-        z->sst_spatialmean_ann     = sst_mean_ann
+        z->sst_spatialmean_djf     = set_varAtts(sst_mean_djf,"sst mean (DJF)","","")
+        z->sst_spatialmean_mam     = set_varAtts(sst_mean_mam,"sst mean (MAM)","","")
+        z->sst_spatialmean_jja     = set_varAtts(sst_mean_jja,"sst mean (JJA)","","")
+        z->sst_spatialmean_son     = set_varAtts(sst_mean_son,"sst mean (SON)","","")
+        z->sst_spatialmean_ann     = set_varAtts(sst_mean_ann,"sst mean (annual)","","")
         
-        z->sst_spatialstddev_djf     = sst_sd_djf
-        z->sst_spatialstddev_mam     = sst_sd_mam
-        z->sst_spatialstddev_jja     = sst_sd_jja
-        z->sst_spatialstddev_son     = sst_sd_son
-        z->sst_spatialstddev_ann     = sst_sd_ann
+        z->sst_spatialstddev_djf     = set_varAtts(sst_sd_djf,"sst standard deviation (DJF)","","")
+        z->sst_spatialstddev_mam     = set_varAtts(sst_sd_mam,"sst standard deviation (MAM)","","")
+        z->sst_spatialstddev_jja     = set_varAtts(sst_sd_jja,"sst standard deviation (JJA)","","")
+        z->sst_spatialstddev_son     = set_varAtts(sst_sd_son,"sst standard deviation (SON)","","")
+        z->sst_spatialstddev_ann     = set_varAtts(sst_sd_ann,"sst standard deviation (annual)","","")
         delete(z)
      end if
 ;==========================================================================================
@@ -192,7 +193,6 @@ begin
      
      res@mpCenterLonF = 210.
      res@mpOutlineOn = True  
-     res@mpDataSetName = "Earth..4"
      if (wks_type.eq."png") then
         res@mpGeophysicalLineThicknessF = 2.  
      else
@@ -221,7 +221,7 @@ begin
      
      res@cnLevels = fspan(.2,1.6,8)
      if (COLORMAP.eq.0) then
-        res@cnFillColors = (/54,80,95,125,175,185,195,205,236/)
+        res@cnFillColors = (/2,4,6,8,10,12,14,16,18/)
         res@mpLandFillColor = "gray75"
         sres@cnLevels = ispan(0,36,2)
      end if
@@ -334,43 +334,43 @@ begin
   ncol = floattointeger(sqrt(nsim))
   nrow = (nsim/ncol)+mod(nsim,ncol)  
   
-  panres@txString = "TS Standard Deviations (DJF)"
+  panres@txString = "SST Standard Deviations (DJF)"
   gsn_panel2(wks_stddev_djf,plot_stddev_djf,(/nrow,ncol/),panres)
   delete(wks_stddev_djf)
   
-  panres@txString = "TS Standard Deviations (MAM)"
+  panres@txString = "SST Standard Deviations (MAM)"
   gsn_panel2(wks_stddev_mam,plot_stddev_mam,(/nrow,ncol/),panres)
   delete(wks_stddev_mam)
   
-  panres@txString = "TS Standard Deviations (JJA)"
+  panres@txString = "SST Standard Deviations (JJA)"
   gsn_panel2(wks_stddev_jja,plot_stddev_jja,(/nrow,ncol/),panres)
   delete(wks_stddev_jja)
   
-  panres@txString = "TS Standard Deviations (SON)"
+  panres@txString = "SST Standard Deviations (SON)"
   gsn_panel2(wks_stddev_son,plot_stddev_son,(/nrow,ncol/),panres)
   delete(wks_stddev_son)
   
-  panres@txString = "TS Standard Deviations (Annual)"
+  panres@txString = "SST Standard Deviations (Annual)"
   gsn_panel2(wks_stddev_ann,plot_stddev_ann,(/nrow,ncol/),panres)
   delete(wks_stddev_ann)
   
-  panres@txString = "TS Means (DJF)"
+  panres@txString = "SST Means (DJF)"
   gsn_panel2(wks_mean_djf,plot_mean_djf,(/nrow,ncol/),panres)
   delete(wks_mean_djf)
   
-  panres@txString = "TS Means (MAM)"
+  panres@txString = "SST Means (MAM)"
   gsn_panel2(wks_mean_mam,plot_mean_mam,(/nrow,ncol/),panres)
   delete(wks_mean_mam)
   
-  panres@txString = "TS Means (JJA)"
+  panres@txString = "SST Means (JJA)"
   gsn_panel2(wks_mean_jja,plot_mean_jja,(/nrow,ncol/),panres)
   delete(wks_mean_jja)
   
-  panres@txString = "TS Means (SON)"
+  panres@txString = "SST Means (SON)"
   gsn_panel2(wks_mean_son,plot_mean_son,(/nrow,ncol/),panres)
   delete(wks_mean_son)
   
-  panres@txString = "TS Means (Annual)"
+  panres@txString = "SST Means (Annual)"
   gsn_panel2(wks_mean_ann,plot_mean_ann,(/nrow,ncol/),panres)
   delete(wks_mean_ann)
   delete(panres)

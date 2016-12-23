@@ -1,6 +1,6 @@
 ; Calculates snow depth global trends
 ;
-; Variables used: SNOWDP
+; Variables used: snd
 ;
 load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/gsn_code.ncl"
 load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/gsn_csm.ncl"
@@ -160,6 +160,7 @@ begin
            else
               z@climatology = CLIMO_SYEAR+"-"+CLIMO_EYEAR+" climatology removed prior to all calculations (other than means)"
            end if
+           z@Conventions = "CF-1.6"
         else
            z = addfile(fn,"w")
         end if
@@ -168,25 +169,28 @@ begin
         snd_seas&LAT = snd_trends_seas&lat
         snd_seas!2 = "LON"
         snd_seas&LON = snd_trends_seas&lon
+        copy_VarAtts(snd_trends_seas,snd_seas)
         
         snd_ann = (/ snd_trends_ann /)
         snd_ann!0 = "LAT"
         snd_ann&LAT = snd_trends_ann&lat
         snd_ann!1 = "LON"
         snd_ann&LON = snd_trends_ann&lon
+        copy_VarAtts(snd_trends_ann,snd_ann)
         
         snd_mon = (/ snd_trends_mon /)
         snd_mon!0 = "LAT"
         snd_mon&LAT = snd_trends_mon&lat
         snd_mon!1 = "LON"
         snd_mon&LON = snd_trends_mon&lon
+        copy_VarAtts(snd_trends_mon,snd_mon)
         
-        z->snd_trends_djf     = snd_seas(0,:,:)
-        z->snd_trends_mam     = snd_seas(1,:,:)
-        z->snd_trends_jja     = snd_seas(2,:,:)
-        z->snd_trends_son     = snd_seas(3,:,:)
-        z->snd_trends_ann     = snd_ann
-        z->snd_trends_mon     = snd_mon
+        z->snd_trends_djf     = set_varAtts(snd_seas(0,:,:),"snd linear trends (DJF)","","")
+        z->snd_trends_mam     = set_varAtts(snd_seas(1,:,:),"snd linear trends (MAM)","","")
+        z->snd_trends_jja     = set_varAtts(snd_seas(2,:,:),"snd linear trends (JJA)","","")
+        z->snd_trends_son     = set_varAtts(snd_seas(3,:,:),"snd linear trends (SON)","","")
+        z->snd_trends_ann     = set_varAtts(snd_ann,"snd linear trends (annual)","","")
+        z->snd_trends_mon     = set_varAtts(snd_mon,"snd linear trends (monthly)","","")
         delete(z)
         delete([/snd_seas,snd_ann,snd_mon/])
      end if
@@ -214,7 +218,6 @@ begin
      res@mpFillOn = False
      res@mpCenterLonF = 0.
      res@mpOutlineOn = True  
-     res@mpDataSetName = "Earth..4"
      res@gsnDraw      = False
      res@gsnFrame     = False
   

@@ -139,10 +139,10 @@ begin
   end if  
   
   if (case_sens.eq."True") then
-     tstring0 = "TS_,TS.,ts_,ts.,t_surf_,t_surf.,sst.,sst_"
+     tstring0 = "TS_,.TS.,ts_,.ts.,t_surf_,t_surf.,sst.,sst_"
      tstring1 = "TS,ts,t_surf,sst"
   else
-     tstring0 = "TS_,TS.,t_surf_,t_surf.,sst.,sst_"
+     tstring0 = "TS_,.TS.,t_surf_,t_surf.,sst.,sst_"
      tstring1 = "TS,t_surf,sst"
   end if
   

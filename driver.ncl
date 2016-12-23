@@ -41,19 +41,19 @@
 
 ;---Advanced Options----------------------------------------------------------------------                                             
   zp = "ncl_scripts/"    ; directory path of CVDP NCL scripts. (must end in a "/")
-                         ; Examples: "ncl_scripts/" if all code is local, or on CGD or CISL systems: "~asphilli/CESM-diagnostics/CVDP/Release/v3.7.0/ncl_scripts/"
-                         ; Regardless of this setting the following files should be in one directory: namelist, driver.ncl, runTasks.py and namelist_obs. 
+                         ; Examples: "ncl_scripts/" if all code is local, or on CGD or CISL systems: "~asphilli/CESM-diagnostics/CVDP/Release/v4.1.0/ncl_scripts/"
+                         ; Regardless of this setting the following files should be in one directory: namelist, driver.ncl, and namelist_obs. 
                          ; If pointing to code in ~asphilli make sure the driver script version #s match between this script and the script in ~asphilli.
   
   ncl_exec = "ncl"       ; This can be changed to a different path if a different version of NCL needs to be used, such as "/different/path/to/bin/ncl"                           
                          
-  run_style = "serial" ; parallel = allow simple python-based parallelization to occur. X number of CVDP NCL scripts will be called at once. 
+  run_style = "serial"   ; parallel = allow simple python-based parallelization to occur. X number of CVDP NCL scripts will be called at once. 
                          ;            X is set via max_num_tasks. Terminal output will be harder to follow.
                          ; serial = call CVDP NCL scripts serially. (Default)    
                          
-  max_num_tasks = 5      ; if run_parallel = "parallel", how many CVDP NCL scripts can be called at once? (If unsure set to 4)     
+  max_num_tasks = 4      ; if run_parallel = "parallel", how many CVDP NCL scripts can be called at once? (If unsure set to 3)     
   
-  modular = "False"       ; True = Run only those CVDP scripts specified in modular_list.
+  modular = "False"      ; True = Run only those CVDP scripts specified in modular_list.
                          ; False = Run all CVDP scripts (Default)
 
   modular_list = "aice.mean_stddev,aice.trends_timeseries,sst.indices"  ; When modular = "True" list the CVDP scripts that will be run. 
@@ -63,13 +63,13 @@
   machine_casesen = "True"  ; True = Your filesystem is case sensitive  (Default)
                              ; False = Your filesystem is case insensitive                                                          
 ;========END USER MODIFICATIONS===========================================================
-  version = "4.0.0"
+  version = "4.1.0"
 
   print("Starting: Climate Variability Diagnostics Package ("+systemfunc("date")+")")
 
   complete_list = "psl.nam_nao,psl.pna_npo,tas.trends_timeseries,snd.trends,psl.trends,amo,pdo,sst.indices,pr.trends_timeseries,"+\
                    "psl.sam_psa,sst.mean_stddev,psl.mean_stddev,pr.mean_stddev,sst.trends_timeseries,amoc,tas.mean_stddev,"+\
-                   "snd.mean_stddev,aice.mean_stddev,aice.trends_timeseries"
+                   "snd.mean_stddev,aice.mean_stddev,aice.trends_timeseries,ipo"
 
   loadscript(zp+"functions.ncl")
   outfiles = (/"ts","trefht","psl","prect","snowdp","moc","maxnum","aice_nh","aice_sh"/)

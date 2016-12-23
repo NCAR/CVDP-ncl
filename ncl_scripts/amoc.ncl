@@ -1,7 +1,7 @@
 ; Calculates MOC means/standard deviations, AMOC EOF1/PC1, 
 ; regressions onto AMOC PC1, and lag correlations vs. AMO
 ;
-; Variables used: MOC, TS, TREFHT
+; Variables used: moc, ts, tas
 ;
 load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/gsn_code.ncl"
 load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/gsn_csm.ncl"
@@ -264,8 +264,12 @@ begin
         splt1 = specx_ci(sdof,val1,val2)
         splt1!0 = "ncurves"
         splt1&ncurves = ispan(0,3,1)
+        splt1&ncurves@long_name = "power spectra curves"
+        splt1&ncurves@units = "1"
         splt1!1 = "frequency2"
         splt1&frequency2 = sdof@frq
+        splt1&frequency2@long_name = "power spectra frequency"
+        splt1&frequency2@units = "1"
         splt1@units_info = "df refers to frequency interval; data are standardized so there are no physical units"
         splt1@units = "1/df"
         splt1@info = "(0,:)=spectrum,(1,:)=Markov red noise spectrum, (2,:)="+val1+"% confidence bound for Markhov, (3,:)="+val2+"% confidence bound for Markhov"
@@ -408,12 +412,13 @@ begin
            else
               z@climatology = CLIMO_SYEAR+"-"+CLIMO_EYEAR+" climatology removed prior to all calculations (other than means)"
            end if
+           z@Conventions = "CF-1.6"
         else
            z = addfile(fn,"w")
         end if
      
         if (spectra_mvf.eq.False) then
-           z->amoc_spectra_ann = splt1
+           z->amoc_spectra_ann = set_varAtts(splt1,"AMOC (monthly) power spectra, Markov spectrum and confidence curves","","")   
         end if
         if (nyr(ee).ge.90) then
            time_lag_cor = ispan(mxlag*-1,mxlag,1)
@@ -425,8 +430,8 @@ begin
            time_lag_cor&time_lag_cor = time_lag_cor
            ccr!0 = "time_lag_cor"
            ccr&time_lag_cor = time_lag_cor
-           ccr@long_name = "AMOC_AMO_lead_lag_correlation"
-           z->amoc_amo_lag_cor = ccr
+           ccr@long_name = "AMOC AMO lead lag correlation"
+           z->amoc_amo_lag_cor = set_varAtts(ccr,"","1","")
            delete(time_lag_cor)
         end if
         TIME = ispan(0,dimsizes(amoc_pc_ann)-1,1)
@@ -438,8 +443,8 @@ begin
         TIME&TIME = TIME
         amoc_pc_ann!0 = "TIME"
         amoc_pc_ann&TIME = TIME
-        amoc_pc_ann@long_name = "AMOC PC1 timeseries"
-        z->amoc_timeseries_ann = amoc_pc_ann
+        amoc_pc_ann@long_name = "AMOC pc1 timeseries (annual)"
+        z->amoc_timeseries_ann = set_varAtts(amoc_pc_ann,"","Sv","")
         lat_amoc = moc_reg_ann&lat
         lat_amoc!0 = "lat_amoc"
         lat_amoc&lat_amoc = lat_amoc
@@ -452,9 +457,9 @@ begin
         delete(moc_sd_ann&lat)
         moc_sd_ann!1 = "lat_amoc"
         moc_sd_ann&lat_amoc = lat_amoc
-        z->amoc_mean_ann   = moc_mean_ann
-        z->amoc_stddev_ann = moc_sd_ann
-        z->amoc_pc1_ann        = moc_reg_ann 
+        z->amoc_mean_ann   = set_varAtts(moc_mean_ann,"AMOC mean (annual)","","") 
+        z->amoc_stddev_ann = set_varAtts(moc_sd_ann,"AMOC standard deviation (annual)","","")
+        z->amoc_pattern_ann    = set_varAtts(moc_reg_ann,"AMOC regression onto AMOC principal component timeseries (annual)","","") 
         delete([/modname,fn,TIME,lat_amoc/])
         delete(z)
         
@@ -477,7 +482,7 @@ begin
            else
               z = addfile(fn,"w")
            end if
-           z->amoc_sst_regression_ann = sst_reg_ann
+           z->amoc_sst_regression_ann = set_varAtts(sst_reg_ann,"sst regression onto AMOC principal component timeseries (annual)","","") 
            delete(z)           
         end if
         if (tasreg_plot_flag.eq.0) then
@@ -499,7 +504,7 @@ begin
            else
               z = addfile(fn,"w")
            end if
-           z->amoc_tas_regression_ann = tas_reg_ann
+           z->amoc_tas_regression_ann = set_varAtts(tas_reg_ann,"tas regression onto AMOC PC1 (annual)","","") 
            delete(z)
         end if
      end if     
@@ -682,13 +687,16 @@ begin
      pres@tiXAxisFontHeightF = 0.025
      pres@tiYAxisFontHeightF = 0.025
      pres@tiMainFontHeightF = 0.03
+     pres@gsnRightStringOrthogonalPosF = -0.115
      
      pres@tiMainOn = False
      pres@gsnCenterString = "Period (years)"
      pres@gsnCenterStringFontHeightF =    pres@tiYAxisFontHeightF
+     pres@gsnRightStringFontHeightF =    pres@tiYAxisFontHeightF - 0.005
      pres@gsnRightString = ""
      pres@gsnLeftString = "" 
      pres@gsnCenterString = names(ee)
+     pres@gsnRightString = syear(ee)+"-"+eyear(ee)+"  "
      if (spectra_mvf.eq.False) then
         plot_amoc_powspec_ann(ee) = gsn_csm_xy(wks_amoc_powspec,sdof@frq,splt1,pres) 
         delete([/splt1,sdof/])
@@ -706,7 +714,6 @@ begin
      res@mpFillOn = False
      res@mpCenterLonF = 0.
      res@mpOutlineOn = True  
-     res@mpDataSetName = "Earth..4"
      if (wks_type.eq."png") then
         res@mpGeophysicalLineThicknessF = 2.  
      else

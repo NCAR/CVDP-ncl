@@ -55,12 +55,12 @@ begin
   wks_za_ann = gsn_open_wks(wks_type,getenv("OUTDIR")+"pr.za.ann")
   
   if (COLORMAP.eq.0) then
-     gsn_define_colormap(wks_stddev_djf,"rainbow+white") 
-     gsn_define_colormap(wks_stddev_mam,"rainbow+white")  
-     gsn_define_colormap(wks_stddev_jja,"rainbow+white") 
-     gsn_define_colormap(wks_stddev_son,"rainbow+white")  
-     gsn_define_colormap(wks_stddev_ann,"rainbow+white")   
-     gsn_define_colormap(wks_mean,"prcp_1") 
+     gsn_define_colormap(wks_stddev_djf,"precip3_16lev") 
+     gsn_define_colormap(wks_stddev_mam,"precip3_16lev")  
+     gsn_define_colormap(wks_stddev_jja,"precip3_16lev") 
+     gsn_define_colormap(wks_stddev_son,"precip3_16lev")  
+     gsn_define_colormap(wks_stddev_ann,"precip3_16lev")   
+     gsn_define_colormap(wks_mean,"precip3_16lev") 
      gsn_define_colormap(wks_za_djf,"cb_9step")  
      gsn_define_colormap(wks_za_mam,"cb_9step")  
      gsn_define_colormap(wks_za_jja,"cb_9step")  
@@ -199,21 +199,22 @@ begin
            else
               z@climatology = CLIMO_SYEAR+"-"+CLIMO_EYEAR+" climatology removed prior to all calculations (other than means)"
            end if
+           z@Conventions = "CF-1.6"
         else
            z = addfile(fn,"w")
         end if
 
-        z->ppt_spatialmean_djf     = ppt_mean_djf
-        z->ppt_spatialmean_mam     = ppt_mean_mam
-        z->ppt_spatialmean_jja     = ppt_mean_jja
-        z->ppt_spatialmean_son     = ppt_mean_son
-        z->ppt_spatialmean_ann     = ppt_mean_ann
+        z->pr_spatialmean_djf     = set_varAtts(ppt_mean_djf,"pr mean (DJF)","","")
+        z->pr_spatialmean_mam     = set_varAtts(ppt_mean_mam,"pr mean (MAM)","","")
+        z->pr_spatialmean_jja     = set_varAtts(ppt_mean_jja,"pr mean (JJA)","","")
+        z->pr_spatialmean_son     = set_varAtts(ppt_mean_son,"pr mean (SON)","","")
+        z->pr_spatialmean_ann     = set_varAtts(ppt_mean_ann,"pr mean (annual)","","")
         
-        z->ppt_spatialstddev_djf     = ppt_sd_djf
-        z->ppt_spatialstddev_mam     = ppt_sd_mam
-        z->ppt_spatialstddev_jja     = ppt_sd_jja
-        z->ppt_spatialstddev_son     = ppt_sd_son
-        z->ppt_spatialstddev_ann     = ppt_sd_ann
+        z->pr_spatialstddev_djf     = set_varAtts(ppt_sd_djf,"pr standard deviation (DJF)","","")
+        z->pr_spatialstddev_mam     = set_varAtts(ppt_sd_mam,"pr standard deviation (MAM)","","")
+        z->pr_spatialstddev_jja     = set_varAtts(ppt_sd_jja,"pr standard deviation (JJA)","","")
+        z->pr_spatialstddev_son     = set_varAtts(ppt_sd_son,"pr standard deviation (SON)","","")
+        z->pr_spatialstddev_ann     = set_varAtts(ppt_sd_ann,"pr standard deviation (annual)","","")
         delete(z)
         delete([/modname,fn/])
      end if
@@ -229,7 +230,6 @@ begin
      res@mpFillOn = False
      res@mpCenterLonF = 210.
      res@mpOutlineOn = True  
-     res@mpDataSetName = "Earth..4"
      if (wks_type.eq."png") then
         res@mpGeophysicalLineThicknessF = 2.  
      else
@@ -260,7 +260,7 @@ begin
      sres@cnLevels  = (/0.5,1,2,3,4,5,6,7,8,9,10,12,14,16,18/)
      res@cnLevels = (/.2,.4,.6,1.0,1.5,2.0,2.5,3.5/)
      if (COLORMAP.eq.0) then
-        res@cnFillColors = (/54,80,95,125,175,185,195,205,236/)
+        res@cnFillColors = (/2,4,6,8,10,12,14,16,18/)
      end if
      if (COLORMAP.eq.1) then
         res@cnFillColors = (/35,47,63,79,95,111,124,155,175/)
@@ -373,7 +373,7 @@ begin
           
      txres@txJust = "CenterLeft"
      
-     zres@tiMainString = "PR Zonal Average (DJF)"
+     zres@tiMainString = "pr Zonal Average (DJF)"
      zres@gsnRightString = "mm/day"
 
      plot_za_djf(ee) = gsn_csm_xy(wks_za_djf,ppt_zamean_djf&lat,ppt_zamean_djf,zres) 
@@ -383,7 +383,7 @@ begin
      gsn_text_ndc(wks_za_djf,names(ee),0.765,0.8-(ee*yeval),txres)
      gsn_polyline_ndc(wks_za_djf,(/0.72,.75/),(/0.8-(ee*yeval),0.8-(ee*yeval)/),polyres)
      
-     zres@tiMainString = "PR Zonal Average (MAM)"
+     zres@tiMainString = "pr Zonal Average (MAM)"
      plot_za_mam(ee) = gsn_csm_xy(wks_za_mam,ppt_zamean_mam&lat,ppt_zamean_mam,zres) 
      if (ee.ne.0) then
         overlay(plot_za_mam(0),plot_za_mam(ee))
@@ -391,7 +391,7 @@ begin
      gsn_text_ndc(wks_za_mam,names(ee),0.765,0.8-(ee*yeval),txres)
      gsn_polyline_ndc(wks_za_mam,(/0.72,.75/),(/0.8-(ee*yeval),0.8-(ee*yeval)/),polyres)
      
-     zres@tiMainString = "PR Zonal Average (JJA)"
+     zres@tiMainString = "pr Zonal Average (JJA)"
      plot_za_jja(ee) = gsn_csm_xy(wks_za_jja,ppt_zamean_jja&lat,ppt_zamean_jja,zres) 
      if (ee.ne.0) then
         overlay(plot_za_jja(0),plot_za_jja(ee))
@@ -399,7 +399,7 @@ begin
      gsn_text_ndc(wks_za_jja,names(ee),0.765,0.8-(ee*yeval),txres)
      gsn_polyline_ndc(wks_za_jja,(/0.72,.75/),(/0.8-(ee*yeval),0.8-(ee*yeval)/),polyres)
      
-     zres@tiMainString = "PR Zonal Average (SON)"
+     zres@tiMainString = "pr Zonal Average (SON)"
      plot_za_son(ee) = gsn_csm_xy(wks_za_son,ppt_zamean_son&lat,ppt_zamean_son,zres) 
      if (ee.ne.0) then
         overlay(plot_za_son(0),plot_za_son(ee))
@@ -407,7 +407,7 @@ begin
      gsn_text_ndc(wks_za_son,names(ee),0.765,0.8-(ee*yeval),txres)
      gsn_polyline_ndc(wks_za_son,(/0.72,.75/),(/0.8-(ee*yeval),0.8-(ee*yeval)/),polyres)
      
-     zres@tiMainString = "PR Zonal Average (ANN)"
+     zres@tiMainString = "pr Zonal Average (ANN)"
      plot_za_ann(ee) = gsn_csm_xy(wks_za_ann,ppt_zamean_ann&lat,ppt_zamean_ann,zres) 
      if (ee.ne.0) then
         overlay(plot_za_ann(0),plot_za_ann(ee))
@@ -419,7 +419,7 @@ begin
   
    if (isfilepresent2("obs_prect")) then    ; for pattern correlation table  
      clat = cos(0.01745329*patcor&lat)
-     finpr   = "PR Std Dev (Ann)  "    ; Must be 18 characters long
+     finpr   = "pr Std Dev (Ann)  "    ; Must be 18 characters long
      line3   = "                  "    ; Must be 18 characters long
      line4   = line3
      header = (/"","Pattern Correlations/RMS Differences   Observations vs. Model(s)",""/)

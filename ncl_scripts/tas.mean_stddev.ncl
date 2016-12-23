@@ -1,6 +1,6 @@
 ; Calculates 2m air temperature global means and standard deviations
 ;
-; Variables used: TREFHT (TAS)
+; Variables used: tas
 ;
 load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/gsn_code.ncl"
 load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/gsn_csm.ncl"
@@ -54,11 +54,11 @@ begin
   wks_mean_ann = gsn_open_wks(wks_type,getenv("OUTDIR")+"tas.mean.ann")
   
   if (COLORMAP.eq.0) then
-     gsn_define_colormap(wks_stddev_djf,"rainbow+white") 
-     gsn_define_colormap(wks_stddev_mam,"rainbow+white")  
-     gsn_define_colormap(wks_stddev_jja,"rainbow+white") 
-     gsn_define_colormap(wks_stddev_son,"rainbow+white")  
-     gsn_define_colormap(wks_stddev_ann,"rainbow+white")
+     gsn_define_colormap(wks_stddev_djf,"precip3_16lev") 
+     gsn_define_colormap(wks_stddev_mam,"precip3_16lev")  
+     gsn_define_colormap(wks_stddev_jja,"precip3_16lev") 
+     gsn_define_colormap(wks_stddev_son,"precip3_16lev")  
+     gsn_define_colormap(wks_stddev_ann,"precip3_16lev")
      gsn_define_colormap(wks_mean_djf,"ncl_default") 
      gsn_define_colormap(wks_mean_mam,"ncl_default")  
      gsn_define_colormap(wks_mean_jja,"ncl_default") 
@@ -155,21 +155,22 @@ begin
            else
               z@climatology = CLIMO_SYEAR+"-"+CLIMO_EYEAR+" climatology removed prior to all calculations (other than means)"
            end if
+           z@Conventions = "CF-1.6"
         else
            z = addfile(fn,"w")
         end if
 
-        z->tas_spatialmean_djf     = tas_mean_djf
-        z->tas_spatialmean_mam     = tas_mean_mam
-        z->tas_spatialmean_jja     = tas_mean_jja
-        z->tas_spatialmean_son     = tas_mean_son
-        z->tas_spatialmean_ann     = tas_mean_ann
+        z->tas_spatialmean_djf     = set_varAtts(tas_mean_djf,"tas mean (DJF)","","")
+        z->tas_spatialmean_mam     = set_varAtts(tas_mean_mam,"tas mean (MAM)","","")
+        z->tas_spatialmean_jja     = set_varAtts(tas_mean_jja,"tas mean (JJA)","","")
+        z->tas_spatialmean_son     = set_varAtts(tas_mean_son,"tas mean (SON)","","")
+        z->tas_spatialmean_ann     = set_varAtts(tas_mean_ann,"tas mean (annual)","","")
         
-        z->tas_spatialstddev_djf     = tas_sd_djf
-        z->tas_spatialstddev_mam     = tas_sd_mam
-        z->tas_spatialstddev_jja     = tas_sd_jja
-        z->tas_spatialstddev_son     = tas_sd_son
-        z->tas_spatialstddev_ann     = tas_sd_ann
+        z->tas_spatialstddev_djf     = set_varAtts(tas_sd_djf,"tas standard deviation (DJF)","","")
+        z->tas_spatialstddev_mam     = set_varAtts(tas_sd_mam,"tas standard deviation (MAM)","","")
+        z->tas_spatialstddev_jja     = set_varAtts(tas_sd_jja,"tas standard deviation (JJA)","","")
+        z->tas_spatialstddev_son     = set_varAtts(tas_sd_son,"tas standard deviation (SON)","","")
+        z->tas_spatialstddev_ann     = set_varAtts(tas_sd_ann,"tas standard deviation (annual)","","")
         delete(z)
      end if
      
@@ -186,7 +187,6 @@ begin
      res@mpFillOn = False
      res@mpCenterLonF = 210.
      res@mpOutlineOn = True  
-     res@mpDataSetName = "Earth..4"
      if (wks_type.eq."png") then
         res@mpGeophysicalLineThicknessF = 2.  
      else
@@ -216,7 +216,7 @@ begin
      
      res@cnLevels = fspan(.4,3.2,8)    
      if (COLORMAP.eq.0) then
-        res@cnFillColors = (/54,80,95,125,175,185,195,205,236/)
+        res@cnFillColors = (/2,4,6,8,10,12,14,16,18/)
         sres@cnLevels = ispan(-40,40,2)
      end if
      if (COLORMAP.eq.1) then

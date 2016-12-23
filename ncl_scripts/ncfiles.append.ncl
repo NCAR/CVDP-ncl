@@ -48,16 +48,28 @@ begin
      fils = systemfunc("ls "+OUTDIR+names(gg)+".*.nc 2> /dev/null")
      if (.not.ismissing(fils(0))) then
         dimf = dimsizes(fils)
+        ofile = OUTDIR+names(gg)+".cvdp_data."+syear(gg)+"-"+eyear(gg)+".nc"
         if (dimf.eq.1) then
-           system("mv "+fils(0)+" "+OUTDIR+names(gg)+".cvdp_data."+syear(gg)+"-"+eyear(gg)+".nc")
+           system("mv "+fils(0)+" "+ofile)
         else
-           do hh = 0,dimf-2
-              system("ncks -A -h "+fils(hh)+" "+fils(dimf-1))
-           end do
-           system("mv "+fils(dimf-1)+" "+OUTDIR+names(gg)+".cvdp_data."+syear(gg)+"-"+eyear(gg)+".nc")
-           system("rm "+str_join(fils(:dimf-2)," "))
+           if (isfilepresent(ofile)) then                                    ; if file master is present append individual data files to file master.
+              do hh = 0,dimf-1
+                 if (fils(hh).ne.ofile) then
+                    system("ncks -A -h "+fils(hh)+" "+ofile)
+                 end if
+              end do
+           else                                                              ; if file master is not present, append individual data files to last file in list,
+              do hh = 0,dimf-2                                               ; and when done move the last file to be the master file
+                 system("ncks -A -h "+fils(hh)+" "+fils(dimf-1))             
+              end do
+              system("mv "+fils(dimf-1)+" "+ofile)
+           end if
+           if (dimsizes(fils(:dimf-2)).ge.2) then
+              system("rm "+str_sub_str(str_join(fils(:dimf-2)," "),ofile,""))   ; remove each script's file, but do not remove the master file (if present)
+           end if
         end if
-        delete([/dimf/])
+        system("ncks -O "+ofile+" "+ofile)   ; done to alphabetize output variable
+        delete([/dimf,ofile/])
      else
 ;        print("NetCDF files not found for "+names+", skipping appending")
      end if
@@ -95,17 +107,29 @@ begin
               delete(fil0)
               ofi = OUTDIR+namesB(gg)+".cvdp_data."+suffix
               if (dimf.ge.2) then
-                 do hh = 0,dimf-2
-                    system("ncks -A -h "+fils(hh)+" "+fils(dimf-1))
-                 end do
-                 system("mv "+fils(dimf-1)+" "+ofi)
-                 system("rm "+str_join(fils(:dimf-2)," "))
+                 if (isfilepresent(ofi)) then                   ; if file master is present append individual data files to file master.
+                    do hh = 0,dimf-1
+                       if (fils(hh).ne.ofi) then
+                          system("ncks -A -h "+fils(hh)+" "+ofi)
+                       end if
+                    end do
+                 else                                                        ; if file master is not present, append individual data files to last file in list,
+                    do hh = 0,dimf-2                                         ; and when done move the last file to be the master file
+                       system("ncks -A -h "+fils(hh)+" "+fils(dimf-1))
+                    end do
+                    system("mv "+fils(dimf-1)+" "+ofi)
+                 end if
+
+                 if (dimsizes(fils(:dimf-2)).ge.2) then
+                    system("rm "+str_sub_str(str_join(fils(:dimf-2)," "),ofi,""))   ; remove each script's file, but do not remove the master file (if present)
+                 end if
               else
                  if (fils(0).ne.ofi) then
                     system("mv "+fils(0)+" "+ofi)
                  end if
               end if
-              delete(dimf)
+              system("ncks -O "+ofi+" "+ofi)   ; done to alphabetize output variable
+              delete([/dimf,ofi/])
            else
 ;              print("NetCDF files not found for "+namesB(gg)+", skipping appending")
            end if

@@ -187,7 +187,9 @@ begin
      ppt_trends_seas = ppt_trends_seas*nyr(ee)
      ppt_trends_seas@units = ppt_seas@units+" "+nyr(ee)+"yr~S~-1~N~"
      ppt_trends_ann = ppt_trends_ann*nyr(ee)
-     ppt_trends_ann@units = ppt_ann@units+" "+nyr(ee)+"yr~S~-1~N~"         
+     ppt_trends_ann@units = ppt_ann@units+" "+nyr(ee)+"yr~S~-1~N~"    
+     ppt_aa_seas@units = ppt_seas@units   
+     ppt_aa_ann@units = ppt_ann@units     
      delete([/ppt_seas,ppt_ann,coswgt/])    
 
      if (isfilepresent2("obs_prect").and.ee.eq.0) then
@@ -218,6 +220,7 @@ begin
            else
               z@climatology = CLIMO_SYEAR+"-"+CLIMO_EYEAR+" climatology removed prior to all calculations (other than means)"
            end if
+           z@Conventions = "CF-1.6"
         else
            z = addfile(fn,"w")
         end if
@@ -231,18 +234,18 @@ begin
         ppt_aa_ann2&TIME = ispan(syear(ee),eyear(ee),1)
         ppt_aa_ann2&TIME@units = "YYYY"
         ppt_aa_ann2&TIME@long_name = "time"
-        z->ppt_global_avg_mon = ppt_aa_mon
-        z->ppt_global_avg_djf = ppt_aa_seas2(0,:)
-        z->ppt_global_avg_mam = ppt_aa_seas2(1,:)
-        z->ppt_global_avg_jja = ppt_aa_seas2(2,:)
-        z->ppt_global_avg_son = ppt_aa_seas2(3,:)
-        z->ppt_global_avg_ann = ppt_aa_ann2
-        z->ppt_trends_djf     = ppt_trends_seas(0,:,:)
-        z->ppt_trends_mam     = ppt_trends_seas(1,:,:)
-        z->ppt_trends_jja     = ppt_trends_seas(2,:,:)
-        z->ppt_trends_son     = ppt_trends_seas(3,:,:)
-        z->ppt_trends_ann     = ppt_trends_ann
-        z->ppt_trends_mon     = ppt_trends_mon
+        z->pr_global_avg_mon = set_varAtts(ppt_aa_mon,"pr global area-average (monthly)","","")
+        z->pr_global_avg_djf = set_varAtts(ppt_aa_seas2(0,:),"pr global area-average (DJF)","","")
+        z->pr_global_avg_mam = set_varAtts(ppt_aa_seas2(1,:),"pr global area-average (MAM)","","")
+        z->pr_global_avg_jja = set_varAtts(ppt_aa_seas2(2,:),"pr global area-average (JJA)","","")
+        z->pr_global_avg_son = set_varAtts(ppt_aa_seas2(3,:),"pr global area-average (SON)","","")
+        z->pr_global_avg_ann = set_varAtts(ppt_aa_ann2,"pr global area-average (annual)","","")
+        z->pr_trends_djf     = set_varAtts(ppt_trends_seas(0,:,:),"pr linear trends (DJF)","","")
+        z->pr_trends_mam     = set_varAtts(ppt_trends_seas(1,:,:),"pr linear trends (MAM)","","")
+        z->pr_trends_jja     = set_varAtts(ppt_trends_seas(2,:,:),"pr linear trends (JJA)","","")
+        z->pr_trends_son     = set_varAtts(ppt_trends_seas(3,:,:),"pr linear trends (SON)","","")
+        z->pr_trends_ann     = set_varAtts(ppt_trends_ann,"pr linear trends (annual)","","")
+        z->pr_trends_mon     = set_varAtts(ppt_trends_mon,"pr linear trends (monthly)","","")
         delete(z)
         delete(ppt_aa_seas2)
         delete(ppt_aa_ann2)
@@ -265,7 +268,6 @@ begin
      res@mpFillOn = False
      res@mpCenterLonF = 210.
      res@mpOutlineOn = True  
-     res@mpDataSetName = "Earth..4"
      res@gsnDraw      = False
      res@gsnFrame     = False
   

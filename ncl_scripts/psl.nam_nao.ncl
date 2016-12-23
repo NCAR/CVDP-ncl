@@ -1,7 +1,7 @@
 ; Calculates NAM and NAO (patterns and PC timeseries), as well as 
-; regressions of those PC timeseries onto the land-masked TS field.
+; regressions of those PC timeseries  onto ts, tas, and pr.
 ;
-; Variables used: PSL and TS
+; Variables used: psl, ts, tas, and pr
 ; 
 load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/gsn_code.ncl"
 load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/gsn_csm.ncl"
@@ -58,31 +58,67 @@ begin
   end do
   delete(na_ts)
   nyr_ts = eyear_ts-syear_ts+1  
-;-------------------------------------------------------------------------------------------------
-    
+;---------TAS Regressions coding-------------------------------------------------
+  nsim_tas = numAsciiRow("namelist_byvar/namelist_trefht")
+  na_tas = asciiread("namelist_byvar/namelist_trefht",(/nsim_tas/),"string")
+  names_tas = new(nsim_tas,"string")
+  paths_tas = new(nsim_tas,"string")
+  syear_tas = new(nsim_tas,"integer",-999)
+  eyear_tas = new(nsim_tas,"integer",-999)
+
+  do gg = 0,nsim_tas-1
+     names_tas(gg) = str_strip(str_get_field(na_tas(gg),1,delim))
+     paths_tas(gg) = str_strip(str_get_field(na_tas(gg),2,delim))
+     syear_tas(gg) = stringtointeger(str_strip(str_get_field(na_tas(gg),3,delim)))
+     eyear_tas(gg) = stringtointeger(str_strip(str_get_field(na_tas(gg),4,delim)))
+  end do
+  delete(na_tas)
+  nyr_tas = eyear_tas-syear_tas+1  
+;---------PR Regressions coding-------------------------------------------------
+  nsim_pr = numAsciiRow("namelist_byvar/namelist_prect")
+  na_pr = asciiread("namelist_byvar/namelist_prect",(/nsim_pr/),"string")
+  names_pr = new(nsim_pr,"string")
+  paths_pr = new(nsim_pr,"string")
+  syear_pr = new(nsim_pr,"integer",-999)
+  eyear_pr = new(nsim_pr,"integer",-999)
+
+  do gg = 0,nsim_pr-1
+     names_pr(gg) = str_strip(str_get_field(na_pr(gg),1,delim))
+     paths_pr(gg) = str_strip(str_get_field(na_pr(gg),2,delim))
+     syear_pr(gg) = stringtointeger(str_strip(str_get_field(na_pr(gg),3,delim)))
+     eyear_pr(gg) = stringtointeger(str_strip(str_get_field(na_pr(gg),4,delim)))
+  end do
+  delete(na_pr)
+  nyr_pr = eyear_pr-syear_pr+1  
+;-------------------------------------------------------------------------------------------------    
   wks_type = OUTPUT_TYPE
   if (wks_type.eq."png") then
      wks_type@wkWidth = 1500*PNG_SCALE
      wks_type@wkHeight = 1500*PNG_SCALE
   end if
   wks_nam = gsn_open_wks(wks_type,getenv("OUTDIR")+"nam")
+  wks_nam_pr = gsn_open_wks(wks_type,getenv("OUTDIR")+"nam.prreg")
   wks_nam_ts = gsn_open_wks(wks_type,getenv("OUTDIR")+"nam.timeseries")
 
   wks_nao = gsn_open_wks(wks_type,getenv("OUTDIR")+"nao")
+  wks_nao_pr = gsn_open_wks(wks_type,getenv("OUTDIR")+"nao.prreg")
   wks_nao_ts = gsn_open_wks(wks_type,getenv("OUTDIR")+"nao.timeseries")
-
   
   if (COLORMAP.eq.0) then
      gsn_define_colormap(wks_nam,"ncl_default")   
      gsn_define_colormap(wks_nam_ts,"ncl_default")
      gsn_define_colormap(wks_nao,"ncl_default")   
      gsn_define_colormap(wks_nao_ts,"ncl_default")
+     gsn_define_colormap(wks_nam_pr,"MPL_BrBG")  
+     gsn_define_colormap(wks_nao_pr,"MPL_BrBG")  
   end if
   if (COLORMAP.eq.1) then
      gsn_define_colormap(wks_nam,"BlueDarkRed18")   
      gsn_define_colormap(wks_nam_ts,"ncl_default")
      gsn_define_colormap(wks_nao,"BlueDarkRed18")   
      gsn_define_colormap(wks_nao_ts,"ncl_default")
+     gsn_define_colormap(wks_nam_pr,"BrownBlue12")    
+     gsn_define_colormap(wks_nao_pr,"BrownBlue12")     
   end if
    
   map_nam_djf = new(nsim,"graphic")  
@@ -103,6 +139,12 @@ begin
   reg_nam_son = new(nsim,"graphic")  
   reg_nam_ann = new(nsim,"graphic")  
   reg_nam_mon = new(nsim,"graphic")  
+  reg_nam_pr_djf = new(nsim,"graphic")  
+  reg_nam_pr_mam = new(nsim,"graphic")  
+  reg_nam_pr_jja = new(nsim,"graphic")  
+  reg_nam_pr_son = new(nsim,"graphic")  
+  reg_nam_pr_ann = new(nsim,"graphic")  
+  reg_nam_pr_mon = new(nsim,"graphic")  
 
   map_nao_djf = new(nsim,"graphic")  
   map_nao_mam = new(nsim,"graphic")  
@@ -121,12 +163,20 @@ begin
   reg_nao_jja = new(nsim,"graphic")  
   reg_nao_son = new(nsim,"graphic")  
   reg_nao_ann = new(nsim,"graphic")  
-  reg_nao_mon = new(nsim,"graphic")  
-
+  reg_nao_mon = new(nsim,"graphic") 
+  reg_nao_pr_djf = new(nsim,"graphic")  
+  reg_nao_pr_mam = new(nsim,"graphic")  
+  reg_nao_pr_jja = new(nsim,"graphic")  
+  reg_nao_pr_son = new(nsim,"graphic")  
+  reg_nao_pr_ann = new(nsim,"graphic")  
+  reg_nao_pr_mon = new(nsim,"graphic")   
   
   xy_npi = new(nsim,"graphic")
-  sstreg_frame = 1    ; sstreg_frame = flag to create regressions .ps/.png files. Created/used instead of sstreg_plot_flag
-                      ; so that if sst regressions are not created for the last simulation listed that .ps/png files are created
+  sstreg_frame = 1    ; *reg_frame = flag to create regressions .ps/.png files. Created/used instead of *reg_plot_flag
+                      ; so that if {sst,tas,pr} regressions are not created for the last simulation listed that .ps/png files are created
+  tasreg_frame = 1
+  prreg_frame  = 1
+
   do ee = 0,nsim-1
 ;     print(paths(ee)+" "+syear(ee)+" "+eyear(ee)) 
      arr = data_read_in(paths(ee),"PSL",syear(ee),eyear(ee))    ; read in data, orient lats/lons correctly, set time coordinate variable up
@@ -174,7 +224,7 @@ begin
      if (any(ismissing((/syear(ee),syear_ts(ee),eyear(ee),eyear_ts(ee)/)))) then
         sstreg_plot_flag = 1
      else
-        if (syear(ee).eq.syear_ts(ee)) then     ; check that the start and end years match for ts, trefht, and psl
+        if (syear(ee).eq.syear_ts(ee)) then     ; check that the start and end years match for ts, tas, and psl
            if (eyear(ee).eq.eyear_ts(ee)) then
               sstreg_plot_flag = 0
            else
@@ -225,10 +275,120 @@ begin
      
            sstV = runave_n_Wrap(sst,12,0,0)
            sst_ann = sstV(5::12,:,:)
-           delete(sstV)
+           delete([/sstV/])
         end if
      end if
-;---------NAM calculations----------------------------------------------------------     
+;---------TAS Regressions coding-------------------------------------------------
+     if (any(ismissing((/syear(ee),syear_tas(ee),eyear(ee),eyear_tas(ee)/)))) then
+        tasreg_plot_flag = 1
+     else
+        if (syear(ee).eq.syear_tas(ee)) then     ; check that the start and end years match for ts, tas, and psl
+           if (eyear(ee).eq.eyear_tas(ee)) then
+              tasreg_plot_flag = 0
+           else
+              tasreg_plot_flag = 1
+           end if
+        else
+           tasreg_plot_flag = 1
+        end if
+        if (sstreg_plot_flag.eq.1) then          ; if the ts dataset is missing but the tas is not, do not
+           tasreg_plot_flag = 1                  ; run through the tas calculations as both currently required
+        end if
+     end if 
+
+     if (tasreg_plot_flag.eq.0) then 
+        tas = data_read_in(paths_tas(ee),"TREFHT",syear_tas(ee),eyear_tas(ee))
+        if (isatt(tas,"is_all_missing")) then
+           tasreg_plot_flag = 1
+           delete(tas)
+        end if
+        
+        if (tasreg_plot_flag.eq.0) then     ; only continue if both PSL/TS fields are present
+           d = addfile("$NCARG_ROOT/lib/ncarg/data/cdf/landsea.nc","r")   
+           basemap = d->LSMASK
+           lsm = landsea_mask(basemap,tas&lat,tas&lon)
+           tas = mask(tas,conform(tas,lsm,(/1,2/)).eq.0,False)
+           delete(lsm)
+           
+           if (OPT_CLIMO.eq."Full") then
+              tas = rmMonAnnCycTLL(tas)
+           else
+              check_custom_climo(names_tas(ee),syear_tas(ee),eyear_tas(ee),CLIMO_SYEAR,CLIMO_EYEAR)
+              temp_arr = tas
+              delete(temp_arr&time)
+              temp_arr&time = cd_calendar(tas&time,1)
+              climo = clmMonTLL(temp_arr({CLIMO_SYEAR*100+1:CLIMO_EYEAR*100+12},:,:))                 
+              delete(temp_arr)
+              tas   = calcMonAnomTLL(tas,climo) 
+              delete(climo)
+           end if
+;           tas = (/ dtrend_msg_n(ispan(0,dimsizes(tas&time)-1,1),tas,False,False,0) /)  
+        
+           tasT =  runave_n_Wrap(tas,3,0,0)               ; form DJF averages
+           tasT(0,:,:) = (/ dim_avg_n(tas(:1,:,:),0) /)   
+           tas_djf = tasT(0::12,:,:)
+           tas_mam = tasT(3::12,:,:)
+           tas_jja = tasT(6::12,:,:)                       ; form JJA averages
+           tas_son = tasT(9::12,:,:)
+           delete(tasT)
+     
+           tasV = runave_n_Wrap(tas,12,0,0)
+           tas_ann = tasV(5::12,:,:)
+           delete([/tasV/])
+        end if
+     end if
+;---------PR Regressions coding-------------------------------------------------
+     if (any(ismissing((/syear(ee),syear_pr(ee),eyear(ee),eyear_pr(ee)/)))) then
+        prreg_plot_flag = 1
+     else
+        if (syear(ee).eq.syear_pr(ee)) then     ; check that the start and end years match for ts, tas, and psl
+           if (eyear(ee).eq.eyear_pr(ee)) then
+              prreg_plot_flag = 0
+           else
+              prreg_plot_flag = 1
+           end if
+        else
+           prreg_plot_flag = 1
+        end if
+     end if 
+
+     if (prreg_plot_flag.eq.0) then 
+        pr = data_read_in(paths_pr(ee),"PRECT",syear_pr(ee),eyear_pr(ee))
+        if (isatt(pr,"is_all_missing")) then
+           prreg_plot_flag = 1
+           delete(pr)
+        end if
+        
+        if (prreg_plot_flag.eq.0) then     ; only continue if both PSL/TS fields are present
+           if (OPT_CLIMO.eq."Full") then
+              pr = rmMonAnnCycTLL(pr)
+           else
+              check_custom_climo(names_pr(ee),syear_pr(ee),eyear_pr(ee),CLIMO_SYEAR,CLIMO_EYEAR)
+              temp_arr = pr
+              delete(temp_arr&time)
+              temp_arr&time = cd_calendar(pr&time,1)
+              climo = clmMonTLL(temp_arr({CLIMO_SYEAR*100+1:CLIMO_EYEAR*100+12},:,:))                 
+              delete(temp_arr)
+              pr   = calcMonAnomTLL(pr,climo) 
+              delete(climo)
+           end if
+;           pr = (/ dtrend_msg_n(ispan(0,dimsizes(pr&time)-1,1),pr,False,False,0) /)  
+        
+           prT =  runave_n_Wrap(pr,3,0,0)               ; form DJF averages
+           prT(0,:,:) = (/ dim_avg_n(pr(:1,:,:),0) /)   
+           pr_djf = prT(0::12,:,:)
+           pr_mam = prT(3::12,:,:)
+           pr_jja = prT(6::12,:,:)                       ; form JJA averages
+           pr_son = prT(9::12,:,:)
+           delete(prT)
+     
+           prV = runave_n_Wrap(pr,12,0,0)
+           pr_ann = prV(5::12,:,:)
+           delete([/prV/])
+        end if
+     end if
+
+;-------------------------------------------------------------------     
      arr_djf_CW = SqrtCosWeight(arr_djf)
      arr_mam_CW = SqrtCosWeight(arr_mam)
      arr_jja_CW = SqrtCosWeight(arr_jja)
@@ -237,12 +397,20 @@ begin
      if (COMPUTE_MODES_MON.eq."True") then   
         arr_mon_CW = SqrtCosWeight(arr)
      else
-        delete(arr)
-        if (sstreg_plot_flag.eq.0) then
-           delete(sst)
+        if (isvar("arr")) then
+           delete(arr)
         end if
+        if (isvar("sst")) then
+           delete(sst)
+        end if 
+        if (isvar("tas")) then
+           delete(tas)
+        end if 
+        if (isvar("pr")) then
+           delete(pr)
+        end if 
      end if
-  
+;---------NAM calculations----------------------------------------------------------     
      evecv = eofunc(arr_djf_CW({lat|20:},lon|:,time|:),2,75)
      pcts = eofunc_ts(arr_djf_CW({lat|20:},lon|:,time|:),evecv,False)  
      nam_pc_djf = dim_standardize(pcts(0,:),0)
@@ -252,12 +420,26 @@ begin
         nam_sst_djf = sst_djf(0,:,:)
         nam_sst_djf = (/ regCoef(nam_pc_djf,sst_djf(lat|:,lon|:,time|:)) /)
      end if
+     if (tasreg_plot_flag.eq.0) then
+        nam_tas_djf = tas_djf(0,:,:)
+        nam_tas_djf = (/ regCoef(nam_pc_djf,tas_djf(lat|:,lon|:,time|:)) /)
+     end if
+     if (prreg_plot_flag.eq.0) then
+        nam_pr_djf = pr_djf(0,:,:)
+        nam_pr_djf = (/ regCoef(nam_pc_djf,pr_djf(lat|:,lon|:,time|:)) /)
+     end if
      if (.not.ismissing(nam_djf({85},{5}))) then
         if (nam_djf({85},{5}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
            nam_djf = nam_djf*-1.
            nam_pc_djf = nam_pc_djf*-1.
            if (sstreg_plot_flag.eq.0) then
               nam_sst_djf = nam_sst_djf*-1.
+           end if
+           if (tasreg_plot_flag.eq.0) then
+              nam_tas_djf = nam_tas_djf*-1.
+           end if
+           if (prreg_plot_flag.eq.0) then
+              nam_pr_djf = nam_pr_djf*-1.
            end if
         end if
      end if
@@ -283,12 +465,26 @@ begin
         nam_sst_mam = sst_mam(0,:,:)
         nam_sst_mam = (/ regCoef(nam_pc_mam,sst_mam(lat|:,lon|:,time|:)) /)
      end if
+     if (tasreg_plot_flag.eq.0) then
+        nam_tas_mam = tas_mam(0,:,:)
+        nam_tas_mam = (/ regCoef(nam_pc_mam,tas_mam(lat|:,lon|:,time|:)) /)
+     end if
+     if (prreg_plot_flag.eq.0) then
+        nam_pr_mam = pr_mam(0,:,:)
+        nam_pr_mam = (/ regCoef(nam_pc_mam,pr_mam(lat|:,lon|:,time|:)) /)
+     end if
      if (.not.ismissing(nam_mam({85},{5}))) then
         if (nam_mam({85},{5}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
            nam_mam = nam_mam*-1.
            nam_pc_mam = nam_pc_mam*-1.
            if (sstreg_plot_flag.eq.0) then
               nam_sst_mam = nam_sst_mam*-1.
+           end if
+           if (tasreg_plot_flag.eq.0) then
+              nam_tas_mam = nam_tas_mam*-1.
+           end if
+           if (prreg_plot_flag.eq.0) then
+              nam_pr_mam = nam_pr_mam*-1.
            end if
         end if
      end if
@@ -311,12 +507,26 @@ begin
         nam_sst_jja = sst_jja(0,:,:)
         nam_sst_jja = (/ regCoef(nam_pc_jja,sst_jja(lat|:,lon|:,time|:)) /)
      end if
+     if (tasreg_plot_flag.eq.0) then
+        nam_tas_jja = tas_jja(0,:,:)
+        nam_tas_jja = (/ regCoef(nam_pc_jja,tas_jja(lat|:,lon|:,time|:)) /)
+     end if
+     if (prreg_plot_flag.eq.0) then
+        nam_pr_jja = pr_jja(0,:,:)
+        nam_pr_jja = (/ regCoef(nam_pc_jja,pr_jja(lat|:,lon|:,time|:)) /)
+     end if
      if (.not.ismissing(nam_jja({85},{5}))) then
         if (nam_jja({85},{5}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
            nam_jja = nam_jja*-1.
            nam_pc_jja = nam_pc_jja*-1.
            if (sstreg_plot_flag.eq.0) then
               nam_sst_jja = nam_sst_jja*-1.
+           end if
+           if (tasreg_plot_flag.eq.0) then
+              nam_tas_jja = nam_tas_jja*-1.
+           end if
+           if (prreg_plot_flag.eq.0) then
+              nam_pr_jja = nam_pr_jja*-1.
            end if
         end if
      end if
@@ -339,12 +549,26 @@ begin
         nam_sst_son = sst_son(0,:,:)
         nam_sst_son = (/ regCoef(nam_pc_son,sst_son(lat|:,lon|:,time|:)) /)
      end if
+     if (tasreg_plot_flag.eq.0) then
+        nam_tas_son = tas_son(0,:,:)
+        nam_tas_son = (/ regCoef(nam_pc_son,tas_son(lat|:,lon|:,time|:)) /)
+     end if
+     if (prreg_plot_flag.eq.0) then
+        nam_pr_son = pr_son(0,:,:)
+        nam_pr_son = (/ regCoef(nam_pc_son,pr_son(lat|:,lon|:,time|:)) /)
+     end if
      if (.not.ismissing(nam_son({85},{5}))) then
         if (nam_son({85},{5}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
            nam_son = nam_son*-1.
            nam_pc_son = nam_pc_son*-1.
            if (sstreg_plot_flag.eq.0) then
               nam_sst_son = nam_sst_son*-1.
+           end if
+           if (tasreg_plot_flag.eq.0) then
+              nam_tas_son = nam_tas_son*-1.
+           end if
+           if (prreg_plot_flag.eq.0) then
+              nam_pr_son = nam_pr_son*-1.
            end if
         end if
      end if
@@ -367,12 +591,26 @@ begin
         nam_sst_ann = sst_ann(0,:,:)
         nam_sst_ann = (/ regCoef(nam_pc_ann,sst_ann(lat|:,lon|:,time|:)) /)
      end if
+     if (tasreg_plot_flag.eq.0) then
+        nam_tas_ann = tas_ann(0,:,:)
+        nam_tas_ann = (/ regCoef(nam_pc_ann,tas_ann(lat|:,lon|:,time|:)) /)
+     end if
+     if (prreg_plot_flag.eq.0) then
+        nam_pr_ann = pr_ann(0,:,:)
+        nam_pr_ann = (/ regCoef(nam_pc_ann,pr_ann(lat|:,lon|:,time|:)) /)
+     end if
      if (.not.ismissing(nam_ann({85},{5}))) then
         if (nam_ann({85},{5}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
            nam_ann = nam_ann*-1.
            nam_pc_ann = nam_pc_ann*-1.
            if (sstreg_plot_flag.eq.0) then
               nam_sst_ann = nam_sst_ann*-1.
+           end if
+           if (tasreg_plot_flag.eq.0) then
+              nam_tas_ann = nam_tas_ann*-1.
+           end if
+           if (prreg_plot_flag.eq.0) then
+              nam_pr_ann = nam_pr_ann*-1.
            end if
         end if
      end if
@@ -396,12 +634,26 @@ begin
            nam_sst_mon = sst(0,:,:)
            nam_sst_mon = (/ regCoef(nam_pc_mon,sst(lat|:,lon|:,time|:)) /)
         end if
+        if (tasreg_plot_flag.eq.0) then
+           nam_tas_mon = tas(0,:,:)
+           nam_tas_mon = (/ regCoef(nam_pc_mon,tas(lat|:,lon|:,time|:)) /)
+        end if
+        if (prreg_plot_flag.eq.0) then
+           nam_pr_mon = pr(0,:,:)
+           nam_pr_mon = (/ regCoef(nam_pc_mon,pr(lat|:,lon|:,time|:)) /)
+        end if
         if (.not.ismissing(nam_mon({85},{5}))) then
            if (nam_mon({85},{5}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
               nam_mon = nam_mon*-1.
               nam_pc_mon = nam_pc_mon*-1.
               if (sstreg_plot_flag.eq.0) then
                  nam_sst_mon = nam_sst_mon*-1.
+              end if
+              if (tasreg_plot_flag.eq.0) then
+                 nam_tas_mon = nam_tas_mon*-1.
+              end if
+              if (prreg_plot_flag.eq.0) then
+                 nam_pr_mon = nam_pr_mon*-1.
               end if
            end if
         end if
@@ -438,12 +690,28 @@ begin
         nao_sst_djf = (/ regCoef(nao_pc_djf,sst_djf(lat|:,lon|:,time|:)) /)
         delete(sst_djf)
      end if
+     if (tasreg_plot_flag.eq.0) then
+        nao_tas_djf = tas_djf(0,:,:)
+        nao_tas_djf = (/ regCoef(nao_pc_djf,tas_djf(lat|:,lon|:,time|:)) /)
+        delete(tas_djf)
+     end if
+     if (prreg_plot_flag.eq.0) then
+        nao_pr_djf = pr_djf(0,:,:)
+        nao_pr_djf = (/ regCoef(nao_pc_djf,pr_djf(lat|:,lon|:,time|:)) /)
+        delete(pr_djf)
+     end if
      if (.not.ismissing(nao_djf({70},{350}))) then
         if (nao_djf({70},{350}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
            nao_djf = nao_djf*-1.
            nao_pc_djf = nao_pc_djf*-1.
            if (sstreg_plot_flag.eq.0) then
               nao_sst_djf = nao_sst_djf*-1.
+           end if
+           if (tasreg_plot_flag.eq.0) then
+              nao_tas_djf = nao_tas_djf*-1.
+           end if
+           if (prreg_plot_flag.eq.0) then
+              nao_pr_djf = nao_pr_djf*-1.
            end if
         end if
      end if
@@ -467,12 +735,28 @@ begin
         nao_sst_mam = (/ regCoef(nao_pc_mam,sst_mam(lat|:,lon|:,time|:)) /)
         delete(sst_mam)
      end if
+     if (tasreg_plot_flag.eq.0) then
+        nao_tas_mam = tas_mam(0,:,:)
+        nao_tas_mam = (/ regCoef(nao_pc_mam,tas_mam(lat|:,lon|:,time|:)) /)
+        delete(tas_mam)
+     end if
+     if (prreg_plot_flag.eq.0) then
+        nao_pr_mam = pr_mam(0,:,:)
+        nao_pr_mam = (/ regCoef(nao_pc_mam,pr_mam(lat|:,lon|:,time|:)) /)
+        delete(pr_mam)
+     end if
      if (.not.ismissing(nao_mam({70},{350}))) then
         if (nao_mam({70},{350}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
            nao_mam = nao_mam*-1.
            nao_pc_mam = nao_pc_mam*-1.
            if (sstreg_plot_flag.eq.0) then
               nao_sst_mam = nao_sst_mam*-1.
+           end if
+           if (tasreg_plot_flag.eq.0) then
+              nao_tas_mam = nao_tas_mam*-1.
+           end if
+           if (prreg_plot_flag.eq.0) then
+              nao_pr_mam = nao_pr_mam*-1.
            end if
         end if
      end if
@@ -496,12 +780,28 @@ begin
         nao_sst_jja = (/ regCoef(nao_pc_jja,sst_jja(lat|:,lon|:,time|:)) /)
         delete(sst_jja)
      end if
+     if (tasreg_plot_flag.eq.0) then
+        nao_tas_jja = tas_jja(0,:,:)
+        nao_tas_jja = (/ regCoef(nao_pc_jja,tas_jja(lat|:,lon|:,time|:)) /)
+        delete(tas_jja)
+     end if
+     if (prreg_plot_flag.eq.0) then
+        nao_pr_jja = pr_jja(0,:,:)
+        nao_pr_jja = (/ regCoef(nao_pc_jja,pr_jja(lat|:,lon|:,time|:)) /)
+        delete(pr_jja)
+     end if
      if (.not.ismissing(nao_jja({70},{350}))) then
         if (nao_jja({70},{350}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
            nao_jja = nao_jja*-1.
            nao_pc_jja = nao_pc_jja*-1.
            if (sstreg_plot_flag.eq.0) then
               nao_sst_jja = nao_sst_jja*-1.
+           end if
+           if (tasreg_plot_flag.eq.0) then
+              nao_tas_jja = nao_tas_jja*-1.
+           end if
+           if (prreg_plot_flag.eq.0) then
+              nao_pr_jja = nao_pr_jja*-1.
            end if
         end if
      end if
@@ -525,12 +825,28 @@ begin
         nao_sst_son = (/ regCoef(nao_pc_son,sst_son(lat|:,lon|:,time|:)) /)
         delete(sst_son)
      end if
+     if (tasreg_plot_flag.eq.0) then
+        nao_tas_son = tas_son(0,:,:)
+        nao_tas_son = (/ regCoef(nao_pc_son,tas_son(lat|:,lon|:,time|:)) /)
+        delete(tas_son)
+     end if
+     if (prreg_plot_flag.eq.0) then
+        nao_pr_son = pr_son(0,:,:)
+        nao_pr_son = (/ regCoef(nao_pc_son,pr_son(lat|:,lon|:,time|:)) /)
+        delete(pr_son)
+     end if
      if (.not.ismissing(nao_son({70},{350}))) then
         if (nao_son({70},{350}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
            nao_son = nao_son*-1.
            nao_pc_son = nao_pc_son*-1.
            if (sstreg_plot_flag.eq.0) then
               nao_sst_son = nao_sst_son*-1.
+           end if
+           if (tasreg_plot_flag.eq.0) then
+              nao_tas_son = nao_tas_son*-1.
+           end if
+           if (prreg_plot_flag.eq.0) then
+              nao_pr_son = nao_pr_son*-1.
            end if
         end if
      end if
@@ -554,12 +870,28 @@ begin
         nao_sst_ann = (/ regCoef(nao_pc_ann,sst_ann(lat|:,lon|:,time|:)) /)
         delete(sst_ann)
      end if
+     if (tasreg_plot_flag.eq.0) then
+        nao_tas_ann = tas_ann(0,:,:)
+        nao_tas_ann = (/ regCoef(nao_pc_ann,tas_ann(lat|:,lon|:,time|:)) /)
+        delete(tas_ann)
+     end if
+     if (prreg_plot_flag.eq.0) then
+        nao_pr_ann = pr_ann(0,:,:)
+        nao_pr_ann = (/ regCoef(nao_pc_ann,pr_ann(lat|:,lon|:,time|:)) /)
+        delete(pr_ann)
+     end if
      if (.not.ismissing(nao_ann({70},{350}))) then
         if (nao_ann({70},{350}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
            nao_ann = nao_ann*-1.
            nao_pc_ann = nao_pc_ann*-1.
            if (sstreg_plot_flag.eq.0) then
               nao_sst_ann = nao_sst_ann*-1.
+           end if
+           if (tasreg_plot_flag.eq.0) then
+              nao_tas_ann = nao_tas_ann*-1.
+           end if
+           if (prreg_plot_flag.eq.0) then
+              nao_pr_ann = nao_pr_ann*-1.
            end if
         end if
      end if
@@ -584,12 +916,28 @@ begin
            nao_sst_mon = (/ regCoef(nao_pc_mon,sst(lat|:,lon|:,time|:)) /)
            delete(sst)
         end if
+        if (tasreg_plot_flag.eq.0) then
+           nao_tas_mon = tas(0,:,:)
+           nao_tas_mon = (/ regCoef(nao_pc_mon,tas(lat|:,lon|:,time|:)) /)
+           delete(tas)
+        end if
+        if (prreg_plot_flag.eq.0) then
+           nao_pr_mon = pr(0,:,:)
+           nao_pr_mon = (/ regCoef(nao_pc_mon,pr(lat|:,lon|:,time|:)) /)
+           delete(pr)
+        end if
         if (.not.ismissing(nao_mon({70},{350}))) then
            if (nao_mon({70},{350}).ge.0) then  ; arbitrary attempt to make all plots have the same sign..
               nao_mon = nao_mon*-1.
               nao_pc_mon = nao_pc_mon*-1.
               if (sstreg_plot_flag.eq.0) then
                  nao_sst_mon = nao_sst_mon*-1.
+              end if
+              if (tasreg_plot_flag.eq.0) then
+                 nao_tas_mon = nao_tas_mon*-1.
+              end if
+              if (prreg_plot_flag.eq.0) then
+                 nao_pr_mon = nao_pr_mon*-1.
               end if
            end if
         end if
@@ -608,6 +956,12 @@ begin
      if (sstreg_frame.eq.1.and.sstreg_plot_flag.eq.0) then    ; sstreg_frame = flag to create regressions .ps/.png files 
         sstreg_frame = 0
      end if          
+     if (tasreg_frame.eq.1.and.tasreg_plot_flag.eq.0) then    ; tasreg_frame = flag to create regressions .ps/.png files 
+        tasreg_frame = 0
+     end if  
+     if (prreg_frame.eq.1.and.prreg_plot_flag.eq.0) then      ; prreg_frame = flag to create regressions .ps/.png files 
+        prreg_frame = 0
+     end if  
 ;------------------------------------------------------------------------------------------------------
      if (OUTPUT_DATA.eq."True") then
         modname = str_sub_str(names(ee)," ","_")
@@ -625,39 +979,40 @@ begin
            else
               z@climatology = CLIMO_SYEAR+"-"+CLIMO_EYEAR+" climatology removed prior to all calculations (other than means)"
            end if
+           z@Conventions = "CF-1.6"
         else
            z = addfile(fn,"w")
         end if
         
-        z->nao_pc_djf = nao_pc_djf
-        z->nao_pc_mam = nao_pc_mam
-        z->nao_pc_jja = nao_pc_jja
-        z->nao_pc_son = nao_pc_son
-        z->nao_pc_ann = nao_pc_ann
+        z->nao_pc_djf = set_varAtts(nao_pc_djf,"NAO normalized principal component timeseries (DJF)","1","")
+        z->nao_pc_mam = set_varAtts(nao_pc_mam,"NAO normalized principal component timeseries (MAM)","1","")
+        z->nao_pc_jja = set_varAtts(nao_pc_jja,"NAO normalized principal component timeseries (JJA)","1","")
+        z->nao_pc_son = set_varAtts(nao_pc_son,"NAO normalized principal component timeseries (SON)","1","")
+        z->nao_pc_ann = set_varAtts(nao_pc_ann,"NAO normalized principal component timeseries (ANN)","1","")
         
-        z->nam_pc_djf = nam_pc_djf
-        z->nam_pc_mam = nam_pc_mam
-        z->nam_pc_jja = nam_pc_jja
-        z->nam_pc_son = nam_pc_son
-        z->nam_pc_ann = nam_pc_ann
+        z->nam_pc_djf = set_varAtts(nam_pc_djf,"NAM normalized principal component timeseries (DJF)","1","")
+        z->nam_pc_mam = set_varAtts(nam_pc_mam,"NAM normalized principal component timeseries (MAM)","1","")
+        z->nam_pc_jja = set_varAtts(nam_pc_jja,"NAM normalized principal component timeseries (JJA)","1","")
+        z->nam_pc_son = set_varAtts(nam_pc_son,"NAM normalized principal component timeseries (SON)","1","")
+        z->nam_pc_ann = set_varAtts(nam_pc_ann,"NAM normalized principal component timeseries (ANN)","1","")
         
-        z->nao_djf = nao_djf
-        z->nao_mam = nao_mam
-        z->nao_jja = nao_jja
-        z->nao_son = nao_son
-        z->nao_ann = nao_ann
+        z->nao_pattern_djf = set_varAtts(nao_djf,"NAO spatial pattern (DJF)","","")   
+        z->nao_pattern_mam = set_varAtts(nao_mam,"NAO spatial pattern (MAM)","","")
+        z->nao_pattern_jja = set_varAtts(nao_jja,"NAO spatial pattern (JJA)","","")
+        z->nao_pattern_son = set_varAtts(nao_son,"NAO spatial pattern (SON)","","")
+        z->nao_pattern_ann = set_varAtts(nao_ann,"NAO spatial pattern (annual)","","")
         
-        z->nam_djf = nam_djf
-        z->nam_mam = nam_mam
-        z->nam_jja = nam_jja
-        z->nam_son = nam_son
-        z->nam_ann = nam_ann
+        z->nam_pattern_djf = set_varAtts(nam_djf,"NAM spatial pattern (DJF)","","")
+        z->nam_pattern_mam = set_varAtts(nam_mam,"NAM spatial pattern (MAM)","","")
+        z->nam_pattern_jja = set_varAtts(nam_jja,"NAM spatial pattern (JJA)","","")
+        z->nam_pattern_son = set_varAtts(nam_son,"NAM spatial pattern (SON)","","")
+        z->nam_pattern_ann = set_varAtts(nam_ann,"NAM spatial pattern (annual)","","")
 
         if (COMPUTE_MODES_MON.eq."True") then   
-           z->nao_pc_mon = nao_pc_mon
-           z->nam_pc_mon = nam_pc_mon
-           z->nao_mon = nao_mon
-           z->nam_mon = nam_mon
+           z->nao_pc_mon = set_varAtts(nao_pc_mon,"NAO principal component timeseries (monthly)","","")
+           z->nam_pc_mon = set_varAtts(nam_pc_mon,"NAM principal component timeseries (monthly)","","")
+           z->nao_pattern_mon = set_varAtts(nao_mon,"NAO spatial pattern (monthly)","","")
+           z->nam_pattern_mon = set_varAtts(nam_mon,"NAM spatial pattern (monthly)","","")
         end if
         delete(z)
         delete([/modname,fn/])
@@ -678,27 +1033,104 @@ begin
               else
                  z@climatology = CLIMO_SYEAR+"-"+CLIMO_EYEAR+" climatology removed prior to all calculations (other than means)"
               end if
+              z@Conventions = "CF-1.6"
            else
               z = addfile(fn,"w")
            end if
-           z->nao_sst_regression_djf = nao_sst_djf
-           z->nao_sst_regression_mam = nao_sst_mam
-           z->nao_sst_regression_jja = nao_sst_jja
-           z->nao_sst_regression_son = nao_sst_son
-           z->nao_sst_regression_ann = nao_sst_ann
+           z->nao_sst_regression_djf = set_varAtts(nao_sst_djf,"sst regression onto NAO principal component timeseries (DJF)","","")    
+           z->nao_sst_regression_mam = set_varAtts(nao_sst_mam,"sst regression onto NAO principal component timeseries (MAM)","","")    
+           z->nao_sst_regression_jja = set_varAtts(nao_sst_jja,"sst regression onto NAO principal component timeseries (JJA)","","")    
+           z->nao_sst_regression_son = set_varAtts(nao_sst_son,"sst regression onto NAO principal component timeseries (SON)","","")    
+           z->nao_sst_regression_ann = set_varAtts(nao_sst_ann,"sst regression onto NAO principal component timeseries (annual)","","")    
         
-           z->nam_sst_regression_djf = nam_sst_djf
-           z->nam_sst_regression_mam = nam_sst_mam
-           z->nam_sst_regression_jja = nam_sst_jja
-           z->nam_sst_regression_son = nam_sst_son
-           z->nam_sst_regression_ann = nam_sst_ann
+           z->nam_sst_regression_djf = set_varAtts(nam_sst_djf,"sst regression onto NAM principal component timeseries (DJF)","","")    
+           z->nam_sst_regression_mam = set_varAtts(nam_sst_mam,"sst regression onto NAM principal component timeseries (MAM)","","")    
+           z->nam_sst_regression_jja = set_varAtts(nam_sst_jja,"sst regression onto NAM principal component timeseries (JJA)","","")    
+           z->nam_sst_regression_son = set_varAtts(nam_sst_son,"sst regression onto NAM principal component timeseries (SON)","","")    
+           z->nam_sst_regression_ann = set_varAtts(nam_sst_ann,"sst regression onto NAM principal component timeseries (annual)","","")    
            if (COMPUTE_MODES_MON.eq."True") then   
-              z->nao_sst_regression_mon = nao_sst_mon
-              z->nam_sst_regression_mon = nam_sst_mon
+              z->nao_sst_regression_mon = set_varAtts(nao_sst_mon,"sst regression onto NAO principal component timeseries (monthly)","","")    
+              z->nam_sst_regression_mon = set_varAtts(nam_sst_mon,"sst regression onto NAM principal component timeseries (monthly)","","")    
            end if
            delete(z)
            delete([/modname,fn/])
         end if
+        if (tasreg_plot_flag.eq.0) then
+           modname = str_sub_str(names_tas(ee)," ","_")
+           bc = (/"/","'","(",")"/)
+           do gg = 0,dimsizes(bc)-1
+              modname = str_sub_str(modname,bc(gg),"_")
+           end do
+           fn = getenv("OUTDIR")+modname+".cvdp_data.psl.nam_nao.tas."+syear_tas(ee)+"-"+eyear_tas(ee)+".nc"
+           if (.not.isfilepresent2(fn)) then
+              z = addfile(fn,"c")
+              z@source = "NCAR Climate Analysis Section's Climate Variability Diagnostics Package v"+getenv("VERSION")
+              z@notes = "Data from "+names_tas(ee)+" from "+syear_tas(ee)+"-"+eyear_tas(ee)
+              if (OPT_CLIMO.eq."Full") then
+                 z@climatology = syear_tas(ee)+"-"+eyear_tas(ee)+" climatology removed prior to all calculations (other than means)"
+              else
+                 z@climatology = CLIMO_SYEAR+"-"+CLIMO_EYEAR+" climatology removed prior to all calculations (other than means)"
+              end if
+              z@Conventions = "CF-1.6"
+           else
+              z = addfile(fn,"w")
+           end if
+           z->nao_tas_regression_djf = set_varAtts(nao_tas_djf,"tas regression onto NAO principal component timeseries (DJF)","","")    
+           z->nao_tas_regression_mam = set_varAtts(nao_tas_mam,"tas regression onto NAO principal component timeseries (MAM)","","")    
+           z->nao_tas_regression_jja = set_varAtts(nao_tas_jja,"tas regression onto NAO principal component timeseries (JJA)","","")    
+           z->nao_tas_regression_son = set_varAtts(nao_tas_son,"tas regression onto NAO principal component timeseries (SON)","","")    
+           z->nao_tas_regression_ann = set_varAtts(nao_tas_ann,"tas regression onto NAO principal component timeseries (annual)","","")    
+        
+           z->nam_tas_regression_djf = set_varAtts(nam_tas_djf,"tas regression onto NAM principal component timeseries (DJF)","","")    
+           z->nam_tas_regression_mam = set_varAtts(nam_tas_mam,"tas regression onto NAM principal component timeseries (MAM)","","")    
+           z->nam_tas_regression_jja = set_varAtts(nam_tas_jja,"tas regression onto NAM principal component timeseries (JJA)","","")    
+           z->nam_tas_regression_son = set_varAtts(nam_tas_son,"tas regression onto NAM principal component timeseries (SON)","","")    
+           z->nam_tas_regression_ann = set_varAtts(nam_tas_ann,"tas regression onto NAM principal component timeseries (annual)","","")    
+           if (COMPUTE_MODES_MON.eq."True") then   
+              z->nao_tas_regression_mon = set_varAtts(nao_tas_mon,"tas regression onto NAO principal component timeseries (monthly)","","")    
+              z->nam_tas_regression_mon = set_varAtts(nam_tas_mon,"tas regression onto NAM principal component timeseries (monthly)","","")    
+           end if
+           delete(z)
+           delete([/modname,fn/])
+        end if
+        if (prreg_plot_flag.eq.0) then
+           modname = str_sub_str(names_pr(ee)," ","_")
+           bc = (/"/","'","(",")"/)
+           do gg = 0,dimsizes(bc)-1
+              modname = str_sub_str(modname,bc(gg),"_")
+           end do
+           fn = getenv("OUTDIR")+modname+".cvdp_data.psl.nam_nao.pr."+syear_pr(ee)+"-"+eyear_pr(ee)+".nc"
+           if (.not.isfilepresent2(fn)) then
+              z = addfile(fn,"c")
+              z@source = "NCAR Climate Analysis Section's Climate Variability Diagnostics Package v"+getenv("VERSION")
+              z@notes = "Data from "+names_pr(ee)+" from "+syear_pr(ee)+"-"+eyear_pr(ee)
+              if (OPT_CLIMO.eq."Full") then
+                 z@climatology = syear_pr(ee)+"-"+eyear_pr(ee)+" climatology removed prior to all calculations (other than means)"
+              else
+                 z@climatology = CLIMO_SYEAR+"-"+CLIMO_EYEAR+" climatology removed prior to all calculations (other than means)"
+              end if
+              z@Conventions = "CF-1.6"
+           else
+              z = addfile(fn,"w")
+           end if
+           z->nao_pr_regression_djf = set_varAtts(nao_pr_djf,"pr regression onto NAO principal component timeseries (DJF)","","")    
+           z->nao_pr_regression_mam = set_varAtts(nao_pr_mam,"pr regression onto NAO principal component timeseries (MAM)","","")    
+           z->nao_pr_regression_jja = set_varAtts(nao_pr_jja,"pr regression onto NAO principal component timeseries (JJA)","","")    
+           z->nao_pr_regression_son = set_varAtts(nao_pr_son,"pr regression onto NAO principal component timeseries (SON)","","")    
+           z->nao_pr_regression_ann = set_varAtts(nao_pr_ann,"pr regression onto NAO principal component timeseries (annual)","","")    
+        
+           z->nam_pr_regression_djf = set_varAtts(nam_pr_djf,"pr regression onto NAM principal component timeseries (DJF)","","")    
+           z->nam_pr_regression_mam = set_varAtts(nam_pr_mam,"pr regression onto NAM principal component timeseries (MAM)","","")    
+           z->nam_pr_regression_jja = set_varAtts(nam_pr_jja,"pr regression onto NAM principal component timeseries (JJA)","","")    
+           z->nam_pr_regression_son = set_varAtts(nam_pr_son,"pr regression onto NAM principal component timeseries (SON)","","")    
+           z->nam_pr_regression_ann = set_varAtts(nam_pr_ann,"pr regression onto NAM principal component timeseries (annual)","","")    
+           if (COMPUTE_MODES_MON.eq."True") then   
+              z->nao_pr_regression_mon = set_varAtts(nao_pr_mon,"pr regression onto NAO principal component timeseries (monthly)","","")    
+              z->nam_pr_regression_mon = set_varAtts(nam_pr_mon,"pr regression onto NAM principal component timeseries (monthly)","","")    
+           end if
+           delete(z)
+           delete([/modname,fn/])
+        end if 
      end if       
 ;========================================================================
      res = True
@@ -707,7 +1139,6 @@ begin
      res@mpGridAndLimbOn = False
      res@mpFillOn = False
      res@mpOutlineOn = True  
-     res@mpDataSetName = "Earth..4"
      res@gsnDraw      = False
      res@gsnFrame     = False
      res@cnLevelSelectionMode = "ExplicitLevels"
@@ -734,10 +1165,35 @@ begin
      res@gsnPolar = "NH"     
      res@mpMinLatF    = 20.
      res@mpCenterLonF = 0.
-     
      res@cnLevels = (/-7,-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6,7./)
+
      res@gsnLeftString = syear(ee)+"-"+eyear(ee)
      res@gsnCenterString = names(ee)
+     
+     res4 = res    ; res4 = pr regression resources     
+     if (COLORMAP.eq.0) then
+        res4@cnLevels := fspan(-.7,.7,15)  
+     else
+        res4@cnLevels := fspan(-.5,.5,11)     
+     end if
+
+     res2 = True
+     res2@gsnDraw      = False
+     res2@gsnFrame     = False
+     res2@cnLevelSelectionMode = "ExplicitLevels"
+     res2@cnLevels = res@cnLevels
+
+     res2@cnLineLabelsOn = False
+     res2@cnFillOn        = True
+     res2@cnLinesOn       = False
+     res2@cnFillMode = "AreaFill"
+     res2@lbLabelBarOn    = False
+     res2@cnInfoLabelOn = False
+     res2@gsnRightString = ""
+     res2@gsnLeftString = "" 
+     res2@gsnCenterString = ""   
+     res2@gsnAddCyclic = True
+
      
      if (isfilepresent2("obs_psl").and.ee.eq.0) then    ; for pattern correlation table. Save entire lat/lon array
         patcor_nam_djf = new((/nsim,dimsizes(nam_djf&lat),dimsizes(nam_djf&lon)/),typeof(nam_djf))
@@ -801,8 +1257,17 @@ begin
         delete([/nao_mon/])
      end if
      
-     if (sstreg_plot_flag.eq.0) then
-        res@cnLevels = fspan(-1.05,1.05,15)
+     if (sstreg_plot_flag.eq.0) then     ; SSTs have to be present for regressions. TASs are optional
+        res@cnLevels := fspan(-.7,.7,15)
+        if (tasreg_plot_flag.eq.0) then
+           if (names_ts(ee).eq.names_tas(ee)) then
+              res@gsnCenterString = names_ts(ee)
+           else
+              res@gsnCenterString = names_ts(ee)+" / "+names_tas(ee)
+           end if    
+        else
+           res@gsnCenterString = names_ts(ee)
+        end if
         res@gsnRightString = ""
         reg_nam_djf(ee) = gsn_csm_contour_map_polar(wks_nam,nam_sst_djf,res)
         reg_nam_mam(ee) = gsn_csm_contour_map_polar(wks_nam,nam_sst_mam,res)
@@ -810,9 +1275,28 @@ begin
         reg_nam_son(ee) = gsn_csm_contour_map_polar(wks_nam,nam_sst_son,res)
         reg_nam_ann(ee) = gsn_csm_contour_map_polar(wks_nam,nam_sst_ann,res)     
         delete([/nam_sst_djf,nam_sst_mam,nam_sst_jja,nam_sst_son,nam_sst_ann/])
+        if (tasreg_plot_flag.eq.0) then
+           o_djf = gsn_csm_contour(wks_nam,nam_tas_djf,res2)
+           o_mam = gsn_csm_contour(wks_nam,nam_tas_mam,res2)
+           o_jja = gsn_csm_contour(wks_nam,nam_tas_jja,res2)
+           o_son = gsn_csm_contour(wks_nam,nam_tas_son,res2)
+           o_ann = gsn_csm_contour(wks_nam,nam_tas_ann,res2)
+           delete([/nam_tas_djf,nam_tas_mam,nam_tas_jja,nam_tas_son,nam_tas_ann/])
+           overlay(reg_nam_djf(ee),o_djf)
+           overlay(reg_nam_mam(ee),o_mam)
+           overlay(reg_nam_jja(ee),o_jja)
+           overlay(reg_nam_son(ee),o_son)
+           overlay(reg_nam_ann(ee),o_ann)
+           delete([/o_djf,o_mam,o_jja,o_son,o_ann/])           
+        end if
         if (COMPUTE_MODES_MON.eq."True") then                    
            reg_nam_mon(ee) = gsn_csm_contour_map_polar(wks_nam,nam_sst_mon,res)
            delete([/nam_sst_mon/])
+           if (tasreg_plot_flag.eq.0) then
+              o_mon = gsn_csm_contour(wks_nam,nam_tas_mon,res2)
+              overlay(reg_nam_mon(ee),o_mon)
+              delete([/o_mon,nam_tas_mon/])
+           end if
         end if
      
         reg_nao_djf(ee) = gsn_csm_contour_map_polar(wks_nao,nao_sst_djf,res)
@@ -821,9 +1305,54 @@ begin
         reg_nao_son(ee) = gsn_csm_contour_map_polar(wks_nao,nao_sst_son,res)
         reg_nao_ann(ee) = gsn_csm_contour_map_polar(wks_nao,nao_sst_ann,res)     
         delete([/nao_sst_djf,nao_sst_mam,nao_sst_jja,nao_sst_son,nao_sst_ann/])
+        if (tasreg_plot_flag.eq.0) then
+           o_djf = gsn_csm_contour(wks_nao,nao_tas_djf,res2)
+           o_mam = gsn_csm_contour(wks_nao,nao_tas_mam,res2)
+           o_jja = gsn_csm_contour(wks_nao,nao_tas_jja,res2)
+           o_son = gsn_csm_contour(wks_nao,nao_tas_son,res2)
+           o_ann = gsn_csm_contour(wks_nao,nao_tas_ann,res2)
+           delete([/nao_tas_djf,nao_tas_mam,nao_tas_jja,nao_tas_son,nao_tas_ann/])
+           overlay(reg_nao_djf(ee),o_djf)
+           overlay(reg_nao_mam(ee),o_mam)
+           overlay(reg_nao_jja(ee),o_jja)
+           overlay(reg_nao_son(ee),o_son)
+           overlay(reg_nao_ann(ee),o_ann)
+           delete([/o_djf,o_mam,o_jja,o_son,o_ann/])           
+        end if
         if (COMPUTE_MODES_MON.eq."True") then                    
            reg_nao_mon(ee) = gsn_csm_contour_map_polar(wks_nao,nao_sst_mon,res)
            delete([/nao_sst_mon/])
+           if (tasreg_plot_flag.eq.0) then
+              o_mon = gsn_csm_contour(wks_nao,nao_tas_mon,res2)
+              overlay(reg_nao_mon(ee),o_mon)
+              delete([/o_mon,nao_tas_mon/])
+           end if
+        end if
+     end if
+
+     if (prreg_plot_flag.eq.0) then     ; PR regressions
+        res4@gsnRightString = ""
+        res4@gsnCenterString = names_pr(ee)
+        reg_nam_pr_djf(ee) = gsn_csm_contour_map_polar(wks_nam_pr,nam_pr_djf,res4)
+        reg_nam_pr_mam(ee) = gsn_csm_contour_map_polar(wks_nam_pr,nam_pr_mam,res4)
+        reg_nam_pr_jja(ee) = gsn_csm_contour_map_polar(wks_nam_pr,nam_pr_jja,res4)
+        reg_nam_pr_son(ee) = gsn_csm_contour_map_polar(wks_nam_pr,nam_pr_son,res4)
+        reg_nam_pr_ann(ee) = gsn_csm_contour_map_polar(wks_nam_pr,nam_pr_ann,res4)     
+        delete([/nam_pr_djf,nam_pr_mam,nam_pr_jja,nam_pr_son,nam_pr_ann/])
+        if (COMPUTE_MODES_MON.eq."True") then                    
+           reg_nam_pr_mon(ee) = gsn_csm_contour_map_polar(wks_nam_pr,nam_pr_mon,res4)
+           delete([/nam_pr_mon/])
+        end if
+     
+        reg_nao_pr_djf(ee) = gsn_csm_contour_map_polar(wks_nao_pr,nao_pr_djf,res4)
+        reg_nao_pr_mam(ee) = gsn_csm_contour_map_polar(wks_nao_pr,nao_pr_mam,res4)
+        reg_nao_pr_jja(ee) = gsn_csm_contour_map_polar(wks_nao_pr,nao_pr_jja,res4)
+        reg_nao_pr_son(ee) = gsn_csm_contour_map_polar(wks_nao_pr,nao_pr_son,res4)
+        reg_nao_pr_ann(ee) = gsn_csm_contour_map_polar(wks_nao_pr,nao_pr_ann,res4)     
+        delete([/nao_pr_djf,nao_pr_mam,nao_pr_jja,nao_pr_son,nao_pr_ann/])
+        if (COMPUTE_MODES_MON.eq."True") then                    
+           reg_nao_pr_mon(ee) = gsn_csm_contour_map_polar(wks_nao_pr,nao_pr_mon,res4)
+           delete([/nao_pr_mon/])
         end if
      end if
 
@@ -998,27 +1527,55 @@ begin
   end if
   
   if (sstreg_frame.eq.0) then
-     panres@txString = "NAM SST Regressions (DJF)" 
+     if (tasreg_frame.eq.0) then
+        txt0 = "SST/TAS"
+     else
+        txt0 = "SST"
+     end if
+     panres@txString = "NAM "+txt0+" Regressions (DJF)" 
      gsn_panel2(wks_nam,reg_nam_djf,(/nrow,ncol/),panres)
      delete(reg_nam_djf)
-     panres@txString = "NAM SST Regressions (MAM)"
+     panres@txString = "NAM "+txt0+" Regressions (MAM)"
      gsn_panel2(wks_nam,reg_nam_mam,(/nrow,ncol/),panres)
      delete(reg_nam_mam)
-     panres@txString = "NAM SST Regressions (JJA)"
+     panres@txString = "NAM "+txt0+" Regressions (JJA)"
      gsn_panel2(wks_nam,reg_nam_jja,(/nrow,ncol/),panres)
      delete(reg_nam_jja)
-     panres@txString = "NAM SST Regressions (SON)"
+     panres@txString = "NAM "+txt0+" Regressions (SON)"
      gsn_panel2(wks_nam,reg_nam_son,(/nrow,ncol/),panres)
      delete(reg_nam_son)
-     panres@txString = "NAM SST Regressions (Annual)"
+     panres@txString = "NAM "+txt0+" Regressions (Annual)"
      gsn_panel2(wks_nam,reg_nam_ann,(/nrow,ncol/),panres)
      delete(reg_nam_ann)
      if (COMPUTE_MODES_MON.eq."True") then    
-        panres@txString = "NAM SST Regressions (Monthly)"
+        panres@txString = "NAM "+txt0+" Regressions (Monthly)"
         gsn_panel2(wks_nam,reg_nam_mon,(/nrow,ncol/),panres)
         delete(reg_nam_mon)
      end if
      delete(wks_nam)  
+  end if
+  if (prreg_frame.eq.0) then
+     panres@txString = "NAM PR Regressions (DJF)" 
+     gsn_panel2(wks_nam_pr,reg_nam_pr_djf,(/nrow,ncol/),panres)
+     delete(reg_nam_pr_djf)
+     panres@txString = "NAM PR Regressions (MAM)"
+     gsn_panel2(wks_nam_pr,reg_nam_pr_mam,(/nrow,ncol/),panres)
+     delete(reg_nam_pr_mam)
+     panres@txString = "NAM PR Regressions (JJA)"
+     gsn_panel2(wks_nam_pr,reg_nam_pr_jja,(/nrow,ncol/),panres)
+     delete(reg_nam_pr_jja)
+     panres@txString = "NAM PR Regressions (SON)"
+     gsn_panel2(wks_nam_pr,reg_nam_pr_son,(/nrow,ncol/),panres)
+     delete(reg_nam_pr_son)
+     panres@txString = "NAM PR Regressions (Annual)"
+     gsn_panel2(wks_nam_pr,reg_nam_pr_ann,(/nrow,ncol/),panres)
+     delete(reg_nam_pr_ann)
+     if (COMPUTE_MODES_MON.eq."True") then    
+        panres@txString = "NAM PR Regressions (Monthly)"
+        gsn_panel2(wks_nam_pr,reg_nam_pr_mon,(/nrow,ncol/),panres)
+        delete(reg_nam_pr_mon)
+     end if
+     delete(wks_nam_pr)  
   end if
   
   panres@txString = "NAO (DJF)" 
@@ -1043,27 +1600,55 @@ begin
   end if
   
   if (sstreg_frame.eq.0) then
-     panres@txString = "NAO SST Regressions (DJF)" 
+     if (tasreg_frame.eq.0) then
+        txt0 = "SST/TAS"
+     else
+        txt0 = "SST"
+     end if
+     panres@txString = "NAO "+txt0+" Regressions (DJF)" 
      gsn_panel2(wks_nao,reg_nao_djf,(/nrow,ncol/),panres)
      delete(reg_nao_djf)
-     panres@txString = "NAO SST Regressions (MAM)"
+     panres@txString = "NAO "+txt0+" Regressions (MAM)"
      gsn_panel2(wks_nao,reg_nao_mam,(/nrow,ncol/),panres)
      delete(reg_nao_mam)
-     panres@txString = "NAO SST Regressions (JJA)"
+     panres@txString = "NAO "+txt0+" Regressions (JJA)"
      gsn_panel2(wks_nao,reg_nao_jja,(/nrow,ncol/),panres)
      delete(reg_nao_jja)
-     panres@txString = "NAO SST Regressions (SON)"
+     panres@txString = "NAO "+txt0+" Regressions (SON)"
      gsn_panel2(wks_nao,reg_nao_son,(/nrow,ncol/),panres)
      delete(reg_nao_son)
-     panres@txString = "NAO SST Regressions (Annual)"
+     panres@txString = "NAO "+txt0+" Regressions (Annual)"
      gsn_panel2(wks_nao,reg_nao_ann,(/nrow,ncol/),panres)
      delete(reg_nao_ann)
      if (COMPUTE_MODES_MON.eq."True") then    
-        panres@txString = "NAO SST Regressions (Monthly)"
+        panres@txString = "NAO "+txt0+" Regressions (Monthly)"
         gsn_panel2(wks_nao,reg_nao_mon,(/nrow,ncol/),panres)
         delete(reg_nao_mon)
      end if
-     delete(wks_nao)
+     delete(wks_nao)  
+  end if
+  if (prreg_frame.eq.0) then
+     panres@txString = "NAO PR Regressions (DJF)" 
+     gsn_panel2(wks_nao_pr,reg_nao_pr_djf,(/nrow,ncol/),panres)
+     delete(reg_nao_pr_djf)
+     panres@txString = "NAO PR Regressions (MAM)"
+     gsn_panel2(wks_nao_pr,reg_nao_pr_mam,(/nrow,ncol/),panres)
+     delete(reg_nao_pr_mam)
+     panres@txString = "NAO PR Regressions (JJA)"
+     gsn_panel2(wks_nao_pr,reg_nao_pr_jja,(/nrow,ncol/),panres)
+     delete(reg_nao_pr_jja)
+     panres@txString = "NAO PR Regressions (SON)"
+     gsn_panel2(wks_nao_pr,reg_nao_pr_son,(/nrow,ncol/),panres)
+     delete(reg_nao_pr_son)
+     panres@txString = "NAO PR Regressions (Annual)"
+     gsn_panel2(wks_nao_pr,reg_nao_pr_ann,(/nrow,ncol/),panres)
+     delete(reg_nao_pr_ann)
+     if (COMPUTE_MODES_MON.eq."True") then    
+        panres@txString = "NAO PR Regressions (Monthly)"
+        gsn_panel2(wks_nao_pr,reg_nao_pr_mon,(/nrow,ncol/),panres)
+        delete(reg_nao_pr_mon)
+     end if
+     delete(wks_nao_pr)  
   end if
 
   panres2 = True    
@@ -1139,23 +1724,34 @@ begin
      if (COMPUTE_MODES_MON.eq."True") then     
         system("mv "+OUTDIR+"nam.000006.png "+OUTDIR+"nam.mon.png") 
         if (sstreg_frame.eq.0) then 
-           system("mv "+OUTDIR+"nam.000007.png "+OUTDIR+"nam.sstreg.djf.png") 
-           system("mv "+OUTDIR+"nam.000008.png "+OUTDIR+"nam.sstreg.mam.png") 
-           system("mv "+OUTDIR+"nam.000009.png "+OUTDIR+"nam.sstreg.jja.png") 
-           system("mv "+OUTDIR+"nam.000010.png "+OUTDIR+"nam.sstreg.son.png") 
-           system("mv "+OUTDIR+"nam.000011.png "+OUTDIR+"nam.sstreg.ann.png")
-           system("mv "+OUTDIR+"nam.000012.png "+OUTDIR+"nam.sstreg.mon.png")     
+           system("mv "+OUTDIR+"nam.000007.png "+OUTDIR+"nam.tempreg.djf.png") 
+           system("mv "+OUTDIR+"nam.000008.png "+OUTDIR+"nam.tempreg.mam.png") 
+           system("mv "+OUTDIR+"nam.000009.png "+OUTDIR+"nam.tempreg.jja.png") 
+           system("mv "+OUTDIR+"nam.000010.png "+OUTDIR+"nam.tempreg.son.png") 
+           system("mv "+OUTDIR+"nam.000011.png "+OUTDIR+"nam.tempreg.ann.png")
+           system("mv "+OUTDIR+"nam.000012.png "+OUTDIR+"nam.tempreg.mon.png")     
         end if
      else
         if (sstreg_frame.eq.0) then
-           system("mv "+OUTDIR+"nam.000006.png "+OUTDIR+"nam.sstreg.djf.png") 
-           system("mv "+OUTDIR+"nam.000007.png "+OUTDIR+"nam.sstreg.mam.png") 
-           system("mv "+OUTDIR+"nam.000008.png "+OUTDIR+"nam.sstreg.jja.png") 
-           system("mv "+OUTDIR+"nam.000009.png "+OUTDIR+"nam.sstreg.son.png") 
-           system("mv "+OUTDIR+"nam.000010.png "+OUTDIR+"nam.sstreg.ann.png")
+           system("mv "+OUTDIR+"nam.000006.png "+OUTDIR+"nam.tempreg.djf.png") 
+           system("mv "+OUTDIR+"nam.000007.png "+OUTDIR+"nam.tempreg.mam.png") 
+           system("mv "+OUTDIR+"nam.000008.png "+OUTDIR+"nam.tempreg.jja.png") 
+           system("mv "+OUTDIR+"nam.000009.png "+OUTDIR+"nam.tempreg.son.png") 
+           system("mv "+OUTDIR+"nam.000010.png "+OUTDIR+"nam.tempreg.ann.png")
         end if
      end if
-     
+
+     if (prreg_frame.eq.0) then
+        system("mv "+OUTDIR+"nam.prreg.000001.png "+OUTDIR+"nam.prreg.djf.png") 
+        system("mv "+OUTDIR+"nam.prreg.000002.png "+OUTDIR+"nam.prreg.mam.png") 
+        system("mv "+OUTDIR+"nam.prreg.000003.png "+OUTDIR+"nam.prreg.jja.png") 
+        system("mv "+OUTDIR+"nam.prreg.000004.png "+OUTDIR+"nam.prreg.son.png") 
+        system("mv "+OUTDIR+"nam.prreg.000005.png "+OUTDIR+"nam.prreg.ann.png")         
+        if (COMPUTE_MODES_MON.eq."True") then     
+           system("mv "+OUTDIR+"nam.prreg.000006.png "+OUTDIR+"nam.prreg.mon.png")         
+        end if
+     end if
+
      system("mv "+OUTDIR+"nao.000001.png "+OUTDIR+"nao.djf.png") 
      system("mv "+OUTDIR+"nao.000002.png "+OUTDIR+"nao.mam.png") 
      system("mv "+OUTDIR+"nao.000003.png "+OUTDIR+"nao.jja.png") 
@@ -1164,23 +1760,34 @@ begin
      if (COMPUTE_MODES_MON.eq."True") then     
         system("mv "+OUTDIR+"nao.000006.png "+OUTDIR+"nao.mon.png")  
         if (sstreg_frame.eq.0) then
-           system("mv "+OUTDIR+"nao.000007.png "+OUTDIR+"nao.sstreg.djf.png") 
-           system("mv "+OUTDIR+"nao.000008.png "+OUTDIR+"nao.sstreg.mam.png") 
-           system("mv "+OUTDIR+"nao.000009.png "+OUTDIR+"nao.sstreg.jja.png") 
-           system("mv "+OUTDIR+"nao.000010.png "+OUTDIR+"nao.sstreg.son.png") 
-           system("mv "+OUTDIR+"nao.000011.png "+OUTDIR+"nao.sstreg.ann.png")
-           system("mv "+OUTDIR+"nao.000012.png "+OUTDIR+"nao.sstreg.mon.png")     
+           system("mv "+OUTDIR+"nao.000007.png "+OUTDIR+"nao.tempreg.djf.png") 
+           system("mv "+OUTDIR+"nao.000008.png "+OUTDIR+"nao.tempreg.mam.png") 
+           system("mv "+OUTDIR+"nao.000009.png "+OUTDIR+"nao.tempreg.jja.png") 
+           system("mv "+OUTDIR+"nao.000010.png "+OUTDIR+"nao.tempreg.son.png") 
+           system("mv "+OUTDIR+"nao.000011.png "+OUTDIR+"nao.tempreg.ann.png")
+           system("mv "+OUTDIR+"nao.000012.png "+OUTDIR+"nao.tempreg.mon.png")     
         end if
      else
         if (sstreg_frame.eq.0) then
-           system("mv "+OUTDIR+"nao.000006.png "+OUTDIR+"nao.sstreg.djf.png") 
-           system("mv "+OUTDIR+"nao.000007.png "+OUTDIR+"nao.sstreg.mam.png") 
-           system("mv "+OUTDIR+"nao.000008.png "+OUTDIR+"nao.sstreg.jja.png") 
-           system("mv "+OUTDIR+"nao.000009.png "+OUTDIR+"nao.sstreg.son.png") 
-           system("mv "+OUTDIR+"nao.000010.png "+OUTDIR+"nao.sstreg.ann.png")
+           system("mv "+OUTDIR+"nao.000006.png "+OUTDIR+"nao.tempreg.djf.png") 
+           system("mv "+OUTDIR+"nao.000007.png "+OUTDIR+"nao.tempreg.mam.png") 
+           system("mv "+OUTDIR+"nao.000008.png "+OUTDIR+"nao.tempreg.jja.png") 
+           system("mv "+OUTDIR+"nao.000009.png "+OUTDIR+"nao.tempreg.son.png") 
+           system("mv "+OUTDIR+"nao.000010.png "+OUTDIR+"nao.tempreg.ann.png")
         end if
      end if
      
+     if (prreg_frame.eq.0) then
+        system("mv "+OUTDIR+"nao.prreg.000001.png "+OUTDIR+"nao.prreg.djf.png") 
+        system("mv "+OUTDIR+"nao.prreg.000002.png "+OUTDIR+"nao.prreg.mam.png") 
+        system("mv "+OUTDIR+"nao.prreg.000003.png "+OUTDIR+"nao.prreg.jja.png") 
+        system("mv "+OUTDIR+"nao.prreg.000004.png "+OUTDIR+"nao.prreg.son.png") 
+        system("mv "+OUTDIR+"nao.prreg.000005.png "+OUTDIR+"nao.prreg.ann.png")         
+        if (COMPUTE_MODES_MON.eq."True") then     
+           system("mv "+OUTDIR+"nao.prreg.000006.png "+OUTDIR+"nao.prreg.mon.png")         
+        end if
+     end if
+
      system("mv "+OUTDIR+"nam.timeseries.000001.png "+OUTDIR+"nam.timeseries.djf.png") 
      system("mv "+OUTDIR+"nam.timeseries.000002.png "+OUTDIR+"nam.timeseries.mam.png") 
      system("mv "+OUTDIR+"nam.timeseries.000003.png "+OUTDIR+"nam.timeseries.jja.png") 
@@ -1210,23 +1817,35 @@ begin
      if (COMPUTE_MODES_MON.eq."True") then     
         system("mv "+OUTDIR+"psl_nn0006.ps "+OUTDIR+"nam.mon.ps") 
         if (sstreg_frame.eq.0) then
-           system("mv "+OUTDIR+"psl_nn0007.ps "+OUTDIR+"nam.sstreg.djf.ps") 
-           system("mv "+OUTDIR+"psl_nn0008.ps "+OUTDIR+"nam.sstreg.mam.ps") 
-           system("mv "+OUTDIR+"psl_nn0009.ps "+OUTDIR+"nam.sstreg.jja.ps") 
-           system("mv "+OUTDIR+"psl_nn0010.ps "+OUTDIR+"nam.sstreg.son.ps") 
-           system("mv "+OUTDIR+"psl_nn0011.ps "+OUTDIR+"nam.sstreg.ann.ps")
-           system("mv "+OUTDIR+"psl_nn0012.ps "+OUTDIR+"nam.sstreg.mon.ps") 
+           system("mv "+OUTDIR+"psl_nn0007.ps "+OUTDIR+"nam.tempreg.djf.ps") 
+           system("mv "+OUTDIR+"psl_nn0008.ps "+OUTDIR+"nam.tempreg.mam.ps") 
+           system("mv "+OUTDIR+"psl_nn0009.ps "+OUTDIR+"nam.tempreg.jja.ps") 
+           system("mv "+OUTDIR+"psl_nn0010.ps "+OUTDIR+"nam.tempreg.son.ps") 
+           system("mv "+OUTDIR+"psl_nn0011.ps "+OUTDIR+"nam.tempreg.ann.ps")
+           system("mv "+OUTDIR+"psl_nn0012.ps "+OUTDIR+"nam.tempreg.mon.ps") 
         end if
      else
         if (sstreg_frame.eq.0) then
-           system("mv "+OUTDIR+"psl_nn0006.ps "+OUTDIR+"nam.sstreg.djf.ps") 
-           system("mv "+OUTDIR+"psl_nn0007.ps "+OUTDIR+"nam.sstreg.mam.ps") 
-           system("mv "+OUTDIR+"psl_nn0008.ps "+OUTDIR+"nam.sstreg.jja.ps") 
-           system("mv "+OUTDIR+"psl_nn0009.ps "+OUTDIR+"nam.sstreg.son.ps") 
-           system("mv "+OUTDIR+"psl_nn0010.ps "+OUTDIR+"nam.sstreg.ann.ps")     
+           system("mv "+OUTDIR+"psl_nn0006.ps "+OUTDIR+"nam.tempreg.djf.ps") 
+           system("mv "+OUTDIR+"psl_nn0007.ps "+OUTDIR+"nam.tempreg.mam.ps") 
+           system("mv "+OUTDIR+"psl_nn0008.ps "+OUTDIR+"nam.tempreg.jja.ps") 
+           system("mv "+OUTDIR+"psl_nn0009.ps "+OUTDIR+"nam.tempreg.son.ps") 
+           system("mv "+OUTDIR+"psl_nn0010.ps "+OUTDIR+"nam.tempreg.ann.ps")     
         end if
      end if
-     
+
+     if (prreg_frame.eq.0) then
+        system("psplit "+OUTDIR+"nam.prreg.ps "+OUTDIR+"pr_nn")
+        system("mv "+OUTDIR+"pr_nn0001.ps "+OUTDIR+"nam.prreg.djf.ps") 
+        system("mv "+OUTDIR+"pr_nn0002.ps "+OUTDIR+"nam.prreg.mam.ps") 
+        system("mv "+OUTDIR+"pr_nn0003.ps "+OUTDIR+"nam.prreg.jja.ps") 
+        system("mv "+OUTDIR+"pr_nn0004.ps "+OUTDIR+"nam.prreg.son.ps") 
+        system("mv "+OUTDIR+"pr_nn0005.ps "+OUTDIR+"nam.prreg.ann.ps") 
+        if (COMPUTE_MODES_MON.eq."True") then
+           system("mv "+OUTDIR+"pr_nn0006.ps "+OUTDIR+"nam.prreg.mon.ps") 
+        end if
+     end if
+
      system("psplit "+OUTDIR+"nao.ps "+OUTDIR+"psl_nn")
      system("mv "+OUTDIR+"psl_nn0001.ps "+OUTDIR+"nao.djf.ps") 
      system("mv "+OUTDIR+"psl_nn0002.ps "+OUTDIR+"nao.mam.ps") 
@@ -1236,23 +1855,36 @@ begin
      if (COMPUTE_MODES_MON.eq."True") then     
         system("mv "+OUTDIR+"psl_nn0006.ps "+OUTDIR+"nao.mon.ps") 
         if (sstreg_frame.eq.0) then
-           system("mv "+OUTDIR+"psl_nn0007.ps "+OUTDIR+"nao.sstreg.djf.ps") 
-           system("mv "+OUTDIR+"psl_nn0008.ps "+OUTDIR+"nao.sstreg.mam.ps") 
-           system("mv "+OUTDIR+"psl_nn0009.ps "+OUTDIR+"nao.sstreg.jja.ps") 
-           system("mv "+OUTDIR+"psl_nn0010.ps "+OUTDIR+"nao.sstreg.son.ps") 
-           system("mv "+OUTDIR+"psl_nn0011.ps "+OUTDIR+"nao.sstreg.ann.ps")
-           system("mv "+OUTDIR+"psl_nn0012.ps "+OUTDIR+"nao.sstreg.mon.ps") 
+           system("mv "+OUTDIR+"psl_nn0007.ps "+OUTDIR+"nao.tempreg.djf.ps") 
+           system("mv "+OUTDIR+"psl_nn0008.ps "+OUTDIR+"nao.tempreg.mam.ps") 
+           system("mv "+OUTDIR+"psl_nn0009.ps "+OUTDIR+"nao.tempreg.jja.ps") 
+           system("mv "+OUTDIR+"psl_nn0010.ps "+OUTDIR+"nao.tempreg.son.ps") 
+           system("mv "+OUTDIR+"psl_nn0011.ps "+OUTDIR+"nao.tempreg.ann.ps")
+           system("mv "+OUTDIR+"psl_nn0012.ps "+OUTDIR+"nao.tempreg.mon.ps") 
         end if
      else
         if (sstreg_frame.eq.0) then
-           system("mv "+OUTDIR+"psl_nn0006.ps "+OUTDIR+"nao.sstreg.djf.ps") 
-           system("mv "+OUTDIR+"psl_nn0007.ps "+OUTDIR+"nao.sstreg.mam.ps") 
-           system("mv "+OUTDIR+"psl_nn0008.ps "+OUTDIR+"nao.sstreg.jja.ps") 
-           system("mv "+OUTDIR+"psl_nn0009.ps "+OUTDIR+"nao.sstreg.son.ps") 
-           system("mv "+OUTDIR+"psl_nn0010.ps "+OUTDIR+"nao.sstreg.ann.ps")     
+           system("mv "+OUTDIR+"psl_nn0006.ps "+OUTDIR+"nao.tempreg.djf.ps") 
+           system("mv "+OUTDIR+"psl_nn0007.ps "+OUTDIR+"nao.tempreg.mam.ps") 
+           system("mv "+OUTDIR+"psl_nn0008.ps "+OUTDIR+"nao.tempreg.jja.ps") 
+           system("mv "+OUTDIR+"psl_nn0009.ps "+OUTDIR+"nao.tempreg.son.ps") 
+           system("mv "+OUTDIR+"psl_nn0010.ps "+OUTDIR+"nao.tempreg.ann.ps")     
         end if
      end if
      
+     if (prreg_frame.eq.0) then
+        system("psplit "+OUTDIR+"nao.prreg.ps "+OUTDIR+"pr_nn")
+        system("mv "+OUTDIR+"pr_nn0001.ps "+OUTDIR+"nao.prreg.djf.ps") 
+        system("mv "+OUTDIR+"pr_nn0002.ps "+OUTDIR+"nao.prreg.mam.ps") 
+        system("mv "+OUTDIR+"pr_nn0003.ps "+OUTDIR+"nao.prreg.jja.ps") 
+        system("mv "+OUTDIR+"pr_nn0004.ps "+OUTDIR+"nao.prreg.son.ps") 
+        system("mv "+OUTDIR+"pr_nn0005.ps "+OUTDIR+"nao.prreg.ann.ps") 
+        if (COMPUTE_MODES_MON.eq."True") then
+           system("mv "+OUTDIR+"pr_nn0006.ps "+OUTDIR+"nao.prreg.mon.ps") 
+        end if
+        system("rm "+OUTDIR+"nam.prreg.ps "+OUTDIR+"nao.prreg.ps")
+     end if
+
      system("psplit "+OUTDIR+"nam.timeseries.ps "+OUTDIR+"psl_nn")
      system("mv "+OUTDIR+"psl_nn0001.ps "+OUTDIR+"nam.timeseries.djf.ps") 
      system("mv "+OUTDIR+"psl_nn0002.ps "+OUTDIR+"nam.timeseries.mam.ps") 
