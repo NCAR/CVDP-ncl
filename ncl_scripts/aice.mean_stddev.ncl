@@ -135,7 +135,11 @@ begin
                  temp_arr = aice_nhT
                  delete(temp_arr&time)
                  temp_arr&time = cd_calendar(aice_nhT&time,-1)
-                 climo = clmMonTLL(temp_arr({CLIMO_SYEAR*100+1:CLIMO_EYEAR*100+12},:,:))                 
+                 if (CLIMO_SYEAR.lt.0) then
+                    climo = clmMonTLL(temp_arr({(eyear(ee)+CLIMO_SYEAR)*100+1:(eyear(ee)+CLIMO_EYEAR)*100+12},:,:))       
+                 else
+                    climo = clmMonTLL(temp_arr({CLIMO_SYEAR*100+1:CLIMO_EYEAR*100+12},:,:))                 
+                 end if               
                  delete(temp_arr)
                  aice_nhT   = calcMonAnomTLL(aice_nhT,climo) 
                  delete(climo)
@@ -188,7 +192,11 @@ begin
                  temp_arr = aice_shX
                  delete(temp_arr&time)
                  temp_arr&time = cd_calendar(aice_shX&time,-1)
-                 climo = clmMonTLL(temp_arr({CLIMO_SYEAR*100+1:CLIMO_EYEAR*100+12},:,:))                 
+                 if (CLIMO_SYEAR.lt.0) then
+                    climo = clmMonTLL(temp_arr({(eyear(ee)+CLIMO_SYEAR)*100+1:(eyear(ee)+CLIMO_EYEAR)*100+12},:,:))       
+                 else
+                    climo = clmMonTLL(temp_arr({CLIMO_SYEAR*100+1:CLIMO_EYEAR*100+12},:,:))                 
+                 end if               
                  delete(temp_arr)
                  aice_shX   = calcMonAnomTLL(aice_shX,climo) 
                  delete(climo)
@@ -238,7 +246,11 @@ begin
            if (OPT_CLIMO.eq."Full") then
               z@climatology = syear(ee)+"-"+eyear(ee)+" climatology removed prior to all calculations (other than means)"
            else
-              z@climatology = CLIMO_SYEAR+"-"+CLIMO_EYEAR+" climatology removed prior to all calculations (other than means)"
+              if (CLIMO_SYEAR.lt.0) then
+                 z@climatology = (eyear(ee)+CLIMO_SYEAR)+"-"+(eyear(ee)+CLIMO_EYEAR)+" climatology removed prior to all calculations (other than means)"
+              else
+                 z@climatology = CLIMO_SYEAR+"-"+CLIMO_EYEAR+" climatology removed prior to all calculations (other than means)"
+              end if
            end if
            z@Conventions = "CF-1.6"
         else
@@ -316,7 +328,11 @@ begin
            if (OPT_CLIMO.eq."Full") then
               z@climatology = syear_sh(ee)+"-"+eyear_sh(ee)+" climatology removed prior to all calculations (other than means)"
            else
-              z@climatology = CLIMO_SYEAR+"-"+CLIMO_EYEAR+" climatology removed prior to all calculations (other than means)"
+              if (CLIMO_SYEAR.lt.0) then
+                 z@climatology = (eyear(ee)+CLIMO_SYEAR)+"-"+(eyear(ee)+CLIMO_EYEAR)+" climatology removed prior to all calculations (other than means)"
+              else
+                 z@climatology = CLIMO_SYEAR+"-"+CLIMO_EYEAR+" climatology removed prior to all calculations (other than means)"
+              end if
            end if
            z@Conventions = "CF-1.6"
         else
@@ -326,14 +342,13 @@ begin
         if (isatt(sh_mean_djf,"lat2d")) then    ; if there is a lat2d there will be a lon2d
            delete(sh_mean_djf@lat2d)
            delete(sh_mean_djf@lon2d)
-           lat2d_ice_sh = aice_sh_mean_djf@lat2d
-           lon2d_ice_sh = aice_sh_mean_djf@lon2d
-           lat2d_ice_sh!0 = "j2"
-           lat2d_ice_sh!1 = "i2"
-           copy_VarMeta(lat2d_ice_sh,lon2d_ice_sh)
-           z->lat2d_ice_sh = set_varAtts(lat2d_ice_sh,"Southern Hemisphere ice grid 2-dimensional latitudes","","")
-           z->lon2d_ice_sh = set_varAtts(lon2d_ice_sh,"Southern Hemisphere ice grid 2-dimensional longitudes","","")
-           delete([/lat2d_ice_sh,lon2d_ice_sh/])
+           LAT2D = aice_sh_mean_djf@lat2d
+           copy_VarCoords(sh_mean_djf,LAT2D)
+           LON2D = aice_sh_mean_djf@lon2d
+           copy_VarCoords(sh_mean_djf,LON2D)
+           z->lat2d_ice_sh = set_varAtts(LAT2D,"Southern Hemisphere ice grid 2-dimensional latitudes","","")
+           z->lon2d_ice_sh = set_varAtts(LON2D,"Southern Hemisphere ice grid 2-dimensional longitudes","","")
+           delete([/LAT2D,LON2D/])
            sh_mean_djf@coordinates ="lat2d_ice_sh lon2d_ice_sh"
         end if  
         if (isatt(sh_mean_djf,"area")) then
@@ -658,7 +673,7 @@ begin
      system("psplit "+OUTDIR+"aice.stddev.ann.ps "+OUTDIR+"aice_sd")
      system("mv "+OUTDIR+"aice_sd0001.ps "+OUTDIR+"aice.stddev.nh.ann.ps") 
      system("mv "+OUTDIR+"aice_sd0002.ps "+OUTDIR+"aice.stddev.sh.ann.ps")
-     system("rm "+OUTDIR+"aice_sd000?.ps "+OUTDIR+"aice.stddev.???.ps")
+     system("rm "+OUTDIR+"aice.stddev.???.ps")
 
      system("psplit "+OUTDIR+"aice.mean.djf.ps "+OUTDIR+"aice_m")
      system("mv "+OUTDIR+"aice_m0001.ps "+OUTDIR+"aice.mean.nh.djf.ps") 
@@ -675,7 +690,7 @@ begin
      system("psplit "+OUTDIR+"aice.mean.ann.ps "+OUTDIR+"aice_m")
      system("mv "+OUTDIR+"aice_m0001.ps "+OUTDIR+"aice.mean.nh.ann.ps") 
      system("mv "+OUTDIR+"aice_m0002.ps "+OUTDIR+"aice.mean.sh.ann.ps")
-     system("rm "+OUTDIR+"aice_m000?.ps "+OUTDIR+"aice.mean.???.ps")
+     system("rm "+OUTDIR+"aice.mean.???.ps")
   end if
   print("Finished: aice.mean_stddev.ncl")
 end

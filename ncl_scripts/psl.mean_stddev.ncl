@@ -105,7 +105,11 @@ begin
               temp_arr = pslT
               delete(temp_arr&time)
               temp_arr&time = cd_calendar(pslT&time,-1)
-              climo = clmMonTLL(temp_arr({CLIMO_SYEAR*100+1:CLIMO_EYEAR*100+12},:,:))                 
+              if (CLIMO_SYEAR.lt.0) then
+                 climo = clmMonTLL(temp_arr({(eyear(ee)+CLIMO_SYEAR)*100+1:(eyear(ee)+CLIMO_EYEAR)*100+12},:,:))       
+              else
+                 climo = clmMonTLL(temp_arr({CLIMO_SYEAR*100+1:CLIMO_EYEAR*100+12},:,:))                 
+              end if                  
               delete(temp_arr)
               pslT   = calcMonAnomTLL(pslT,climo) 
               delete(climo)
@@ -154,7 +158,11 @@ begin
            if (OPT_CLIMO.eq."Full") then
               z@climatology = syear(ee)+"-"+eyear(ee)+" climatology removed prior to all calculations (other than means)"
            else
-              z@climatology = CLIMO_SYEAR+"-"+CLIMO_EYEAR+" climatology removed prior to all calculations (other than means)"
+              if (CLIMO_SYEAR.lt.0) then
+                 z@climatology = (eyear(ee)+CLIMO_SYEAR)+"-"+(eyear(ee)+CLIMO_EYEAR)+" climatology removed prior to all calculations (other than means)"
+              else
+                 z@climatology = CLIMO_SYEAR+"-"+CLIMO_EYEAR+" climatology removed prior to all calculations (other than means)"
+              end if
            end if
            z@Conventions = "CF-1.6"
         else
@@ -235,8 +243,8 @@ begin
         patcor&lon = psl_sd_ann&lon
         patcor(ee,:,:) = (/ psl_sd_ann /)
      end if
-     if (isfilepresent2("obs_psl").and.ee.ge.1) then
-        patcor(ee,:,:) = (/ linint2(psl_sd_ann&lon,psl_sd_ann&lat,psl_sd_ann,True,patcor&lon,patcor&lat,0) /)
+     if (isfilepresent2("obs_psl").and.ee.ge.1.and.isvar("patcor")) then
+        patcor(ee,:,:) = (/ totype(linint2(psl_sd_ann&lon,psl_sd_ann&lat,psl_sd_ann,True,patcor&lon,patcor&lat,0),typeof(patcor)) /)
      end if
 
      res@gsnLeftString = syear(ee)+"-"+eyear(ee) 
@@ -259,7 +267,7 @@ begin
      delete([/psl_sd_djf,psl_sd_mam,psl_sd_jja,psl_sd_son,psl_sd_ann,psl_mean_djf,psl_mean_mam,psl_mean_jja,psl_mean_son,psl_mean_ann,res,sres/])
   end do     
   
-  if (isfilepresent2("obs_psl")) then    ; for pattern correlation table  
+  if (isvar("patcor")) then    ; for pattern correlation table  
      clat = cos(0.01745329*patcor&lat)
      finpr   = "psl Std Dev (Ann) "    ; Must be 18 characters long
      line3   = "                  "    ; Must be 18 characters long
@@ -330,43 +338,43 @@ begin
   ncol = floattointeger(sqrt(nsim))
   nrow = (nsim/ncol)+mod(nsim,ncol)  
   
-  panres@txString = "psl Standard Deviations (DJF)"
+  panres@txString = "PSL Standard Deviations (DJF)"
   gsn_panel2(wks_stddev_djf,plot_stddev_djf,(/nrow,ncol/),panres)
   delete(wks_stddev_djf)
   
-  panres@txString = "psl Standard Deviations (MAM)"
+  panres@txString = "PSL Standard Deviations (MAM)"
   gsn_panel2(wks_stddev_mam,plot_stddev_mam,(/nrow,ncol/),panres)
   delete(wks_stddev_mam)
   
-  panres@txString = "psl Standard Deviations (JJA)"
+  panres@txString = "PSL Standard Deviations (JJA)"
   gsn_panel2(wks_stddev_jja,plot_stddev_jja,(/nrow,ncol/),panres)
   delete(wks_stddev_jja)
   
-  panres@txString = "psl Standard Deviations (SON)"
+  panres@txString = "PSL Standard Deviations (SON)"
   gsn_panel2(wks_stddev_son,plot_stddev_son,(/nrow,ncol/),panres)
   delete(wks_stddev_son)
   
-  panres@txString = "psl Standard Deviations (Annual)"
+  panres@txString = "PSL Standard Deviations (Annual)"
   gsn_panel2(wks_stddev_ann,plot_stddev_ann,(/nrow,ncol/),panres)
   delete(wks_stddev_ann)
   
-  panres@txString = "psl Means (DJF)"
+  panres@txString = "PSL Means (DJF)"
   gsn_panel2(wks_mean_djf,plot_mean_djf,(/nrow,ncol/),panres)
   delete(wks_mean_djf)
   
-  panres@txString = "psl Means (MAM)"
+  panres@txString = "PSL Means (MAM)"
   gsn_panel2(wks_mean_mam,plot_mean_mam,(/nrow,ncol/),panres)
   delete(wks_mean_mam)
   
-  panres@txString = "psl Means (JJA)"
+  panres@txString = "PSL Means (JJA)"
   gsn_panel2(wks_mean_jja,plot_mean_jja,(/nrow,ncol/),panres)
   delete(wks_mean_jja)
   
-  panres@txString = "psl Means (SON)"
+  panres@txString = "PSL Means (SON)"
   gsn_panel2(wks_mean_son,plot_mean_son,(/nrow,ncol/),panres)
   delete(wks_mean_son)
   
-  panres@txString = "psl Means (Annual)"
+  panres@txString = "PSL Means (Annual)"
   gsn_panel2(wks_mean_ann,plot_mean_ann,(/nrow,ncol/),panres)
   delete(wks_mean_ann)
   delete(panres)

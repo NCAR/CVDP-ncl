@@ -147,7 +147,7 @@ begin
   end if
   
   do gg = 0,nsim-1
-     fsst = systemfunc("ls "+paths(gg)+"*{"+tstring0+"}*.nc 2> /dev/null")   ; /dev/null suppresses all standard error output
+     fsst = systemfunc("bash -c 'ls "+paths(gg)+"*{"+tstring0+"}*.nc 2> /dev/null'")   ; /dev/null suppresses all standard error output
      if (dimsizes(fsst).eq.1) then
         namelist_ts(gg+maxnumobs) =  names(gg)+" | "+fsst(0)+" | "+syear(gg)+" | "+eyear(gg)   ; grab first file
      else
@@ -191,7 +191,7 @@ begin
      tstring1 = "PSL,slp"
   end if
   do gg = 0,nsim-1
-     fsst = systemfunc("ls "+paths(gg)+"*{"+tstring0+"}*.nc 2> /dev/null")   ; /dev/null suppresses all standard error output
+     fsst = systemfunc("bash -c 'ls "+paths(gg)+"*{"+tstring0+"}*.nc 2> /dev/null'")   ; /dev/null suppresses all standard error output
      if (dimsizes(fsst).eq.1) then
         namelist_psl(gg+maxnumobs) =  names(gg)+" | "+fsst(0)+" | "+syear(gg)+" | "+eyear(gg)   ; grab first file
      else
@@ -235,7 +235,7 @@ begin
      tstring1 = "TREFHT,tas,t_ref,T2"
   end if
   do gg = 0,nsim-1
-     fsst = systemfunc("ls "+paths(gg)+"*{"+tstring0+"}*.nc 2> /dev/null")   ; /dev/null suppresses all standard error output
+     fsst = systemfunc("bash -c 'ls "+paths(gg)+"*{"+tstring0+"}*.nc 2> /dev/null'")   ; /dev/null suppresses all standard error output
      if (dimsizes(fsst).eq.1) then
         namelist_trefht(gg+maxnumobs) =  names(gg)+" | "+fsst(0)+" | "+syear(gg)+" | "+eyear(gg)   ; grab first file
      else
@@ -275,7 +275,7 @@ begin
         if (isvar((/"fsst"/))) then
            delete(fsst)
         end if
-        fsst = systemfunc("ls "+paths(gg)+"*"+pstring(hh)+".nc 2> /dev/null")   ; /dev/null suppresses all standard error output
+        fsst = systemfunc("bash -c 'ls "+paths(gg)+"*"+pstring(hh)+".nc 2> /dev/null'")   ; /dev/null suppresses all standard error output
         if (dimsizes(fsst).eq.1) then
            if (.not.ismissing(fsst)) then
               if (pstring(hh).eq."PRECC.*".or.pstring(hh).eq."PRECC_*") then
@@ -339,9 +339,9 @@ begin
      end if
      delete(snowdp_i)
   end if 
-
+  sn_string = "SNOWDP_,SNOWDP.,snd_,snd."
   do gg = 0,nsim-1
-     fsst = systemfunc("ls "+paths(gg)+"*{SNOWDP_,SNOWDP.,snd_,snd.}*.nc 2> /dev/null")   ; /dev/null suppresses all standard error output
+     fsst = systemfunc("bash -c 'ls "+paths(gg)+"*{"+sn_string+"}*.nc 2> /dev/null'")   ; /dev/null suppresses all standard error output
      if (dimsizes(fsst).eq.1) then
         namelist_snowdp(gg+maxnumobs) =  names(gg)+" | "+fsst(0)+" | "+syear(gg)+" | "+eyear(gg)   ; grab first file
      else
@@ -377,7 +377,7 @@ begin
   end if 
 
   do gg = 0,nsim-1
-     fsst = systemfunc("ls "+paths(gg)+"*{MOC_,MOC.,msftmyz.,msftmyz_,stfmmc.,stfmmc_}*.nc 2> /dev/null")   ; /dev/null suppresses all standard error output
+     fsst = systemfunc("bash -c 'ls "+paths(gg)+"*{MOC_,MOC.,msftmyz.,msftmyz_,stfmmc.,stfmmc_}*.nc 2> /dev/null'")   ; /dev/null suppresses all standard error output
      if (dimsizes(fsst).eq.1) then
         namelist_moc(gg+maxnumobs) =  names(gg)+" | "+fsst(0)+" | "+syear(gg)+" | "+eyear(gg)   ; grab first file
      else
@@ -414,7 +414,7 @@ begin
   end if 
 
   do gg = 0,nsim-1
-     fsst = systemfunc("ls "+paths(gg)+"*{aice_nh.,aice.,sic_,sic.,.CN.,_CN_}*.nc 2> /dev/null")   ; /dev/null suppresses all standard error output
+     fsst = systemfunc("bash -c 'ls "+paths(gg)+"*{aice_nh.,aice.,sic_,sic.,.CN.,_CN_}*.nc 2> /dev/null'")   ; /dev/null suppresses all standard error output
      if (dimsizes(fsst).eq.1) then
         namelist_aice_nh(gg+maxnumobs) =  names(gg)+" | "+fsst(0)+" | "+syear(gg)+" | "+eyear(gg)   ; grab first file
      else
@@ -450,7 +450,7 @@ begin
   end if 
 
   do gg = 0,nsim-1
-     fsst = systemfunc("ls "+paths(gg)+"*{aice_sh.,aice.,sic_,sic.,.CN.,_CN_}*.nc 2> /dev/null")   ; /dev/null suppresses all standard error output
+     fsst = systemfunc("bash -c 'ls "+paths(gg)+"*{aice_sh.,aice.,sic_,sic.,.CN.,_CN_}*.nc 2> /dev/null'")   ; /dev/null suppresses all standard error output
      if (dimsizes(fsst).eq.1) then
         namelist_aice_sh(gg+maxnumobs) =  names(gg)+" | "+fsst(0)+" | "+syear(gg)+" | "+eyear(gg)   ; grab first file
      else

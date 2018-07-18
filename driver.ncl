@@ -21,11 +21,13 @@
                                              ; False = do not compute the Monthly Atmospheric Modes of Variability  (saves computation time)                               
 ;- - - - - - - - - - - - - - - - - -   
   opt_climo         = "Full"                 ; Full  = remove climatology based on full record of each simulation,
-                                             ; Custom = use start and end year of climatological period specified by climo_syear and climo_eyear 
-  if (opt_climo.eq."Custom") then
-     climo_syear    = 700                   ; remove the climatology/annual cycle based on these years when opt_climo = "Custom"
-     climo_eyear    = 719                   ; note: climo_syear and climo_eyear should be within the range of years of all analyzed model runs 
-  end if                                    ;       and specified observational datasets.
+                                             ; Custom = set climatological period using climo_syear (climatological start year) and climo_eyear (climatological end year) 
+
+  if (opt_climo.eq."Custom") then            ; When climo_syear and climo_eyear are positive, remove the climatology/annual cycle based on these years.
+     climo_syear    = -30                    ;   Both settings should be within the range of years of all specified model runs and observational datasets. 
+     climo_eyear    = 0                    ; When climo_syear is negative, remove the climatology/annual cycle relative to the end of each model run
+  end if                                     ;   or observational dataset. Example: climo_syear = -25, climo_eyear = 0 will result in the climatology
+                                             ;   being removed from the last 26 years of each model run and observations. 
 ;- - - - - - - - - - - - - - - - - -   
   colormap          = 0               ; 0 = default colormaps, 1 = colormaps better for color blindness
 
@@ -47,7 +49,7 @@
   
   ncl_exec = "ncl"       ; This can be changed to a different path if a different version of NCL needs to be used, such as "/different/path/to/bin/ncl"                           
                          
-  run_style = "serial"   ; parallel = allow simple python-based parallelization to occur. X number of CVDP NCL scripts will be called at once. 
+  run_style = "parallel"   ; parallel = allow simple python-based parallelization to occur. X number of CVDP NCL scripts will be called at once. 
                          ;            X is set via max_num_tasks. Terminal output will be harder to follow.
                          ; serial = call CVDP NCL scripts serially. (Default)    
                          
@@ -56,14 +58,14 @@
   modular = "False"      ; True = Run only those CVDP scripts specified in modular_list.
                          ; False = Run all CVDP scripts (Default)
 
-  modular_list = "aice.mean_stddev,aice.trends_timeseries,sst.indices"  ; When modular = "True" list the CVDP scripts that will be run. 
+  modular_list = "pdo,aice.trends_timeseries,sst.indices"  ; When modular = "True" list the CVDP scripts that will be run. 
                                            ; Example: modular_list = "amoc,amo,pr.trends_timeseries"
-                                           ; For a list of available scripts see complete_list (line 70) 
+                                           ; For a list of available scripts see complete_list at line 72. 
 
   machine_casesen = "True"  ; True = Your filesystem is case sensitive  (Default)
                              ; False = Your filesystem is case insensitive                                                          
 ;========END USER MODIFICATIONS===========================================================
-  version = "4.1.0"
+  version = "5.0.0"
 
   print("Starting: Climate Variability Diagnostics Package ("+systemfunc("date")+")")
 
@@ -82,18 +84,20 @@
   if (isfilepresent2(outdir+"metrics_orig.txt")) then    ; remove metrics_orig.txt file if present
      system("rm "+outdir+"metrics_orig.txt")
   end if
-  if (isfilepresent2(outdir+"metrics.txt")) then    ; remove metrics.txt file if present
-     system("rm "+outdir+"metrics.txt")
+
+  if (opt_climo.eq."Custom") then
+     if (climo_syear.ge.climo_eyear) then
+        print("Specified custom climatology start year (climo_syear) cannot be greater than or equal to the specified end year (climo_eyear), exiting CVDP.")
+        exit 
+     end if
+  else
+     climo_syear = -999
+     climo_eyear = -999
   end if
 
   if (.not.isfilepresent2(outdir)) then
      system("mkdir "+outdir)
   end if
-  if (opt_climo.ne."Custom") then
-     climo_syear = -999
-     climo_eyear = -999
-  end if
-
   envvar_str = "   export OUTDIR="+outdir+";   export OBS="+obs+";   export SCALE_TIMESERIES="+scale_timeseries+";   "+\
          "export OUTPUT_DATA="+output_data+";   export VERSION="+version+";   export PNG_SCALE="+png_scale+";   "+\
          "export OPT_CLIMO="+opt_climo+";   export CLIMO_SYEAR="+climo_syear+";   export CLIMO_EYEAR="+climo_eyear+";   "+\
@@ -101,10 +105,10 @@
          "export COLORMAP="+colormap+";   export CVDP_SCRIPTS="+zp+";   export MAX_TASKS="+max_num_tasks+";"  
   ncl_exec = ncl_exec+" -n -Q" 
 
-  system(envvar_str + " "+str_sub_str(ncl_exec," -Q","")+" "+zp+"namelist.ncl")
+  system(envvar_str + " "+str_sub_str(ncl_exec," -Q","")+" "+zp+"namelist.ncl")     ; create variable namelists
   if (namelists_only.eq."True") then
      print("Variable namelists have been created. Examine files in namelist_byvar/ directory to verify CVDP file selection.")
-     print("Finished: Climate Variability Diagnostics Package")
+     print("Finished: Climate Variability Diagnostics Package ("+systemfunc("date")+")")
      do gg = 0,dimsizes(outfiles)-1
         if (isfilepresent2("obs_"+outfiles(gg))) then
            system("rm obs_"+outfiles(gg))
@@ -138,7 +142,7 @@
      end if
   end if
 
-  if (output_data.eq."True") then   
+  if (output_data.eq."True") then        
      system(envvar_str + " "+ncl_exec+" "+zp+"ncfiles.append.ncl")
   end if 
       
@@ -177,7 +181,7 @@
   end if
 
   met_files = systemfunc("ls "+outdir+"metrics.*.txt  2> /dev/null")
-  if (dimsizes(met_files).eq.9) then   ; all 9 metrics text files are present
+  if (dimsizes(met_files).eq.9) then   ; all 9 metrics text files are present, create metrics table(s)
      system("   export OUTDIR="+outdir+"; "+ncl_exec+" "+zp+"metrics.ncl")
   end if
 

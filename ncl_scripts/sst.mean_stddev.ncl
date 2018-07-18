@@ -112,7 +112,11 @@ begin
               temp_arr = sstT
               delete(temp_arr&time)
               temp_arr&time = cd_calendar(sstT&time,-1)
-              climo = clmMonTLL(temp_arr({CLIMO_SYEAR*100+1:CLIMO_EYEAR*100+12},:,:))                 
+              if (CLIMO_SYEAR.lt.0) then
+                 climo = clmMonTLL(temp_arr({(eyear(ee)+CLIMO_SYEAR)*100+1:(eyear(ee)+CLIMO_EYEAR)*100+12},:,:))       
+              else
+                 climo = clmMonTLL(temp_arr({CLIMO_SYEAR*100+1:CLIMO_EYEAR*100+12},:,:))                 
+              end if
               delete(temp_arr)
               sstT   = calcMonAnomTLL(sstT,climo) 
               delete(climo)
@@ -161,7 +165,11 @@ begin
            if (OPT_CLIMO.eq."Full") then
               z@climatology = syear(ee)+"-"+eyear(ee)+" climatology removed prior to all calculations (other than means)"
            else
-              z@climatology = CLIMO_SYEAR+"-"+CLIMO_EYEAR+" climatology removed prior to all calculations (other than means)"
+              if (CLIMO_SYEAR.lt.0) then
+                 z@climatology = (eyear(ee)+CLIMO_SYEAR)+"-"+(eyear(ee)+CLIMO_EYEAR)+" climatology removed prior to all calculations (other than means)"
+              else
+                 z@climatology = CLIMO_SYEAR+"-"+CLIMO_EYEAR+" climatology removed prior to all calculations (other than means)"
+              end if
            end if
            z@Conventions = "CF-1.6"
         else
@@ -239,8 +247,8 @@ begin
         patcor&lon = sst_sd_ann&lon
         patcor(ee,:,:) = (/ sst_sd_ann /)
      end if
-     if (isfilepresent2("obs_ts").and.ee.ge.1) then
-        patcor(ee,:,:) = (/ linint2(sst_sd_ann&lon,sst_sd_ann&lat,sst_sd_ann,True,patcor&lon,patcor&lat,0) /)
+     if (isfilepresent2("obs_ts").and.ee.ge.1.and.isvar("patcor")) then
+        patcor(ee,:,:) = (/ totype(linint2(sst_sd_ann&lon,sst_sd_ann&lat,sst_sd_ann,True,patcor&lon,patcor&lat,0),typeof(patcor)) /)
      end if
      
      res@gsnLeftString = syear(ee)+"-"+eyear(ee) 
@@ -263,7 +271,7 @@ begin
      delete([/sst_sd_djf,sst_sd_mam,sst_sd_jja,sst_sd_son,sst_sd_ann,sst_mean_djf,sst_mean_mam,sst_mean_jja,sst_mean_son,sst_mean_ann,res,sres/])
   end do     
   
-  if (isfilepresent2("obs_ts")) then    ; for pattern correlation table  
+  if (isvar("patcor")) then    ; for pattern correlation table  
      clat = cos(0.01745329*patcor&lat)
      finpr   = "SST Std Dev (Ann) "    ; Must be 18 characters long
      line3   = "                  "    ; Must be 18 characters long

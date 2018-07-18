@@ -113,7 +113,11 @@ begin
               temp_arr = sndT
               delete(temp_arr&time)
               temp_arr&time = cd_calendar(sndT&time,-1)
-              climo = clmMonTLL(temp_arr({CLIMO_SYEAR*100+1:CLIMO_EYEAR*100+12},:,:))                 
+              if (CLIMO_SYEAR.lt.0) then
+                 climo = clmMonTLL(temp_arr({(eyear(ee)+CLIMO_SYEAR)*100+1:(eyear(ee)+CLIMO_EYEAR)*100+12},:,:))       
+              else
+                 climo = clmMonTLL(temp_arr({CLIMO_SYEAR*100+1:CLIMO_EYEAR*100+12},:,:))                 
+              end if   
               delete(temp_arr)
               sndT   = calcMonAnomTLL(sndT,climo) 
               delete(climo)
@@ -162,7 +166,11 @@ begin
            if (OPT_CLIMO.eq."Full") then
               z@climatology = syear(ee)+"-"+eyear(ee)+" climatology removed prior to all calculations (other than means)"
            else
-              z@climatology = CLIMO_SYEAR+"-"+CLIMO_EYEAR+" climatology removed prior to all calculations (other than means)"
+              if (CLIMO_SYEAR.lt.0) then
+                 z@climatology = (eyear(ee)+CLIMO_SYEAR)+"-"+(eyear(ee)+CLIMO_EYEAR)+" climatology removed prior to all calculations (other than means)"
+              else
+                 z@climatology = CLIMO_SYEAR+"-"+CLIMO_EYEAR+" climatology removed prior to all calculations (other than means)"
+              end if
            end if
            z@Conventions = "CF-1.6"
         else
@@ -314,43 +322,43 @@ begin
   ncol = floattointeger(sqrt(nsim))
   nrow = (nsim/ncol)+mod(nsim,ncol)  
   
-  panres@txString = "snd Standard Deviations (DJF)"
+  panres@txString = "SND Standard Deviations (DJF)"
   gsn_panel2(wks_stddev_djf,plot_stddev_djf,(/nrow,ncol/),panres)
   delete(wks_stddev_djf)
   
-  panres@txString = "snd Standard Deviations (MAM)"
+  panres@txString = "SND Standard Deviations (MAM)"
   gsn_panel2(wks_stddev_mam,plot_stddev_mam,(/nrow,ncol/),panres)
   delete(wks_stddev_mam)
   
-  panres@txString = "snd Standard Deviations (JJA)"
+  panres@txString = "SND Standard Deviations (JJA)"
   gsn_panel2(wks_stddev_jja,plot_stddev_jja,(/nrow,ncol/),panres)
   delete(wks_stddev_jja)
   
-  panres@txString = "snd Standard Deviations (SON)"
+  panres@txString = "SND Standard Deviations (SON)"
   gsn_panel2(wks_stddev_son,plot_stddev_son,(/nrow,ncol/),panres)
   delete(wks_stddev_son)
   
-  panres@txString = "snd Standard Deviations (Annual)"
+  panres@txString = "SND Standard Deviations (Annual)"
   gsn_panel2(wks_stddev_ann,plot_stddev_ann,(/nrow,ncol/),panres)
   delete(wks_stddev_ann)
   
-  panres@txString = "snd Means (DJF)"
+  panres@txString = "SND Means (DJF)"
   gsn_panel2(wks_mean_djf,plot_mean_djf,(/nrow,ncol/),panres)
   delete(wks_mean_djf)
   
-  panres@txString = "snd Means (MAM)"
+  panres@txString = "SND Means (MAM)"
   gsn_panel2(wks_mean_mam,plot_mean_mam,(/nrow,ncol/),panres)
   delete(wks_mean_mam)
   
-  panres@txString = "snd Means (JJA)"
+  panres@txString = "SND Means (JJA)"
   gsn_panel2(wks_mean_jja,plot_mean_jja,(/nrow,ncol/),panres)
   delete(wks_mean_jja)
   
-  panres@txString = "snd Means (SON)"
+  panres@txString = "SND Means (SON)"
   gsn_panel2(wks_mean_son,plot_mean_son,(/nrow,ncol/),panres)
   delete(wks_mean_son)
   
-  panres@txString = "snd Means (Annual)"
+  panres@txString = "SND Means (Annual)"
   gsn_panel2(wks_mean_ann,plot_mean_ann,(/nrow,ncol/),panres)
   delete(wks_mean_ann)
   delete(panres)

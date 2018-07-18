@@ -192,7 +192,11 @@ begin
         temp_arr = arr
         delete(temp_arr&time)
         temp_arr&time = cd_calendar(arr&time,-1)
-        climo = clmMonTLL(temp_arr({CLIMO_SYEAR*100+1:CLIMO_EYEAR*100+12},:,:))                 
+        if (CLIMO_SYEAR.lt.0) then
+           climo = clmMonTLL(temp_arr({(eyear(ee)+CLIMO_SYEAR)*100+1:(eyear(ee)+CLIMO_EYEAR)*100+12},:,:))       
+        else
+           climo = clmMonTLL(temp_arr({CLIMO_SYEAR*100+1:CLIMO_EYEAR*100+12},:,:))                 
+        end if   
         delete(temp_arr)
         arr   = calcMonAnomTLL(arr,climo) 
         delete(climo)
@@ -258,7 +262,11 @@ begin
               temp_arr = sst
               delete(temp_arr&time)
               temp_arr&time = cd_calendar(sst&time,1)
-              climo = clmMonTLL(temp_arr({CLIMO_SYEAR*100+1:CLIMO_EYEAR*100+12},:,:))                 
+              if (CLIMO_SYEAR.lt.0) then
+                 climo = clmMonTLL(temp_arr({(eyear(ee)+CLIMO_SYEAR)*100+1:(eyear(ee)+CLIMO_EYEAR)*100+12},:,:))       
+              else
+                 climo = clmMonTLL(temp_arr({CLIMO_SYEAR*100+1:CLIMO_EYEAR*100+12},:,:))                 
+              end if   
               delete(temp_arr)
               sst   = calcMonAnomTLL(sst,climo) 
               delete(climo)
@@ -317,7 +325,11 @@ begin
               temp_arr = tas
               delete(temp_arr&time)
               temp_arr&time = cd_calendar(tas&time,1)
-              climo = clmMonTLL(temp_arr({CLIMO_SYEAR*100+1:CLIMO_EYEAR*100+12},:,:))                 
+              if (CLIMO_SYEAR.lt.0) then
+                 climo = clmMonTLL(temp_arr({(eyear(ee)+CLIMO_SYEAR)*100+1:(eyear(ee)+CLIMO_EYEAR)*100+12},:,:))       
+              else
+                 climo = clmMonTLL(temp_arr({CLIMO_SYEAR*100+1:CLIMO_EYEAR*100+12},:,:))                 
+              end if   
               delete(temp_arr)
               tas   = calcMonAnomTLL(tas,climo) 
               delete(climo)
@@ -341,7 +353,7 @@ begin
      if (any(ismissing((/syear(ee),syear_pr(ee),eyear(ee),eyear_pr(ee)/)))) then
         prreg_plot_flag = 1
      else
-        if (syear(ee).eq.syear_pr(ee)) then     ; check that the start and end years match for ts, tas, and psl
+        if (syear(ee).eq.syear_pr(ee)) then     ; check that the start and end years match for pr and psl
            if (eyear(ee).eq.eyear_pr(ee)) then
               prreg_plot_flag = 0
            else
@@ -359,7 +371,7 @@ begin
            delete(pr)
         end if
         
-        if (prreg_plot_flag.eq.0) then     ; only continue if both PSL/TS fields are present
+        if (prreg_plot_flag.eq.0) then     ; only continue if both PSL/PR fields are present
            if (OPT_CLIMO.eq."Full") then
               pr = rmMonAnnCycTLL(pr)
            else
@@ -367,7 +379,11 @@ begin
               temp_arr = pr
               delete(temp_arr&time)
               temp_arr&time = cd_calendar(pr&time,1)
-              climo = clmMonTLL(temp_arr({CLIMO_SYEAR*100+1:CLIMO_EYEAR*100+12},:,:))                 
+              if (CLIMO_SYEAR.lt.0) then
+                 climo = clmMonTLL(temp_arr({(eyear(ee)+CLIMO_SYEAR)*100+1:(eyear(ee)+CLIMO_EYEAR)*100+12},:,:))       
+              else
+                 climo = clmMonTLL(temp_arr({CLIMO_SYEAR*100+1:CLIMO_EYEAR*100+12},:,:))                 
+              end if   
               delete(temp_arr)
               pr   = calcMonAnomTLL(pr,climo) 
               delete(climo)
@@ -977,24 +993,28 @@ begin
            if (OPT_CLIMO.eq."Full") then
               z@climatology = syear(ee)+"-"+eyear(ee)+" climatology removed prior to all calculations (other than means)"
            else
-              z@climatology = CLIMO_SYEAR+"-"+CLIMO_EYEAR+" climatology removed prior to all calculations (other than means)"
+              if (CLIMO_SYEAR.lt.0) then
+                 z@climatology = (eyear(ee)+CLIMO_SYEAR)+"-"+(eyear(ee)+CLIMO_EYEAR)+" climatology removed prior to all calculations (other than means)"
+              else
+                 z@climatology = CLIMO_SYEAR+"-"+CLIMO_EYEAR+" climatology removed prior to all calculations (other than means)"
+              end if
            end if
            z@Conventions = "CF-1.6"
         else
            z = addfile(fn,"w")
         end if
         
-        z->nao_pc_djf = set_varAtts(nao_pc_djf,"NAO normalized principal component timeseries (DJF)","1","")
-        z->nao_pc_mam = set_varAtts(nao_pc_mam,"NAO normalized principal component timeseries (MAM)","1","")
-        z->nao_pc_jja = set_varAtts(nao_pc_jja,"NAO normalized principal component timeseries (JJA)","1","")
-        z->nao_pc_son = set_varAtts(nao_pc_son,"NAO normalized principal component timeseries (SON)","1","")
-        z->nao_pc_ann = set_varAtts(nao_pc_ann,"NAO normalized principal component timeseries (ANN)","1","")
+        z->nao_timeseries_djf = set_varAtts(nao_pc_djf,"NAO normalized principal component timeseries (DJF)","1","")
+        z->nao_timeseries_mam = set_varAtts(nao_pc_mam,"NAO normalized principal component timeseries (MAM)","1","")
+        z->nao_timeseries_jja = set_varAtts(nao_pc_jja,"NAO normalized principal component timeseries (JJA)","1","")
+        z->nao_timeseries_son = set_varAtts(nao_pc_son,"NAO normalized principal component timeseries (SON)","1","")
+        z->nao_timeseries_ann = set_varAtts(nao_pc_ann,"NAO normalized principal component timeseries (ANN)","1","")
         
-        z->nam_pc_djf = set_varAtts(nam_pc_djf,"NAM normalized principal component timeseries (DJF)","1","")
-        z->nam_pc_mam = set_varAtts(nam_pc_mam,"NAM normalized principal component timeseries (MAM)","1","")
-        z->nam_pc_jja = set_varAtts(nam_pc_jja,"NAM normalized principal component timeseries (JJA)","1","")
-        z->nam_pc_son = set_varAtts(nam_pc_son,"NAM normalized principal component timeseries (SON)","1","")
-        z->nam_pc_ann = set_varAtts(nam_pc_ann,"NAM normalized principal component timeseries (ANN)","1","")
+        z->nam_timeseries_djf = set_varAtts(nam_pc_djf,"NAM normalized principal component timeseries (DJF)","1","")
+        z->nam_timeseries_mam = set_varAtts(nam_pc_mam,"NAM normalized principal component timeseries (MAM)","1","")
+        z->nam_timeseries_jja = set_varAtts(nam_pc_jja,"NAM normalized principal component timeseries (JJA)","1","")
+        z->nam_timeseries_son = set_varAtts(nam_pc_son,"NAM normalized principal component timeseries (SON)","1","")
+        z->nam_timeseries_ann = set_varAtts(nam_pc_ann,"NAM normalized principal component timeseries (ANN)","1","")
         
         z->nao_pattern_djf = set_varAtts(nao_djf,"NAO spatial pattern (DJF)","","")   
         z->nao_pattern_mam = set_varAtts(nao_mam,"NAO spatial pattern (MAM)","","")
@@ -1009,8 +1029,8 @@ begin
         z->nam_pattern_ann = set_varAtts(nam_ann,"NAM spatial pattern (annual)","","")
 
         if (COMPUTE_MODES_MON.eq."True") then   
-           z->nao_pc_mon = set_varAtts(nao_pc_mon,"NAO principal component timeseries (monthly)","","")
-           z->nam_pc_mon = set_varAtts(nam_pc_mon,"NAM principal component timeseries (monthly)","","")
+           z->nao_timeseries_mon = set_varAtts(nao_pc_mon,"NAO principal component timeseries (monthly)","","")
+           z->nam_timeseries_mon = set_varAtts(nam_pc_mon,"NAM principal component timeseries (monthly)","","")
            z->nao_pattern_mon = set_varAtts(nao_mon,"NAO spatial pattern (monthly)","","")
            z->nam_pattern_mon = set_varAtts(nam_mon,"NAM spatial pattern (monthly)","","")
         end if
@@ -1031,7 +1051,11 @@ begin
               if (OPT_CLIMO.eq."Full") then
                  z@climatology = syear_ts(ee)+"-"+eyear_ts(ee)+" climatology removed prior to all calculations (other than means)"
               else
-                 z@climatology = CLIMO_SYEAR+"-"+CLIMO_EYEAR+" climatology removed prior to all calculations (other than means)"
+                 if (CLIMO_SYEAR.lt.0) then
+                    z@climatology = (eyear(ee)+CLIMO_SYEAR)+"-"+(eyear(ee)+CLIMO_EYEAR)+" climatology removed prior to all calculations (other than means)"
+                 else
+                    z@climatology = CLIMO_SYEAR+"-"+CLIMO_EYEAR+" climatology removed prior to all calculations (other than means)"
+                 end if
               end if
               z@Conventions = "CF-1.6"
            else
@@ -1069,7 +1093,11 @@ begin
               if (OPT_CLIMO.eq."Full") then
                  z@climatology = syear_tas(ee)+"-"+eyear_tas(ee)+" climatology removed prior to all calculations (other than means)"
               else
-                 z@climatology = CLIMO_SYEAR+"-"+CLIMO_EYEAR+" climatology removed prior to all calculations (other than means)"
+                 if (CLIMO_SYEAR.lt.0) then
+                    z@climatology = (eyear(ee)+CLIMO_SYEAR)+"-"+(eyear(ee)+CLIMO_EYEAR)+" climatology removed prior to all calculations (other than means)"
+                 else
+                    z@climatology = CLIMO_SYEAR+"-"+CLIMO_EYEAR+" climatology removed prior to all calculations (other than means)"
+                 end if
               end if
               z@Conventions = "CF-1.6"
            else
@@ -1107,7 +1135,11 @@ begin
               if (OPT_CLIMO.eq."Full") then
                  z@climatology = syear_pr(ee)+"-"+eyear_pr(ee)+" climatology removed prior to all calculations (other than means)"
               else
-                 z@climatology = CLIMO_SYEAR+"-"+CLIMO_EYEAR+" climatology removed prior to all calculations (other than means)"
+                 if (CLIMO_SYEAR.lt.0) then
+                    z@climatology = (eyear(ee)+CLIMO_SYEAR)+"-"+(eyear(ee)+CLIMO_EYEAR)+" climatology removed prior to all calculations (other than means)"
+                 else
+                    z@climatology = CLIMO_SYEAR+"-"+CLIMO_EYEAR+" climatology removed prior to all calculations (other than means)"
+                 end if
               end if
               z@Conventions = "CF-1.6"
            else
@@ -1213,14 +1245,14 @@ begin
         patcor_nao_jja(ee,:,:) = (/ nao_jja /)
         patcor_nao_ann(ee,:,:) = (/ nao_ann /)
      end if
-     if (isfilepresent2("obs_psl").and.ee.ge.1) then
-        patcor_nam_djf(ee,:,:) = (/ linint2(nam_djf&lon,nam_djf&lat,nam_djf,True,patcor_nam_djf&lon,patcor_nam_djf&lat,0) /)
-        patcor_nam_jja(ee,:,:) = (/ linint2(nam_jja&lon,nam_jja&lat,nam_jja,True,patcor_nam_jja&lon,patcor_nam_jja&lat,0) /)
-        patcor_nam_ann(ee,:,:) = (/ linint2(nam_ann&lon,nam_ann&lat,nam_ann,True,patcor_nam_ann&lon,patcor_nam_ann&lat,0) /)
+     if (isfilepresent2("obs_psl").and.ee.ge.1.and.isvar("patcor_nam_djf")) then
+        patcor_nam_djf(ee,:,:) = (/ totype(linint2(nam_djf&lon,nam_djf&lat,nam_djf,True,patcor_nam_djf&lon,patcor_nam_djf&lat,0),typeof(patcor_nam_djf)) /)
+        patcor_nam_jja(ee,:,:) = (/ totype(linint2(nam_jja&lon,nam_jja&lat,nam_jja,True,patcor_nam_jja&lon,patcor_nam_jja&lat,0),typeof(patcor_nam_jja)) /)
+        patcor_nam_ann(ee,:,:) = (/ totype(linint2(nam_ann&lon,nam_ann&lat,nam_ann,True,patcor_nam_ann&lon,patcor_nam_ann&lat,0),typeof(patcor_nam_ann)) /)
         
-        patcor_nao_djf(ee,:,:) = (/ linint2(nao_djf&lon,nao_djf&lat,nao_djf,True,patcor_nao_djf&lon,patcor_nao_djf&lat,0) /)
-        patcor_nao_jja(ee,:,:) = (/ linint2(nao_jja&lon,nao_jja&lat,nao_jja,True,patcor_nao_jja&lon,patcor_nao_jja&lat,0) /)
-        patcor_nao_ann(ee,:,:) = (/ linint2(nao_ann&lon,nao_ann&lat,nao_ann,True,patcor_nao_ann&lon,patcor_nao_ann&lat,0) /)
+        patcor_nao_djf(ee,:,:) = (/ totype(linint2(nao_djf&lon,nao_djf&lat,nao_djf,True,patcor_nao_djf&lon,patcor_nao_djf&lat,0),typeof(patcor_nao_djf)) /)
+        patcor_nao_jja(ee,:,:) = (/ totype(linint2(nao_jja&lon,nao_jja&lat,nao_jja,True,patcor_nao_jja&lon,patcor_nao_jja&lat,0),typeof(patcor_nao_jja)) /)
+        patcor_nao_ann(ee,:,:) = (/ totype(linint2(nao_ann&lon,nao_ann&lat,nao_ann,True,patcor_nao_ann&lon,patcor_nao_ann&lat,0),typeof(patcor_nao_ann)) /)
      end if
                
      res@gsnRightString = nam_djf@pcvar
@@ -1381,7 +1413,7 @@ begin
         xyres@tmYLLabelFontHeightF = 0.018
         xyres@gsnStringFontHeightF = 0.024
      end if
-
+     xyres@gsnCenterStringOrthogonalPosF = 0.025
      xyres@vpXF = 0.05
      xyres@vpHeightF = 0.15
      if (SCALE_TIMESERIES.eq."True") then
@@ -1431,7 +1463,7 @@ begin
      delete(clim_eyear)
   end if
   
-  if (isfilepresent2("obs_psl")) then    ; for pattern correlation table  
+  if (isvar("patcor_nam_djf")) then    ; for pattern correlation table  
      clat = cos(0.01745329*patcor_nam_djf&lat)
      clat!0 = "lat"
      clat&lat = patcor_nam_djf&lat

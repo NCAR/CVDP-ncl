@@ -127,7 +127,11 @@ begin
         temp_arr = tas
         delete(temp_arr&time)
         temp_arr&time = cd_calendar(tas&time,-1)
-        climo = clmMonTLL(temp_arr({CLIMO_SYEAR*100+1:CLIMO_EYEAR*100+12},:,:))                 
+        if (CLIMO_SYEAR.lt.0) then
+           climo = clmMonTLL(temp_arr({(eyear(ee)+CLIMO_SYEAR)*100+1:(eyear(ee)+CLIMO_EYEAR)*100+12},:,:))       
+        else
+           climo = clmMonTLL(temp_arr({CLIMO_SYEAR*100+1:CLIMO_EYEAR*100+12},:,:))                 
+        end if
         delete(temp_arr)
         tas   = calcMonAnomTLL(tas,climo) 
         delete(climo)
@@ -227,7 +231,11 @@ begin
            if (OPT_CLIMO.eq."Full") then
               z@climatology = syear(ee)+"-"+eyear(ee)+" climatology removed prior to all calculations (other than means)"
            else
-              z@climatology = CLIMO_SYEAR+"-"+CLIMO_EYEAR+" climatology removed prior to all calculations (other than means)"
+              if (CLIMO_SYEAR.lt.0) then
+                 z@climatology = (eyear(ee)+CLIMO_SYEAR)+"-"+(eyear(ee)+CLIMO_EYEAR)+" climatology removed prior to all calculations (other than means)"
+              else
+                 z@climatology = CLIMO_SYEAR+"-"+CLIMO_EYEAR+" climatology removed prior to all calculations (other than means)"
+              end if
            end if
            z@Conventions = "CF-1.6" 
        else
@@ -344,6 +352,8 @@ begin
         xyres@gsnLeftStringFontHeightF = 0.024
         xyres@gsnRightStringFontHeightF = 0.020     
      end if
+     xyres@gsnLeftStringOrthogonalPosF = 0.025
+     xyres@gsnRightStringOrthogonalPosF = xyres@gsnLeftStringOrthogonalPosF
      xyres@vpXF = 0.05
      xyres@vpHeightF = 0.15
      if (SCALE_TIMESERIES.eq."True") then
@@ -411,20 +421,8 @@ begin
         overlay(xy_son(ee),xy_obs_son(ee))
      end if
      delete(tttt)
-     
-     tttt = dtrend_msg(ispan(0,dimsizes(tas_aa_mon&time)-1,1),tas_aa_mon,False,True)
-     if (isfilepresent2("obs_trefht").and.ee.ge.1) then
-        xyres@trYMinF = min((/min(tas_aa_mon),min(tas_aa_mon_obs)/))-.01
-        xyres@trYMaxF = max((/max(tas_aa_mon),max(tas_aa_mon_obs)/))+.01
-     end if   
-     xyres@gsnRightString = decimalPlaces(tttt@slope*dimsizes(tas_aa_mon&time),2,True)+tas_trends_mon@units
-     xy_mon(ee)     = gsn_csm_xy(wks_aa_mon,fspan(syear(ee),eyear(ee)+.91667,dimsizes(tas_aa_mon)),tas_aa_mon,xyres)  
-     if (isfilepresent2("obs_trefht").and.ee.ge.1) then
-        xy_obs_mon(ee) = gsn_csm_xy(wks_aa_mon,fspan(tas_aa_seas_obs@syear,tas_aa_seas_obs@eyear+.91667,dimsizes(tas_aa_mon_obs)),tas_aa_mon_obs,xyres2)
-        overlay(xy_mon(ee),xy_obs_mon(ee))
-     end if
-     delete(tttt)
-     
+
+
      tttt = dtrend_msg(ispan(0,dimsizes(tas_aa_ann&time)-1,1),tas_aa_ann,False,True)   
      if (isfilepresent2("obs_trefht").and.ee.ge.1) then
         xyres@trYMinF = min((/min(tas_aa_ann),min(tas_aa_ann_obs)/))-.01
@@ -437,6 +435,21 @@ begin
         overlay(xy_ann(ee),xy_obs_ann(ee))
         delete(xyres@trYMinF)
         delete(xyres@trYMaxF)
+     end if
+     delete(tttt)
+
+     xyres@trXMaxF = eyear(ee)+1.5
+     xyres2@trXMaxF = eyear(ee)+1.5     
+     tttt = dtrend_msg(ispan(0,dimsizes(tas_aa_mon&time)-1,1),tas_aa_mon,False,True)
+     if (isfilepresent2("obs_trefht").and.ee.ge.1) then
+        xyres@trYMinF = min((/min(tas_aa_mon),min(tas_aa_mon_obs)/))-.01
+        xyres@trYMaxF = max((/max(tas_aa_mon),max(tas_aa_mon_obs)/))+.01
+     end if   
+     xyres@gsnRightString = decimalPlaces(tttt@slope*dimsizes(tas_aa_mon&time),2,True)+tas_trends_mon@units
+     xy_mon(ee)     = gsn_csm_xy(wks_aa_mon,fspan(syear(ee),eyear(ee)+.91667,dimsizes(tas_aa_mon)),tas_aa_mon,xyres)  
+     if (isfilepresent2("obs_trefht").and.ee.ge.1) then
+        xy_obs_mon(ee) = gsn_csm_xy(wks_aa_mon,fspan(tas_aa_seas_obs@syear,tas_aa_seas_obs@eyear+.91667,dimsizes(tas_aa_mon_obs)),tas_aa_mon_obs,xyres2)
+        overlay(xy_mon(ee),xy_obs_mon(ee))
      end if
      
      xyres@gsnRightString = ""     
@@ -463,6 +476,7 @@ begin
   panres@pmLabelBarWidthF = 0.65
   panres@lbTitleOn = False
   panres@lbBoxLineColor = "gray70"
+  panres@lbLabelFontHeightF = 0.013
   if (nsim.le.4) then
      if (nsim.eq.1) then
         panres@txFontHeightF = 0.022

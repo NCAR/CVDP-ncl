@@ -89,7 +89,11 @@ begin
         temp_arr = psl
         delete(temp_arr&time)
         temp_arr&time = cd_calendar(psl&time,-1)
-        climo = clmMonTLL(temp_arr({CLIMO_SYEAR*100+1:CLIMO_EYEAR*100+12},:,:))                 
+        if (CLIMO_SYEAR.lt.0) then
+           climo = clmMonTLL(temp_arr({(eyear(ee)+CLIMO_SYEAR)*100+1:(eyear(ee)+CLIMO_EYEAR)*100+12},:,:))       
+        else
+           climo = clmMonTLL(temp_arr({CLIMO_SYEAR*100+1:CLIMO_EYEAR*100+12},:,:))                 
+        end if   
         delete(temp_arr)
         psl   = calcMonAnomTLL(psl,climo) 
         delete(climo)
@@ -148,7 +152,11 @@ begin
            if (OPT_CLIMO.eq."Full") then
               z@climatology = syear(ee)+"-"+eyear(ee)+" climatology removed prior to all calculations (other than means)"
            else
-              z@climatology = CLIMO_SYEAR+"-"+CLIMO_EYEAR+" climatology removed prior to all calculations (other than means)"
+              if (CLIMO_SYEAR.lt.0) then
+                 z@climatology = (eyear(ee)+CLIMO_SYEAR)+"-"+(eyear(ee)+CLIMO_EYEAR)+" climatology removed prior to all calculations (other than means)"
+              else
+                 z@climatology = CLIMO_SYEAR+"-"+CLIMO_EYEAR+" climatology removed prior to all calculations (other than means)"
+              end if
            end if
            z@Conventions = "CF-1.6"
         else
@@ -218,6 +226,7 @@ begin
   panres@pmLabelBarWidthF = 0.65
   panres@lbTitleOn = False
   panres@lbBoxLineColor = "gray70"
+  panres@lbLabelFontHeightF = 0.013
   if (nsim.le.4) then
      if (nsim.eq.1) then
         panres@txFontHeightF = 0.022

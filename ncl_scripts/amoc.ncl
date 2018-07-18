@@ -117,6 +117,9 @@ begin
   plot_amoc_sstreg_ann  = new(nsim,"graphic") 
   plot_amoc_tasreg_ann  = new(nsim,"graphic") 
   plot_amoc_amo_ann  = new(nsim,"graphic") 
+  if (isfilepresent2("obs_moc")) then
+     pspec_obs = new(nsim,"graphic")
+  end if
 
   do ee = 0,nsim-1
      mocT = data_read_in_ocean_MOC(paths(ee),"MOC",syear(ee),eyear(ee))    ; read in data, orient lats/lons correctly, set time coordinate variable up        
@@ -142,7 +145,11 @@ begin
         temp_arr = mocT
         delete(temp_arr&time)
         temp_arr&time = cd_calendar(mocT&time,-1)
-        climo = clmMonTLL(temp_arr({CLIMO_SYEAR*100+1:CLIMO_EYEAR*100+12},:,:))                 
+        if (CLIMO_SYEAR.lt.0) then
+           climo = clmMonTLL(temp_arr({(eyear(ee)+CLIMO_SYEAR)*100+1:(eyear(ee)+CLIMO_EYEAR)*100+12},:,:))       
+        else
+           climo = clmMonTLL(temp_arr({CLIMO_SYEAR*100+1:CLIMO_EYEAR*100+12},:,:))                 
+        end if                
         delete(temp_arr)
         mocT   = calcMonAnomTLL(mocT,climo) 
         delete(climo)
@@ -249,17 +256,15 @@ begin
      val1 = .95
      val2 = .99
      pct = 0.1     
-     spectra_mvf = False        ; missing value flag for nino3.4
+     spectra_mvf = False        ; missing value flag for amoc
+     spectra_mvf_obs = True     ; missing value flag for obs amoc
      if (any(ismissing(amoc_pc_ann))) then
-        print("Missing data detected for "+names(ee)+", power spectra function does not allow missing data, not creating AMOC spectra")
+        print("Missing data detected for "+names(ee)+", not creating AMOC spectra")
         spectra_mvf = True
-;        if (isfilepresent2("obs_ts").and.ee.eq.0) then
-;           spectra_mvf_obs = True    ; missing value flag for obs nino3.4
-;        end if
      else
- ;       if (isfilepresent2("obs_ts").and.ee.eq.0) then
- ;          spectra_mvf_obs = False   ; missing value flag for obs nino3.4
- ;       end if
+        if (isfilepresent2("obs_moc").and.ee.eq.0) then
+           spectra_mvf_obs = False   ; missing value flag for obs amoc
+        end if
         sdof = specx_anal(amoc_pc_ann,iopt,jave,pct)
         splt1 = specx_ci(sdof,val1,val2)
         splt1!0 = "ncurves"
@@ -273,7 +278,9 @@ begin
         splt1@units_info = "df refers to frequency interval; data are standardized so there are no physical units"
         splt1@units = "1/df"
         splt1@info = "(0,:)=spectrum,(1,:)=Markov red noise spectrum, (2,:)="+val1+"% confidence bound for Markhov, (3,:)="+val2+"% confidence bound for Markhov"
-
+        if (isfilepresent2("obs_moc").and.ee.eq.0) then
+           sdof_obs = sdof
+        end if
         delete([/iopt,jave,pct/])
      end if
 ;-------------------Read in TS and TAS for regressions onto PC1 and for AMO calculation----------------------------------------     
@@ -303,13 +310,16 @@ begin
 
         if (OPT_CLIMO.eq."Full") then
            sst = rmMonAnnCycTLL(sst)
-
         else
            check_custom_climo(names_ts(ee),syear_ts(ee),eyear_ts(ee),CLIMO_SYEAR,CLIMO_EYEAR)
            temp_arr = sst
            delete(temp_arr&time)
            temp_arr&time = cd_calendar(sst&time,-1)
-           climo = clmMonTLL(temp_arr({CLIMO_SYEAR*100+1:CLIMO_EYEAR*100+12},:,:))                 
+           if (CLIMO_SYEAR.lt.0) then
+              climo = clmMonTLL(temp_arr({(eyear(ee)+CLIMO_SYEAR)*100+1:(eyear(ee)+CLIMO_EYEAR)*100+12},:,:))       
+           else
+              climo = clmMonTLL(temp_arr({CLIMO_SYEAR*100+1:CLIMO_EYEAR*100+12},:,:))                 
+           end if                    
            delete(temp_arr)
            sst   = calcMonAnomTLL(sst,climo) 
            delete(climo)
@@ -358,7 +368,11 @@ begin
            temp_arr = tas
            delete(temp_arr&time)
            temp_arr&time = cd_calendar(tas&time,-1)
-           climo = clmMonTLL(temp_arr({CLIMO_SYEAR*100+1:CLIMO_EYEAR*100+12},:,:))                 
+           if (CLIMO_SYEAR.lt.0) then
+              climo = clmMonTLL(temp_arr({(eyear(ee)+CLIMO_SYEAR)*100+1:(eyear(ee)+CLIMO_EYEAR)*100+12},:,:))       
+           else
+              climo = clmMonTLL(temp_arr({CLIMO_SYEAR*100+1:CLIMO_EYEAR*100+12},:,:))                 
+           end if    
            delete(temp_arr)
            tas   = calcMonAnomTLL(tas,climo) 
            delete(climo)
@@ -394,7 +408,9 @@ begin
         ccr(mxlag:)    = x_Lead_y(0:mxlag)     ; "positive lag"
         delete([/x_Lead_y,y_Lead_x,AMO_wgt,amoc_pc_ann_wgt/])
      end if
-     delete(AMO)
+     if (sstreg_plot_flag.eq.0) then
+        delete(AMO)
+     end if
 ;---------------------------------------------------------------------------------------------     
      if (OUTPUT_DATA.eq."True") then
         modname = str_sub_str(names(ee)," ","_")
@@ -410,7 +426,11 @@ begin
            if (OPT_CLIMO.eq."Full") then
               z@climatology = syear(ee)+"-"+eyear(ee)+" climatology removed prior to all calculations (other than means)"
            else
-              z@climatology = CLIMO_SYEAR+"-"+CLIMO_EYEAR+" climatology removed prior to all calculations (other than means)"
+              if (CLIMO_SYEAR.lt.0) then
+                 z@climatology = (eyear(ee)+CLIMO_SYEAR)+"-"+(eyear(ee)+CLIMO_EYEAR)+" climatology removed prior to all calculations (other than means)"
+              else
+                 z@climatology = CLIMO_SYEAR+"-"+CLIMO_EYEAR+" climatology removed prior to all calculations (other than means)"
+              end if
            end if
            z@Conventions = "CF-1.6"
         else
@@ -420,7 +440,7 @@ begin
         if (spectra_mvf.eq.False) then
            z->amoc_spectra_ann = set_varAtts(splt1,"AMOC (monthly) power spectra, Markov spectrum and confidence curves","","")   
         end if
-        if (nyr(ee).ge.90) then
+        if (nyr(ee).ge.90.and.isvar("ccr")) then
            time_lag_cor = ispan(mxlag*-1,mxlag,1)
            time_lag_cor@units = "months since 0000-01-01 00:00:00"
            time_lag_cor@long_name = "Time"
@@ -444,7 +464,7 @@ begin
         amoc_pc_ann!0 = "TIME"
         amoc_pc_ann&TIME = TIME
         amoc_pc_ann@long_name = "AMOC pc1 timeseries (annual)"
-        z->amoc_timeseries_ann = set_varAtts(amoc_pc_ann,"","Sv","")
+        z->amoc_timeseries_ann = set_varAtts(amoc_pc_ann,"","1","")
         lat_amoc = moc_reg_ann&lat
         lat_amoc!0 = "lat_amoc"
         lat_amoc&lat_amoc = lat_amoc
@@ -477,7 +497,11 @@ begin
               if (OPT_CLIMO.eq."Full") then
                  z@climatology = syear_ts(ee)+"-"+eyear_ts(ee)+" climatology removed prior to all calculations (other than means)"
               else
-                 z@climatology = CLIMO_SYEAR+"-"+CLIMO_EYEAR+" climatology removed prior to all calculations (other than means)"
+                 if (CLIMO_SYEAR.lt.0) then
+                    z@climatology = (eyear(ee)+CLIMO_SYEAR)+"-"+(eyear(ee)+CLIMO_EYEAR)+" climatology removed prior to all calculations (other than means)"
+                 else
+                    z@climatology = CLIMO_SYEAR+"-"+CLIMO_EYEAR+" climatology removed prior to all calculations (other than means)"
+                 end if
               end if
            else
               z = addfile(fn,"w")
@@ -499,7 +523,11 @@ begin
               if (OPT_CLIMO.eq."Full") then
                  z@climatology = syear_trefht(ee)+"-"+eyear_trefht(ee)+" climatology removed prior to all calculations (other than means)"
               else
-                 z@climatology = CLIMO_SYEAR+"-"+CLIMO_EYEAR+" climatology removed prior to all calculations (other than means)"
+                 if (CLIMO_SYEAR.lt.0) then
+                    z@climatology = (eyear(ee)+CLIMO_SYEAR)+"-"+(eyear(ee)+CLIMO_EYEAR)+" climatology removed prior to all calculations (other than means)"
+                 else
+                    z@climatology = CLIMO_SYEAR+"-"+CLIMO_EYEAR+" climatology removed prior to all calculations (other than means)"
+                 end if
               end if
            else
               z = addfile(fn,"w")
@@ -631,7 +659,7 @@ begin
         xyres@tmYLLabelFontHeightF = 0.018
         xyres@gsnStringFontHeightF = 0.024
      end if
-
+     xyres@gsnCenterStringOrthogonalPosF = 0.025
      xyres@vpXF = 0.05
      xyres@vpHeightF = 0.15
      if (SCALE_TIMESERIES.eq."True") then
@@ -699,6 +727,15 @@ begin
      pres@gsnRightString = syear(ee)+"-"+eyear(ee)+"  "
      if (spectra_mvf.eq.False) then
         plot_amoc_powspec_ann(ee) = gsn_csm_xy(wks_amoc_powspec,sdof@frq,splt1,pres) 
+        if (isfilepresent2("obs_moc").and.ee.ge.1.and.spectra_mvf_obs.eq.False) then
+           pres@xyLineColors        = (/"gray70","black","black","black"/)
+           pres@xyCurveDrawOrder = "PreDraw"
+           pres@gsnCenterString = ""
+           pres@gsnRightString = ""
+           pspec_obs(ee) = gsn_csm_xy(wks2,sdof_obs@frq,sdof_obs@spcx,pres)
+           overlay(plot_amoc_powspec_ann(ee),pspec_obs(ee)) 
+           delete(pres@xyCurveDrawOrder)
+        end if 
         delete([/splt1,sdof/])
      end if
      delete(pres)
@@ -799,7 +836,7 @@ begin
      res2@gsnLeftString = "AMO leads"
      res2@gsnCenterString = names(ee)
      res2@gsnRightString = "AMOC PC1 leads"
-     if (nyr(ee).ge.90) then    ; need a minimum number of years to compute lead/lag correlations
+     if (nyr(ee).ge.90.and.isvar("ccr")) then    ; need a minimum number of years to compute lead/lag correlations
         res2@trXMinF = mxlag*-1
         res2@trXMaxF = mxlag
         plot_amoc_amo_ann(ee) = gsn_csm_xy(wks_amoc_amo,ispan(mxlag*-1,mxlag,1),ccr,res2)

@@ -201,7 +201,11 @@ begin
               check_custom_climo(names(ee),syear(ee),eyear(ee),CLIMO_SYEAR,CLIMO_EYEAR)
               temp_arr = taice
               temp_arr&time = cd_calendar(aice_nh_sum_mon&time,-1)
-              climo = clmMonTLL(temp_arr({CLIMO_SYEAR*100+1:CLIMO_EYEAR*100+12},:,:))                 
+              if (CLIMO_SYEAR.lt.0) then
+                 climo = clmMonTLL(temp_arr({(eyear(ee)+CLIMO_SYEAR)*100+1:(eyear(ee)+CLIMO_EYEAR)*100+12},:,:))       
+              else
+                 climo = clmMonTLL(temp_arr({CLIMO_SYEAR*100+1:CLIMO_EYEAR*100+12},:,:))                 
+              end if              
               delete(temp_arr)
               taice   = calcMonAnomTLL(taice,climo) 
               delete(climo)
@@ -262,7 +266,11 @@ begin
            temp_arr = aice_nh
            delete(temp_arr&time)
            temp_arr&time = cd_calendar(aice_nh&time,-1)
-           climo = clmMonTLL(temp_arr({CLIMO_SYEAR*100+1:CLIMO_EYEAR*100+12},:,:))                 
+           if (CLIMO_SYEAR.lt.0) then
+              climo = clmMonTLL(temp_arr({(eyear(ee)+CLIMO_SYEAR)*100+1:(eyear(ee)+CLIMO_EYEAR)*100+12},:,:))       
+           else
+              climo = clmMonTLL(temp_arr({CLIMO_SYEAR*100+1:CLIMO_EYEAR*100+12},:,:))                 
+           end if             
            delete(temp_arr)
            aice_nh   = calcMonAnomTLL(aice_nh,climo) 
            delete(climo)
@@ -350,7 +358,11 @@ begin
               check_custom_climo(names_sh(ee),syear_sh(ee),eyear_sh(ee),CLIMO_SYEAR,CLIMO_EYEAR)
               temp_arr = taice
               temp_arr&time = cd_calendar(aice_sh_sum_mon&time,-1)
-              climo = clmMonTLL(temp_arr({CLIMO_SYEAR*100+1:CLIMO_EYEAR*100+12},:,:))                 
+              if (CLIMO_SYEAR.lt.0) then
+                 climo = clmMonTLL(temp_arr({(eyear(ee)+CLIMO_SYEAR)*100+1:(eyear(ee)+CLIMO_EYEAR)*100+12},:,:))       
+              else
+                 climo = clmMonTLL(temp_arr({CLIMO_SYEAR*100+1:CLIMO_EYEAR*100+12},:,:))                 
+              end if               
               delete(temp_arr)
               taice   = calcMonAnomTLL(taice,climo) 
               delete(climo)
@@ -411,7 +423,11 @@ begin
            temp_arr = aice_sh
            delete(temp_arr&time)
            temp_arr&time = cd_calendar(aice_sh&time,-1)
-           climo = clmMonTLL(temp_arr({CLIMO_SYEAR*100+1:CLIMO_EYEAR*100+12},:,:))                 
+           if (CLIMO_SYEAR.lt.0) then
+              climo = clmMonTLL(temp_arr({(eyear(ee)+CLIMO_SYEAR)*100+1:(eyear(ee)+CLIMO_EYEAR)*100+12},:,:))       
+           else
+              climo = clmMonTLL(temp_arr({CLIMO_SYEAR*100+1:CLIMO_EYEAR*100+12},:,:))                 
+           end if               
            delete(temp_arr)
            aice_sh   = calcMonAnomTLL(aice_sh,climo) 
            delete(climo)
@@ -473,7 +489,11 @@ begin
            if (OPT_CLIMO.eq."Full") then
               z@climatology = syear(ee)+"-"+eyear(ee)+" climatology removed prior to all calculations (other than means)"
            else
-              z@climatology = CLIMO_SYEAR+"-"+CLIMO_EYEAR+" climatology removed prior to all calculations (other than means)"
+              if (CLIMO_SYEAR.lt.0) then
+                 z@climatology = (eyear(ee)+CLIMO_SYEAR)+"-"+(eyear(ee)+CLIMO_EYEAR)+" climatology removed prior to all calculations (other than means)"
+              else
+                 z@climatology = CLIMO_SYEAR+"-"+CLIMO_EYEAR+" climatology removed prior to all calculations (other than means)"
+              end if
            end if
            z@Conventions = "CF-1.6"
         else
@@ -481,16 +501,15 @@ begin
         end if
         nh_trends_seas = aice_nh_trends_seas
         if (isatt(nh_trends_seas,"lat2d")) then    ; if there is a lat2d there will be a lon2d
+           LAT2D = nh_trends_seas@lat2d
+           LON2D = nh_trends_seas@lon2d
            delete(nh_trends_seas@lat2d)
            delete(nh_trends_seas@lon2d)
-           lat2d_ice_nh = aice_nh_trends_seas@lat2d
-           lon2d_ice_nh = aice_nh_trends_seas@lon2d
-           lat2d_ice_nh!0 = "j"
-           lat2d_ice_nh!1 = "i"
-           copy_VarMeta(lat2d_ice_nh,lon2d_ice_nh)
-           z->lat2d_ice_nh = set_varAtts(lat2d_ice_nh,"Northern Hemisphere ice grid 2-dimensional latitudes","","")
-           z->lon2d_ice_nh = set_varAtts(lat2d_ice_nh,"Northern Hemisphere ice grid 2-dimensional longitudes","","")
-           delete([/lat2d_ice_nh,lon2d_ice_nh/])
+           copy_VarCoords(nh_trends_seas(0,:,:),LAT2D)
+           copy_VarCoords(nh_trends_seas(0,:,:),LON2D)
+           z->lat2d_ice_nh = set_varAtts(LAT2D,"Northern Hemisphere ice grid 2-dimensional latitudes","","")
+           z->lon2d_ice_nh = set_varAtts(LON2D,"Northern Hemisphere ice grid 2-dimensional longitudes","","")
+           delete([/LAT2D,LON2D/])
            nh_trends_seas@coordinates ="lat2d_ice_nh lon2d_ice_nh"
         end if           
         if (isatt(nh_trends_seas,"area")) then
@@ -583,7 +602,11 @@ begin
            if (OPT_CLIMO.eq."Full") then
               z@climatology = syear_sh(ee)+"-"+eyear_sh(ee)+" climatology removed prior to all calculations (other than means)"
            else
-              z@climatology = CLIMO_SYEAR+"-"+CLIMO_EYEAR+" climatology removed prior to all calculations (other than means)"
+              if (CLIMO_SYEAR.lt.0) then
+                 z@climatology = (eyear(ee)+CLIMO_SYEAR)+"-"+(eyear(ee)+CLIMO_EYEAR)+" climatology removed prior to all calculations (other than means)"
+              else
+                 z@climatology = CLIMO_SYEAR+"-"+CLIMO_EYEAR+" climatology removed prior to all calculations (other than means)"
+              end if
            end if
            z@Conventions = "CF-1.6"
         else
@@ -591,16 +614,15 @@ begin
         end if
         sh_trends_seas = aice_sh_trends_seas
         if (isatt(sh_trends_seas,"lat2d")) then    ; if there is a lat2d there will be a lon2d
+           LAT2D = sh_trends_seas@lat2d
+           LON2D = sh_trends_seas@lon2d
            delete(sh_trends_seas@lat2d)
            delete(sh_trends_seas@lon2d)
-           lat2d_ice_sh = aice_sh_trends_seas@lat2d
-           lon2d_ice_sh = aice_sh_trends_seas@lon2d
-           lat2d_ice_sh!0 = "j2"
-           lat2d_ice_sh!1 = "i2"
-           copy_VarMeta(lat2d_ice_sh,lon2d_ice_sh)
-           z->lat2d_ice_sh = set_varAtts(lat2d_ice_sh,"Southern Hemisphere ice grid 2-dimensional latitudes","","")
-           z->lon2d_ice_sh = set_varAtts(lat2d_ice_sh,"Southern Hemisphere ice grid 2-dimensional longitudes","","")
-           delete([/lat2d_ice_sh,lon2d_ice_sh/])
+           copy_VarCoords(sh_trends_seas(0,:,:),LAT2D)
+           copy_VarCoords(sh_trends_seas(0,:,:),LON2D)
+           z->lat2d_ice_sh = set_varAtts(LAT2D,"Northern Hemisphere ice grid 2-dimensional latitudes","","")
+           z->lon2d_ice_sh = set_varAtts(LON2D,"Northern Hemisphere ice grid 2-dimensional longitudes","","")
+           delete([/LAT2D,LON2D/])
            sh_trends_seas@coordinates ="lat2d_ice_sh lon2d_ice_sh"
         end if  
         if (isatt(sh_trends_seas,"area")) then
@@ -772,6 +794,8 @@ begin
         xyres@gsnCenterStringFontHeightF = 0.024   
         xyres@gsnRightStringFontHeightF = 0.020     
      end if
+     xyres@gsnLeftStringOrthogonalPosF = 0.025
+     xyres@gsnRightStringOrthogonalPosF = xyres@gsnLeftStringOrthogonalPosF
      xyres@vpXF = 0.05
      xyres@vpHeightF = 0.15
      if (SCALE_TIMESERIES.eq."True") then
@@ -1330,13 +1354,12 @@ begin
   else
      panres2@txFontHeightF = 0.016
   end if
+  panres3 = panres2
   if (SCALE_TIMESERIES.eq."True") then
      tt = ind(nyr.eq.nyr_max)
      panres2@gsnPanelScalePlotIndex = tt(0)
      delete(tt)
-  end if
-  panres3 = panres2
-  if (SCALE_TIMESERIES.eq."True") then
+
      tt = ind(nyr_sh.eq.nyr_max_sh)
      panres3@gsnPanelScalePlotIndex = tt(0)
      delete(tt)
@@ -1481,7 +1504,7 @@ begin
      system("psplit "+OUTDIR+"aice.trends.mon.ps "+OUTDIR+"aice_tr")
      system("mv "+OUTDIR+"aice_tr0001.ps "+OUTDIR+"aice.trends.nh.mon.ps") 
      system("mv "+OUTDIR+"aice_tr0002.ps "+OUTDIR+"aice.trends.sh.mon.ps")
-     system("rm "+OUTDIR+"aice_tr000?.ps "+OUTDIR+"aice.trends.???.ps")
+     system("rm "+OUTDIR+"aice.trends.???.ps")
 
      if (isfilepresent2(OUTDIR+"aice.extent.djf.ps")) then
         system("psplit "+OUTDIR+"aice.extent.djf.ps "+OUTDIR+"aice_tr")
@@ -1514,7 +1537,7 @@ begin
         system("mv "+OUTDIR+"aice_tr0004.ps "+OUTDIR+"aice.extent.anom.sh.mon.ps")
         system("mv "+OUTDIR+"aice_tr0005.ps "+OUTDIR+"aice.extent.nh.climo.ps") 
         system("mv "+OUTDIR+"aice_tr0006.ps "+OUTDIR+"aice.extent.sh.climo.ps")
-        system("rm "+OUTDIR+"aice_tr000?.ps "+OUTDIR+"aice.extent.???.ps "+OUTDIR+"aice.extent.febmar.ps")
+        system("rm "+OUTDIR+"aice.extent.???.ps "+OUTDIR+"aice.extent.febmar.ps")
      end if
   end if
   print("Finished: aice.trends_timeseries.ncl")

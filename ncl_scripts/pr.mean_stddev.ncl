@@ -142,7 +142,11 @@ begin
               temp_arr = pptT
               delete(temp_arr&time)
               temp_arr&time = cd_calendar(pptT&time,-1)
-              climo = clmMonTLL(temp_arr({CLIMO_SYEAR*100+1:CLIMO_EYEAR*100+12},:,:))                 
+              if (CLIMO_SYEAR.lt.0) then
+                 climo = clmMonTLL(temp_arr({(eyear(ee)+CLIMO_SYEAR)*100+1:(eyear(ee)+CLIMO_EYEAR)*100+12},:,:))       
+              else
+                 climo = clmMonTLL(temp_arr({CLIMO_SYEAR*100+1:CLIMO_EYEAR*100+12},:,:))                 
+              end if    
               delete(temp_arr)
               pptT   = calcMonAnomTLL(pptT,climo) 
               delete(climo)
@@ -197,7 +201,11 @@ begin
            if (OPT_CLIMO.eq."Full") then
               z@climatology = syear(ee)+"-"+eyear(ee)+" climatology removed prior to all calculations (other than means)"
            else
-              z@climatology = CLIMO_SYEAR+"-"+CLIMO_EYEAR+" climatology removed prior to all calculations (other than means)"
+              if (CLIMO_SYEAR.lt.0) then
+                 z@climatology = (eyear(ee)+CLIMO_SYEAR)+"-"+(eyear(ee)+CLIMO_EYEAR)+" climatology removed prior to all calculations (other than means)"
+              else
+                 z@climatology = CLIMO_SYEAR+"-"+CLIMO_EYEAR+" climatology removed prior to all calculations (other than means)"
+              end if
            end if
            z@Conventions = "CF-1.6"
         else
@@ -276,8 +284,8 @@ begin
         patcor&lon = ppt_sd_ann&lon
         patcor(ee,:,:) = (/ ppt_sd_ann /)
      end if
-     if (isfilepresent2("obs_prect").and.ee.ge.1) then
-        patcor(ee,:,:) = (/ linint2(ppt_sd_ann&lon,ppt_sd_ann&lat,ppt_sd_ann,True,patcor&lon,patcor&lat,0) /)
+     if (isfilepresent2("obs_prect").and.ee.ge.1.and.isvar("patcor")) then
+        patcor(ee,:,:) = (/ totype(linint2(ppt_sd_ann&lon,ppt_sd_ann&lat,ppt_sd_ann,True,patcor&lon,patcor&lat,0),typeof(patcor)) /)
      end if
      
      res@gsnLeftString = syear(ee)+"-"+eyear(ee) 
@@ -373,7 +381,7 @@ begin
           
      txres@txJust = "CenterLeft"
      
-     zres@tiMainString = "pr Zonal Average (DJF)"
+     zres@tiMainString = "PR Zonal Average (DJF)"
      zres@gsnRightString = "mm/day"
 
      plot_za_djf(ee) = gsn_csm_xy(wks_za_djf,ppt_zamean_djf&lat,ppt_zamean_djf,zres) 
@@ -383,7 +391,7 @@ begin
      gsn_text_ndc(wks_za_djf,names(ee),0.765,0.8-(ee*yeval),txres)
      gsn_polyline_ndc(wks_za_djf,(/0.72,.75/),(/0.8-(ee*yeval),0.8-(ee*yeval)/),polyres)
      
-     zres@tiMainString = "pr Zonal Average (MAM)"
+     zres@tiMainString = "PR Zonal Average (MAM)"
      plot_za_mam(ee) = gsn_csm_xy(wks_za_mam,ppt_zamean_mam&lat,ppt_zamean_mam,zres) 
      if (ee.ne.0) then
         overlay(plot_za_mam(0),plot_za_mam(ee))
@@ -391,7 +399,7 @@ begin
      gsn_text_ndc(wks_za_mam,names(ee),0.765,0.8-(ee*yeval),txres)
      gsn_polyline_ndc(wks_za_mam,(/0.72,.75/),(/0.8-(ee*yeval),0.8-(ee*yeval)/),polyres)
      
-     zres@tiMainString = "pr Zonal Average (JJA)"
+     zres@tiMainString = "PR Zonal Average (JJA)"
      plot_za_jja(ee) = gsn_csm_xy(wks_za_jja,ppt_zamean_jja&lat,ppt_zamean_jja,zres) 
      if (ee.ne.0) then
         overlay(plot_za_jja(0),plot_za_jja(ee))
@@ -399,7 +407,7 @@ begin
      gsn_text_ndc(wks_za_jja,names(ee),0.765,0.8-(ee*yeval),txres)
      gsn_polyline_ndc(wks_za_jja,(/0.72,.75/),(/0.8-(ee*yeval),0.8-(ee*yeval)/),polyres)
      
-     zres@tiMainString = "pr Zonal Average (SON)"
+     zres@tiMainString = "PR Zonal Average (SON)"
      plot_za_son(ee) = gsn_csm_xy(wks_za_son,ppt_zamean_son&lat,ppt_zamean_son,zres) 
      if (ee.ne.0) then
         overlay(plot_za_son(0),plot_za_son(ee))
@@ -407,7 +415,7 @@ begin
      gsn_text_ndc(wks_za_son,names(ee),0.765,0.8-(ee*yeval),txres)
      gsn_polyline_ndc(wks_za_son,(/0.72,.75/),(/0.8-(ee*yeval),0.8-(ee*yeval)/),polyres)
      
-     zres@tiMainString = "pr Zonal Average (ANN)"
+     zres@tiMainString = "PR Zonal Average (ANN)"
      plot_za_ann(ee) = gsn_csm_xy(wks_za_ann,ppt_zamean_ann&lat,ppt_zamean_ann,zres) 
      if (ee.ne.0) then
         overlay(plot_za_ann(0),plot_za_ann(ee))
@@ -417,7 +425,7 @@ begin
      delete([/zres,polyres,txres,ppt_zamean_djf,ppt_zamean_mam,ppt_zamean_jja,ppt_zamean_son,ppt_zamean_ann/])
   end do    
   
-   if (isfilepresent2("obs_prect")) then    ; for pattern correlation table  
+   if (isvar("patcor")) then    ; for pattern correlation table  
      clat = cos(0.01745329*patcor&lat)
      finpr   = "pr Std Dev (Ann)  "    ; Must be 18 characters long
      line3   = "                  "    ; Must be 18 characters long

@@ -314,7 +314,7 @@ begin
      if (farr@units.eq."m/s".or.farr@units.eq."m s-1") then
         farr = farr*86400000.
      end if
-     if (farr@units.eq."kg m-2 s-1".or.farr@units.eq."kg/m2/s".or.farr@units.eq."kg/m^2/s") then
+     if (farr@units.eq."kg m-2 s-1".or.farr@units.eq."kg/m2/s".or.farr@units.eq."kg/m^2/s".or.farr@units.eq."kg/(s*m2)".or.farr@units.eq."mm/s") then
         farr = farr*86400.
      end if
      if (farr@units.eq."m".or.farr@units.eq."m/month".or.farr@units.eq."cm".or.farr@units.eq."cm/month".or.farr@units.eq."mm".or.farr@units.eq."mm/month") then    
@@ -958,11 +958,23 @@ procedure check_custom_climo(mn:string,startyear:numeric,endyear:numeric,climo_s
 local startyear,endyear,climo_startyear,climo_endyear,mn
 begin  
   do gg = 0,dimsizes(startyear)-1
-     if (climo_startyear.ge.startyear(gg).and.climo_endyear.le.endyear(gg)) then
-     else
-        print("check_custom_climo: Warning! Beginning and/or ending of climatological period is outside time range of data.")
-        print("Dataset: "+mn+", years = "+startyear(gg)+":"+endyear(gg)+", set climatological period = "+climo_startyear+":"+climo_endyear)
-        print("The diagnostics package will proceed, but one or more dataset(s) will not have the full climatological period removed and/or tha package may fail with the following message: fatal:NclOneDValGetRangeIndex: start coordinate index out of range.")
+     if (climo_startyear.ge.0) then    ; exact years specified for climatological period
+        if (climo_startyear.ge.startyear(gg).and.climo_endyear.le.endyear(gg)) then
+        else
+           print("check_custom_climo: Warning! Beginning and/or ending of climatological period is outside time range of data.")
+           print("Dataset: "+mn+", years = "+startyear(gg)+":"+endyear(gg)+", set climatological period = "+climo_startyear+":"+climo_endyear)
+           print("The diagnostics package will proceed, but one or more dataset(s) will not have the full climatological period removed and/or the package may fail with the following message: fatal:NclOneDValGetRangeIndex: start coordinate index out of range.")
+        end if
+     else                              ; relative years specified for climatological period
+        if ((endyear(gg)-startyear(gg)+1).lt.(climo_endyear-climo_startyear+1)) then
+           print("check_custom_climo: Warning! Beginning and/or ending of climatological period is outside time range of data.")
+           print("Dataset: "+mn+", years = "+startyear(gg)+":"+endyear(gg)+", set climatological period = "+(endyear(gg)+climo_startyear)+":"+(endyear(gg)+climo_endyear))
+           print("The diagnostics package will proceed, but one or more dataset(s) will not have the full climatological period removed and/or the package may fail with the following message: fatal:NclOneDValGetRangeIndex: start coordinate index out of range.")
+        end if
+        if (abs(climo_startyear).ge.(endyear(gg)-startyear+1)) then
+           print("check_custom_climo: Warning! Dataset: "+mn+", climatology start year "+(endyear(gg)+climo_startyear)+" is outside of analysis time period ("+startyear(gg)+":"+endyear(gg)+"), exiting script.")
+           exit
+        end if
      end if
   end do
 end
@@ -1112,7 +1124,7 @@ begin
      delete(zarr@average_op_ncl)
   end if
   if (isatt(zarr,"cell_measures")) then
-     delete(zarr@cell_methods)
+     delete(zarr@cell_measures)
   end if
   if (isatt(zarr,"cell_methods")) then
      delete(zarr@cell_methods)

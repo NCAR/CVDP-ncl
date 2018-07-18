@@ -39,40 +39,75 @@ begin
 
   pi=4.*atan(1.0)
   rad=(pi/180.)
-         
+;---------TAS Regressions coding-------------------------------------------------
+  nsim_tas = numAsciiRow("namelist_byvar/namelist_trefht")
+  na_tas = asciiread("namelist_byvar/namelist_trefht",(/nsim_tas/),"string")
+  names_tas = new(nsim_tas,"string")
+  paths_tas = new(nsim_tas,"string")
+  syear_tas = new(nsim_tas,"integer",-999)
+  eyear_tas = new(nsim_tas,"integer",-999)
+
+  do gg = 0,nsim_tas-1
+     names_tas(gg) = str_strip(str_get_field(na_tas(gg),1,delim))
+     paths_tas(gg) = str_strip(str_get_field(na_tas(gg),2,delim))
+     syear_tas(gg) = stringtointeger(str_strip(str_get_field(na_tas(gg),3,delim)))
+     eyear_tas(gg) = stringtointeger(str_strip(str_get_field(na_tas(gg),4,delim)))
+  end do
+  delete(na_tas)
+  nyr_tas = eyear_tas-syear_tas+1  
+;---------PR Regressions coding-------------------------------------------------
+  nsim_pr = numAsciiRow("namelist_byvar/namelist_prect")
+  na_pr = asciiread("namelist_byvar/namelist_prect",(/nsim_pr/),"string")
+  names_pr = new(nsim_pr,"string")
+  paths_pr = new(nsim_pr,"string")
+  syear_pr = new(nsim_pr,"integer",-999)
+  eyear_pr = new(nsim_pr,"integer",-999)
+
+  do gg = 0,nsim_pr-1
+     names_pr(gg) = str_strip(str_get_field(na_pr(gg),1,delim))
+     paths_pr(gg) = str_strip(str_get_field(na_pr(gg),2,delim))
+     syear_pr(gg) = stringtointeger(str_strip(str_get_field(na_pr(gg),3,delim)))
+     eyear_pr(gg) = stringtointeger(str_strip(str_get_field(na_pr(gg),4,delim)))
+  end do
+  delete(na_pr)
+  nyr_pr = eyear_pr-syear_pr+1  
+;-------------------------------------------------------------------------------------------------                
   wks_type = OUTPUT_TYPE
   if (wks_type.eq."png") then
      wks_type@wkWidth = 1500*PNG_SCALE
      wks_type@wkHeight = 1500*PNG_SCALE
   end if
   wks = gsn_open_wks(wks_type,getenv("OUTDIR")+"pdo")
+  wks4 = gsn_open_wks(wks_type,getenv("OUTDIR")+"pdo.prreg")
   wks2 = gsn_open_wks(wks_type,getenv("OUTDIR")+"pdo.powspec")
   wks3 = gsn_open_wks(wks_type,getenv("OUTDIR")+"pdo.timeseries")  
+
   if (COLORMAP.eq."0") then
      gsn_define_colormap(wks,"ncl_default")   
      gsn_define_colormap(wks2,"cb_9step")
      gsn_define_colormap(wks3,"ncl_default")
+     gsn_define_colormap(wks4,"MPL_BrBG")  
   end if
   if (COLORMAP.eq."1") then
      gsn_define_colormap(wks,"BlueDarkRed18")   
      gsn_define_colormap(wks2,"cb_9step")
      gsn_define_colormap(wks3,"ncl_default")
+     gsn_define_colormap(wks4,"BrownBlue12")     
   end if
   map = new(nsim,"graphic")  
+  map_sst = new(nsim,"graphic")
+  map_tasreg = new(nsim,"graphic")  
+  map_prreg = new(nsim,"graphic")  
   pspec = new(nsim,"graphic")
   xyplot = new(nsim,"graphic")
   xyplot2 = new(nsim,"graphic")
   if (isfilepresent2("obs_ts")) then
      pspec_obs = new(nsim,"graphic")
   end if
-;  if (isfilepresent2("obs_ts")) then
-;     c1 = 1
-;  else
-;     c1 = 76
-;  end if  
-;  color = (/c1,2,6,11,5,3,7,15,23,31,39,47,55,63,71,79,2,6,11,5,3,7,15,23,31,39,47,55,63,71,79,2,6,11,5,3,7,15,23,31,39,47,55,63,71,79/)   
-;  dash   = (/0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2/)   
-     
+
+  tasreg_frame = 1    ; *reg_frame = flag to create regressions .ps/.png files. Created/used instead of *reg_plot_flag
+                      ; so that if {tas,pr} regressions are not created for the last simulation listed that .ps/png files are created
+  prreg_frame  = 1
   do ee = 0,nsim-1
      sst = data_read_in(paths(ee),"TS",syear(ee),eyear(ee))    ; read in data, orient lats/lons correctly, set time coordinate variable up
      if (isatt(sst,"is_all_missing")) then
@@ -94,7 +129,11 @@ begin
         temp_arr = sst
         delete(temp_arr&time)
         temp_arr&time = cd_calendar(sst&time,-1)
-        climo = clmMonTLL(temp_arr({CLIMO_SYEAR*100+1:CLIMO_EYEAR*100+12},:,:))                 
+        if (CLIMO_SYEAR.lt.0) then
+           climo = clmMonTLL(temp_arr({(eyear(ee)+CLIMO_SYEAR)*100+1:(eyear(ee)+CLIMO_EYEAR)*100+12},:,:))       
+        else
+           climo = clmMonTLL(temp_arr({CLIMO_SYEAR*100+1:CLIMO_EYEAR*100+12},:,:))                 
+        end if    
         delete(temp_arr)
         sst   = calcMonAnomTLL(sst,climo) 
         delete(climo)
@@ -144,6 +183,107 @@ begin
         end if
      end if
      delete([/sst2,pctsS,finarr/])
+;---------TAS Regressions coding-------------------------------------------------
+     if (any(ismissing((/syear(ee),syear_tas(ee),eyear(ee),eyear_tas(ee)/)))) then
+        tasreg_plot_flag = 1
+     else
+        if (syear(ee).eq.syear_tas(ee)) then     ; check that the start and end years match for ts, tas, and psl
+           if (eyear(ee).eq.eyear_tas(ee)) then
+              tasreg_plot_flag = 0
+           else
+              tasreg_plot_flag = 1
+           end if
+        else
+           tasreg_plot_flag = 1
+        end if
+     end if 
+
+     if (tasreg_plot_flag.eq.0) then 
+        tas = data_read_in(paths_tas(ee),"TREFHT",syear_tas(ee),eyear_tas(ee))
+        if (isatt(tas,"is_all_missing")) then
+           tasreg_plot_flag = 1
+           delete(tas)
+        end if
+        
+        if (tasreg_plot_flag.eq.0) then     ; only continue if both TAS/SST fields are present
+           d = addfile("$NCARG_ROOT/lib/ncarg/data/cdf/landsea.nc","r")   
+           basemap = d->LSMASK
+           lsm = landsea_mask(basemap,tas&lat,tas&lon)
+           tas = mask(tas,conform(tas,lsm,(/1,2/)).eq.0,False)
+           delete(lsm)
+           
+           if (OPT_CLIMO.eq."Full") then
+              tas = rmMonAnnCycTLL(tas)
+           else
+              check_custom_climo(names_tas(ee),syear_tas(ee),eyear_tas(ee),CLIMO_SYEAR,CLIMO_EYEAR)
+              temp_arr = tas
+              delete(temp_arr&time)
+              temp_arr&time = cd_calendar(tas&time,1)
+              if (CLIMO_SYEAR.lt.0) then
+                 climo = clmMonTLL(temp_arr({(eyear(ee)+CLIMO_SYEAR)*100+1:(eyear(ee)+CLIMO_EYEAR)*100+12},:,:))       
+              else
+                 climo = clmMonTLL(temp_arr({CLIMO_SYEAR*100+1:CLIMO_EYEAR*100+12},:,:))                 
+              end if    
+              delete(temp_arr)
+              tas   = calcMonAnomTLL(tas,climo) 
+              delete(climo)
+           end if
+           finreg_tas = tas(0,:,:)
+           finreg_tas = (/ regCoef(pc1,tas(lat|:,lon|:,time|:))  /) 
+           delete(tas)
+        end if
+     end if
+;---------PR Regressions coding-------------------------------------------------
+     if (any(ismissing((/syear(ee),syear_pr(ee),eyear(ee),eyear_pr(ee)/)))) then
+        prreg_plot_flag = 1
+     else
+        if (syear(ee).eq.syear_pr(ee)) then     ; check that the start and end years match for pr and psl
+           if (eyear(ee).eq.eyear_pr(ee)) then
+              prreg_plot_flag = 0
+           else
+              prreg_plot_flag = 1
+           end if
+        else
+           prreg_plot_flag = 1
+        end if
+     end if 
+
+     if (prreg_plot_flag.eq.0) then 
+        pr = data_read_in(paths_pr(ee),"PRECT",syear_pr(ee),eyear_pr(ee))
+        if (isatt(pr,"is_all_missing")) then
+           prreg_plot_flag = 1
+           delete(pr)
+        end if
+        
+        if (prreg_plot_flag.eq.0) then     ; only continue if both SST/PR fields are present
+           if (OPT_CLIMO.eq."Full") then
+              pr = rmMonAnnCycTLL(pr)
+           else
+              check_custom_climo(names_pr(ee),syear_pr(ee),eyear_pr(ee),CLIMO_SYEAR,CLIMO_EYEAR)
+              temp_arr = pr
+              delete(temp_arr&time)
+              temp_arr&time = cd_calendar(pr&time,1)
+              if (CLIMO_SYEAR.lt.0) then
+                 climo = clmMonTLL(temp_arr({(eyear(ee)+CLIMO_SYEAR)*100+1:(eyear(ee)+CLIMO_EYEAR)*100+12},:,:))       
+              else
+                 climo = clmMonTLL(temp_arr({CLIMO_SYEAR*100+1:CLIMO_EYEAR*100+12},:,:))                 
+              end if    
+              delete(temp_arr)
+              pr   = calcMonAnomTLL(pr,climo) 
+              delete(climo)
+           end if
+           finreg_pr = pr(0,:,:)
+           finreg_pr = (/ regCoef(pc1,pr(lat|:,lon|:,time|:))  /) 
+           delete(pr)
+        end if
+     end if
+;---------------------------------------------------------------------------------------------    
+     if (tasreg_frame.eq.1.and.tasreg_plot_flag.eq.0) then    ; tasreg_frame = flag to create regressions .ps/.png files 
+        tasreg_frame = 0
+     end if  
+     if (prreg_frame.eq.1.and.prreg_plot_flag.eq.0) then      ; prreg_frame = flag to create regressions .ps/.png files 
+        prreg_frame = 0
+     end if  
 ;---------------------------------------------------------------------------------------------     
      if (OUTPUT_DATA.eq."True") then
         modname = str_sub_str(names(ee)," ","_")
@@ -159,7 +299,11 @@ begin
            if (OPT_CLIMO.eq."Full") then
               z@climatology = syear(ee)+"-"+eyear(ee)+" climatology removed prior to all calculations (other than means)"
            else
-              z@climatology = CLIMO_SYEAR+"-"+CLIMO_EYEAR+" climatology removed prior to all calculations (other than means)"
+              if (CLIMO_SYEAR.lt.0) then
+                 z@climatology = (eyear(ee)+CLIMO_SYEAR)+"-"+(eyear(ee)+CLIMO_EYEAR)+" climatology removed prior to all calculations (other than means)"
+              else
+                 z@climatology = CLIMO_SYEAR+"-"+CLIMO_EYEAR+" climatology removed prior to all calculations (other than means)"
+              end if
            end if
            z@Conventions = "CF-1.6"
         else
@@ -168,6 +312,60 @@ begin
         z->pdo_pattern_mon = set_varAtts(pdo,"PDO spatial pattern (monthly)","","")
         z->pdo_timeseries_mon = set_varAtts(pc1,"PDO normalized principal component timeseries (monthly)","1","")
         delete([/modname,fn/])
+        if (tasreg_plot_flag.eq.0) then
+           modname = str_sub_str(names_tas(ee)," ","_")
+           bc = (/"/","'","(",")"/)
+           do gg = 0,dimsizes(bc)-1
+              modname = str_sub_str(modname,bc(gg),"_")
+           end do
+           fn = getenv("OUTDIR")+modname+".cvdp_data.pdo.tas."+syear_tas(ee)+"-"+eyear_tas(ee)+".nc"
+           if (.not.isfilepresent2(fn)) then
+              z_tas = addfile(fn,"c")
+              z_tas@source = "NCAR Climate Analysis Section's Climate Variability Diagnostics Package v"+getenv("VERSION")
+              z_tas@notes = "Data from "+names_tas(ee)+" from "+syear_tas(ee)+"-"+eyear_tas(ee)
+              if (OPT_CLIMO.eq."Full") then
+                 z_tas@climatology = syear_tas(ee)+"-"+eyear_tas(ee)+" climatology removed prior to all calculations (other than means)"
+              else
+                 if (CLIMO_SYEAR.lt.0) then
+                    z_tas@climatology = (eyear(ee)+CLIMO_SYEAR)+"-"+(eyear(ee)+CLIMO_EYEAR)+" climatology removed prior to all calculations (other than means)"
+                 else
+                    z_tas@climatology = CLIMO_SYEAR+"-"+CLIMO_EYEAR+" climatology removed prior to all calculations (other than means)"
+                 end if
+              end if
+              z_tas@Conventions = "CF-1.6"
+           else
+              z_tas = addfile(fn,"w")
+           end if
+           z_tas->pdo_tas_regression_mon = set_varAtts(finreg_tas,"tas regression onto PDO timeseries (monthly)","","")    
+           delete([/modname,fn,z_tas/])
+        end if
+        if (prreg_plot_flag.eq.0) then
+           modname = str_sub_str(names_pr(ee)," ","_")
+           bc = (/"/","'","(",")"/)
+           do gg = 0,dimsizes(bc)-1
+              modname = str_sub_str(modname,bc(gg),"_")
+           end do
+           fn = getenv("OUTDIR")+modname+".cvdp_data.pdo.pr."+syear_pr(ee)+"-"+eyear_pr(ee)+".nc"
+           if (.not.isfilepresent2(fn)) then
+              z_pr = addfile(fn,"c")
+              z_pr@source = "NCAR Climate Analysis Section's Climate Variability Diagnostics Package v"+getenv("VERSION")
+              z_pr@notes = "Data from "+names_pr(ee)+" from "+syear_pr(ee)+"-"+eyear_pr(ee)
+              if (OPT_CLIMO.eq."Full") then
+                 z_pr@climatology = syear_pr(ee)+"-"+eyear_pr(ee)+" climatology removed prior to all calculations (other than means)"
+              else
+                 if (CLIMO_SYEAR.lt.0) then
+                    z_pr@climatology = (eyear(ee)+CLIMO_SYEAR)+"-"+(eyear(ee)+CLIMO_EYEAR)+" climatology removed prior to all calculations (other than means)"
+                 else
+                    z_pr@climatology = CLIMO_SYEAR+"-"+CLIMO_EYEAR+" climatology removed prior to all calculations (other than means)"
+                 end if
+              end if
+              z_pr@Conventions = "CF-1.6"
+           else
+              z_pr = addfile(fn,"w")
+           end if
+           z_pr->pdo_pr_regression_mon = set_varAtts(finreg_pr,"pr regression onto PDO timeseries (monthly)","","") 
+           delete([/modname,fn,z_pr/])
+        end if
      end if              
 ;------------------------------------------------------------------------
      iopt = 0
@@ -178,18 +376,18 @@ begin
        jave = 1
      end if
      pct = 0.1    
-     spectra_mvf = False        ; missing value flag for nino3.4
-     if (any(ismissing(pc1))) then
-        print("Missing data detected for "+names(ee)+", power spectra function does not allow missing data, not creating PDO spectra")
+     spectra_mvf = False        ; missing value flag
+     if (any(ismissing(pc1))) then  ; check for missing data            
+        print("Missing data detected for "+names(ee)+", not creating PDO spectra")
         spectra_mvf = True
         if (isfilepresent2("obs_ts").and.ee.eq.0) then
-           spectra_mvf_obs = True    ; missing value flag for obs nino3.4
+           spectra_mvf_obs = True    ; missing value flag
         end if
      else
         if (isfilepresent2("obs_ts").and.ee.eq.0) then
-           spectra_mvf_obs = False   ; missing value flag for obs nino3.4
+           spectra_mvf_obs = False   ; missing value flag
         end if 
-        sdof = specx_anal(pc1,iopt,jave,pct)   ; pc1 already standardized
+        sdof = specx_anal(pc1,iopt,jave,pct)   ; pc1 is standardized
         splt1 = specx_ci(sdof,val1,val2)
         if (OUTPUT_DATA.eq."True") then
            splt1!0 = "ncurves"
@@ -256,11 +454,34 @@ begin
      res@gsnCenterStringFontHeightF = 0.018
      res@gsnRightStringFontHeightF = 0.014
      res@gsnLeftString = syear(ee)+"-"+eyear(ee)
- 
      res@gsnRightString = pdo@pcvar
      res@gsnCenterString = names(ee)
-     map(ee) = gsn_csm_contour_map(wks,pdo,res)
-     
+
+     res4 = res    ; res4 = pr regression resources 
+     delete(res4@cnLevels)    
+     if (COLORMAP.eq.0) then
+        res4@cnLevels = (/-5,-4,-3,-2,-1,-.75,-.5,-.25,-.1,0,.1,.25,.5,.75,1,2,3,4,5/)     
+     else
+        res4@cnLevels = (/-3,-2,-1,-.5,-.1,0,.1,.5,1,2,3/)     
+     end if
+
+     res2 = True   ; res2 = tas regression resources     
+     res2@gsnDraw      = False
+     res2@gsnFrame     = False
+     res2@cnLevelSelectionMode = "ExplicitLevels"
+     res2@cnLevels = res@cnLevels
+
+     res2@cnLineLabelsOn = False
+     res2@cnFillOn        = True
+     res2@cnLinesOn       = False
+     res2@cnFillMode = "AreaFill"
+     res2@lbLabelBarOn    = False
+     res2@cnInfoLabelOn = False
+     res2@gsnRightString = ""
+     res2@gsnLeftString = "" 
+     res2@gsnCenterString = ""   
+     res2@gsnAddCyclic = True
+
      if (isfilepresent2("obs_ts").and.ee.eq.0) then    ; for pattern correlation table
         patcor = new((/nsim,dimsizes(pdo&lat),dimsizes(pdo&lon)/),typeof(pdo))
         patcor!1 = "lat"
@@ -269,11 +490,30 @@ begin
         patcor&lon = pdo&lon
         patcor(ee,:,:) = (/ pdo /)
      end if
-     if (isfilepresent2("obs_ts").and.ee.ge.1) then
-        patcor(ee,:,:) = (/ linint2(pdo&lon,pdo&lat,pdo,True,patcor&lon,patcor&lat,0) /)
+     if (isfilepresent2("obs_ts").and.ee.ge.1.and.isvar("patcor")) then
+        patcor(ee,:,:) = (/ totype(linint2(pdo&lon,pdo&lat,pdo,True,patcor&lon,patcor&lat,0),typeof(patcor)) /)
+     end if
+
+     map(ee) = gsn_csm_contour_map(wks,pdo,res)
+          
+     if (tasreg_plot_flag.eq.0) then
+        if (names(ee).eq.names_tas(ee)) then
+           res@gsnCenterString = names(ee)     
+        else
+           res@gsnCenterString = names(ee)+" / "+names_tas(ee)
+        end if
+        map_sst(ee) = gsn_csm_contour_map(wks,pdo,res)
+        map_tasreg(ee) = gsn_csm_contour(wks,finreg_tas,res2)
+        overlay(map_sst(ee),map_tasreg(ee))
+        delete([/finreg_tas/])
      end if
      delete([/pdo/])
-     
+     if (prreg_plot_flag.eq.0) then
+        res4@gsnCenterString = names_pr(ee)
+        map_prreg(ee) = gsn_csm_contour_map(wks4,finreg_pr,res4)
+        delete(finreg_pr)
+     end if
+
      pres = True
      pres@vpXF = 0.07
      pres@trYMinF = 0.
@@ -377,6 +617,7 @@ begin
         xyres@tmYLLabelFontHeightF = 0.018
         xyres@gsnStringFontHeightF = 0.024
      end if
+     xyres@gsnCenterStringOrthogonalPosF = 0.025
      xyres@vpXF = 0.05
      xyres@vpHeightF = 0.15
      if (SCALE_TIMESERIES.eq."True") then
@@ -388,6 +629,7 @@ begin
      
      xyres@trXMinF = syear(ee)-.5
      xyres@trXMaxF = eyear(ee)+1.5
+
      
      xyres2 =    xyres
      delete(xyres2@gsnXYBarChart)
@@ -406,10 +648,10 @@ begin
      xyplot2(ee) = gsn_csm_xy(wks3,fspan(syear(ee),eyear(ee)+.91667,dimsizes(pc1)),runave(pc1,61,0),xyres2)
      overlay(xyplot(ee),xyplot2(ee))
      
-     delete([/val1,val2,pc1/])
+     delete([/val1,val2,pc1,res,pres,xyres,xyres2/])
   end do
 
-  if (isfilepresent2("obs_ts")) then    ; for pattern correlation table  
+  if (isvar("patcor")) then    ; for pattern correlation table  
      clat = cos(0.01745329*patcor&lat)
      finpr   = "PDO (Monthly)     "    ; Must be 18 characters long
      line3   = "                  "    ; Must be 18 characters long
@@ -463,6 +705,7 @@ begin
   panres@pmLabelBarWidthF = 0.55
   panres@lbTitleOn = False
   panres@lbBoxLineColor = "gray70"
+  panres@lbLabelFontHeightF = 0.013
   if (nsim.le.4) then
      if (nsim.eq.1) then
         panres@txFontHeightF = 0.022
@@ -479,7 +722,19 @@ begin
   ncol = floattointeger(sqrt(nsim))
   nrow = (nsim/ncol)+mod(nsim,ncol)  
   gsn_panel2(wks,map,(/nrow,ncol/),panres)
+
+  if (tasreg_frame.eq.0) then
+     panres@txString = "PDO SST/TAS Regressions (Monthly)" 
+     gsn_panel2(wks,map_sst,(/nrow,ncol/),panres)
+  end if
   delete(wks)
+
+  if (prreg_frame.eq.0) then
+     panres@txString = "PDO PR Regressions (Monthly)" 
+     gsn_panel2(wks4,map_prreg,(/nrow,ncol/),panres)
+  end if
+  delete(wks4)
+
 
   delete(panres@gsnPanelLabelBar)
   panres@txString = "PDO (Monthly)"
@@ -500,6 +755,20 @@ begin
   gsn_panel2(wks3,xyplot,lp,panres)  
   delete(wks3)
   delete([/map,pspec,syear,eyear,nyr,nyr_max,lp/])
+;--------------------------------------------------------------------------------------------------
+  OUTDIR = getenv("OUTDIR") 
+  if (wks_type.eq."png") then  
+     if (tasreg_frame.eq.0) then  
+        system("mv "+OUTDIR+"pdo.000001.png "+OUTDIR+"pdo.png") 
+        system("mv "+OUTDIR+"pdo.000002.png "+OUTDIR+"pdo.tasreg.png") 
+     end if
+  else
+     if (tasreg_frame.eq.0) then  
+        system("psplit "+OUTDIR+"pdo.ps "+OUTDIR+"pdo_nn")
+        system("mv "+OUTDIR+"pdo_nn0001.ps "+OUTDIR+"pdo.ps") 
+        system("mv "+OUTDIR+"pdo_nn0002.ps "+OUTDIR+"pdo.tasreg.ps") 
+     end if
+  end if
   print("Finished: pdo.ncl")
 end
     

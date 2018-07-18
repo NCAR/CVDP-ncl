@@ -228,7 +228,11 @@ begin
         temp_arr = arr
         delete(temp_arr&time)
         temp_arr&time = cd_calendar(arr&time,-1)
-        climo = clmMonTLL(temp_arr({CLIMO_SYEAR*100+1:CLIMO_EYEAR*100+12},:,:))                 
+        if (CLIMO_SYEAR.lt.0) then
+           climo = clmMonTLL(temp_arr({(eyear(ee)+CLIMO_SYEAR)*100+1:(eyear(ee)+CLIMO_EYEAR)*100+12},:,:))       
+        else
+           climo = clmMonTLL(temp_arr({CLIMO_SYEAR*100+1:CLIMO_EYEAR*100+12},:,:))                 
+        end if   
         delete(temp_arr)
         arr   = calcMonAnomTLL(arr,climo) 
         delete(climo)
@@ -294,7 +298,11 @@ begin
               temp_arr = sst
               delete(temp_arr&time)
               temp_arr&time = cd_calendar(sst&time,1)
-              climo = clmMonTLL(temp_arr({CLIMO_SYEAR*100+1:CLIMO_EYEAR*100+12},:,:))                 
+              if (CLIMO_SYEAR.lt.0) then
+                 climo = clmMonTLL(temp_arr({(eyear(ee)+CLIMO_SYEAR)*100+1:(eyear(ee)+CLIMO_EYEAR)*100+12},:,:))       
+              else
+                 climo = clmMonTLL(temp_arr({CLIMO_SYEAR*100+1:CLIMO_EYEAR*100+12},:,:))                 
+              end if   
               delete(temp_arr)
               sst   = calcMonAnomTLL(sst,climo) 
               delete(climo)
@@ -353,7 +361,11 @@ begin
               temp_arr = tas
               delete(temp_arr&time)
               temp_arr&time = cd_calendar(tas&time,1)
-              climo = clmMonTLL(temp_arr({CLIMO_SYEAR*100+1:CLIMO_EYEAR*100+12},:,:))                 
+              if (CLIMO_SYEAR.lt.0) then
+                 climo = clmMonTLL(temp_arr({(eyear(ee)+CLIMO_SYEAR)*100+1:(eyear(ee)+CLIMO_EYEAR)*100+12},:,:))       
+              else
+                 climo = clmMonTLL(temp_arr({CLIMO_SYEAR*100+1:CLIMO_EYEAR*100+12},:,:))                 
+              end if   
               delete(temp_arr)
               tas   = calcMonAnomTLL(tas,climo) 
               delete(climo)
@@ -403,7 +415,11 @@ begin
               temp_arr = pr
               delete(temp_arr&time)
               temp_arr&time = cd_calendar(pr&time,1)
-              climo = clmMonTLL(temp_arr({CLIMO_SYEAR*100+1:CLIMO_EYEAR*100+12},:,:))                 
+              if (CLIMO_SYEAR.lt.0) then
+                 climo = clmMonTLL(temp_arr({(eyear(ee)+CLIMO_SYEAR)*100+1:(eyear(ee)+CLIMO_EYEAR)*100+12},:,:))       
+              else
+                 climo = clmMonTLL(temp_arr({CLIMO_SYEAR*100+1:CLIMO_EYEAR*100+12},:,:))                 
+              end if   
               delete(temp_arr)
               pr   = calcMonAnomTLL(pr,climo) 
               delete(climo)
@@ -1118,29 +1134,33 @@ begin
            if (OPT_CLIMO.eq."Full") then
               z@climatology = syear(ee)+"-"+eyear(ee)+" climatology removed prior to all calculations (other than means)"
            else
-              z@climatology = CLIMO_SYEAR+"-"+CLIMO_EYEAR+" climatology removed prior to all calculations (other than means)"
+              if (CLIMO_SYEAR.lt.0) then
+                 z@climatology = (eyear(ee)+CLIMO_SYEAR)+"-"+(eyear(ee)+CLIMO_EYEAR)+" climatology removed prior to all calculations (other than means)"
+              else
+                 z@climatology = CLIMO_SYEAR+"-"+CLIMO_EYEAR+" climatology removed prior to all calculations (other than means)"
+              end if
            end if
            z@Conventions = "CF-1.6"           
         else
            z = addfile(fn,"w")
         end if
-        z->sam_pc_djf = set_varAtts(sam_pc_djf,"SAM normalized principal component timeseries (DJF)","1","")
-        z->sam_pc_mam = set_varAtts(sam_pc_mam,"SAM normalized principal component timeseries (MAM)","1","")
-        z->sam_pc_jja = set_varAtts(sam_pc_jja,"SAM normalized principal component timeseries (JJA)","1","")
-        z->sam_pc_son = set_varAtts(sam_pc_son,"SAM normalized principal component timeseries (SON)","1","")
-        z->sam_pc_ann = set_varAtts(sam_pc_ann,"SAM normalized principal component timeseries (annual)","1","")
+        z->sam_timeseries_djf = set_varAtts(sam_pc_djf,"SAM normalized principal component timeseries (DJF)","1","")
+        z->sam_timeseries_mam = set_varAtts(sam_pc_mam,"SAM normalized principal component timeseries (MAM)","1","")
+        z->sam_timeseries_jja = set_varAtts(sam_pc_jja,"SAM normalized principal component timeseries (JJA)","1","")
+        z->sam_timeseries_son = set_varAtts(sam_pc_son,"SAM normalized principal component timeseries (SON)","1","")
+        z->sam_timeseries_ann = set_varAtts(sam_pc_ann,"SAM normalized principal component timeseries (annual)","1","")
         
-        z->psa1_pc_djf = set_varAtts(psa1_pc_djf,"PSA1 normalized principal component timeseries (DJF)","1","")
-        z->psa1_pc_mam = set_varAtts(psa1_pc_mam,"PSA1 normalized principal component timeseries (MAM)","1","")
-        z->psa1_pc_jja = set_varAtts(psa1_pc_jja,"PSA1 normalized principal component timeseries (JJA)","1","")
-        z->psa1_pc_son = set_varAtts(psa1_pc_son,"PSA1 normalized principal component timeseries (SON)","1","")
-        z->psa1_pc_ann = set_varAtts(psa1_pc_ann,"PSA1 normalized principal component timeseries (annual)","1","")
+        z->psa1_timeseries_djf = set_varAtts(psa1_pc_djf,"PSA1 normalized principal component timeseries (DJF)","1","")
+        z->psa1_timeseries_mam = set_varAtts(psa1_pc_mam,"PSA1 normalized principal component timeseries (MAM)","1","")
+        z->psa1_timeseries_jja = set_varAtts(psa1_pc_jja,"PSA1 normalized principal component timeseries (JJA)","1","")
+        z->psa1_timeseries_son = set_varAtts(psa1_pc_son,"PSA1 normalized principal component timeseries (SON)","1","")
+        z->psa1_timeseries_ann = set_varAtts(psa1_pc_ann,"PSA1 normalized principal component timeseries (annual)","1","")
         
-        z->psa2_pc_djf = set_varAtts(psa2_pc_djf,"PSA2 normalized principal component timeseries (DJF)","1","")
-        z->psa2_pc_mam = set_varAtts(psa2_pc_mam,"PSA2 normalized principal component timeseries (MAM)","1","")
-        z->psa2_pc_jja = set_varAtts(psa2_pc_jja,"PSA2 normalized principal component timeseries (JJA)","1","")
-        z->psa2_pc_son = set_varAtts(psa2_pc_son,"PSA2 normalized principal component timeseries (SON)","1","")
-        z->psa2_pc_ann = set_varAtts(psa2_pc_ann,"PSA2 normalized principal component timeseries (annual)","1","")
+        z->psa2_timeseries_djf = set_varAtts(psa2_pc_djf,"PSA2 normalized principal component timeseries (DJF)","1","")
+        z->psa2_timeseries_mam = set_varAtts(psa2_pc_mam,"PSA2 normalized principal component timeseries (MAM)","1","")
+        z->psa2_timeseries_jja = set_varAtts(psa2_pc_jja,"PSA2 normalized principal component timeseries (JJA)","1","")
+        z->psa2_timeseries_son = set_varAtts(psa2_pc_son,"PSA2 normalized principal component timeseries (SON)","1","")
+        z->psa2_timeseries_ann = set_varAtts(psa2_pc_ann,"PSA2 normalized principal component timeseries (annual)","1","")
         
         z->sam_djf = set_varAtts(sam_djf,"SAM spatial pattern (DJF)","","")
         z->sam_mam = set_varAtts(sam_mam,"SAM spatial pattern (MAM)","","")
@@ -1161,9 +1181,9 @@ begin
         z->psa2_ann = set_varAtts(psa2_ann,"PSA2 spatial pattern (annual)","","")
 
         if (COMPUTE_MODES_MON.eq."True") then   
-           z->sam_pc_mon = set_varAtts(sam_pc_mon,"SAM principal component timeseries (monthly)","","")
-           z->psa1_pc_mon = set_varAtts(psa1_pc_mon,"PSA1 principal component timeseries (monthly)","","")
-           z->psa2_pc_mon = set_varAtts(psa2_pc_mon,"PSA2 principal component timeseries (monthly)","","")
+           z->sam_timeseries_mon = set_varAtts(sam_pc_mon,"SAM principal component timeseries (monthly)","","")
+           z->psa1_timeseries_mon = set_varAtts(psa1_pc_mon,"PSA1 principal component timeseries (monthly)","","")
+           z->psa2_timeseries_mon = set_varAtts(psa2_pc_mon,"PSA2 principal component timeseries (monthly)","","")
            z->sam_mon = set_varAtts(sam_mon,"SAM spatial pattern (monthly)","","")
            z->psa1_mon = set_varAtts(psa1_mon,"PSA1 spatial pattern (monthly)","","")
            z->psa2_mon = set_varAtts(psa2_mon,"PSA2 spatial pattern (monthly)","","")
@@ -1185,7 +1205,11 @@ begin
               if (OPT_CLIMO.eq."Full") then
                  z@climatology = syear_ts(ee)+"-"+eyear_ts(ee)+" climatology removed prior to all calculations (other than means)"
               else
-                 z@climatology = CLIMO_SYEAR+"-"+CLIMO_EYEAR+" climatology removed prior to all calculations (other than means)"
+                 if (CLIMO_SYEAR.lt.0) then
+                    z@climatology = (eyear(ee)+CLIMO_SYEAR)+"-"+(eyear(ee)+CLIMO_EYEAR)+" climatology removed prior to all calculations (other than means)"
+                 else
+                    z@climatology = CLIMO_SYEAR+"-"+CLIMO_EYEAR+" climatology removed prior to all calculations (other than means)"
+                 end if
               end if
               z@Conventions = "CF-1.6"
            else
@@ -1230,7 +1254,11 @@ begin
               if (OPT_CLIMO.eq."Full") then
                  z@climatology = syear_tas(ee)+"-"+eyear_tas(ee)+" climatology removed prior to all calculations (other than means)"
               else
-                 z@climatology = CLIMO_SYEAR+"-"+CLIMO_EYEAR+" climatology removed prior to all calculations (other than means)"
+                 if (CLIMO_SYEAR.lt.0) then
+                    z@climatology = (eyear(ee)+CLIMO_SYEAR)+"-"+(eyear(ee)+CLIMO_EYEAR)+" climatology removed prior to all calculations (other than means)"
+                 else
+                    z@climatology = CLIMO_SYEAR+"-"+CLIMO_EYEAR+" climatology removed prior to all calculations (other than means)"
+                 end if
               end if
               z@Conventions = "CF-1.6"
            else
@@ -1275,7 +1303,11 @@ begin
               if (OPT_CLIMO.eq."Full") then
                  z@climatology = syear_pr(ee)+"-"+eyear_pr(ee)+" climatology removed prior to all calculations (other than means)"
               else
-                 z@climatology = CLIMO_SYEAR+"-"+CLIMO_EYEAR+" climatology removed prior to all calculations (other than means)"
+                 if (CLIMO_SYEAR.lt.0) then
+                    z@climatology = (eyear(ee)+CLIMO_SYEAR)+"-"+(eyear(ee)+CLIMO_EYEAR)+" climatology removed prior to all calculations (other than means)"
+                 else
+                    z@climatology = CLIMO_SYEAR+"-"+CLIMO_EYEAR+" climatology removed prior to all calculations (other than means)"
+                 end if
               end if
               z@Conventions = "CF-1.6"
            else
@@ -1393,18 +1425,18 @@ begin
         patcor_psa2_jja(ee,:,:) = (/ psa2_jja /)
         patcor_psa2_ann(ee,:,:) = (/ psa2_ann /)
      end if
-     if (isfilepresent2("obs_psl").and.ee.ge.1) then       
-        patcor_sam_djf(ee,:,:) = (/ linint2(sam_djf&lon,sam_djf&lat,sam_djf,True,patcor_sam_djf&lon,patcor_sam_djf&lat,0) /)
-        patcor_sam_jja(ee,:,:) = (/ linint2(sam_jja&lon,sam_jja&lat,sam_jja,True,patcor_sam_jja&lon,patcor_sam_jja&lat,0) /)
-        patcor_sam_ann(ee,:,:) = (/ linint2(sam_ann&lon,sam_ann&lat,sam_ann,True,patcor_sam_ann&lon,patcor_sam_ann&lat,0) /)
+     if (isfilepresent2("obs_psl").and.ee.ge.1.and.isvar("patcor_sam_djf")) then       
+        patcor_sam_djf(ee,:,:) = (/ totype(linint2(sam_djf&lon,sam_djf&lat,sam_djf,True,patcor_sam_djf&lon,patcor_sam_djf&lat,0),typeof(patcor_sam_djf)) /)
+        patcor_sam_jja(ee,:,:) = (/ totype(linint2(sam_jja&lon,sam_jja&lat,sam_jja,True,patcor_sam_jja&lon,patcor_sam_jja&lat,0),typeof(patcor_sam_jja)) /)
+        patcor_sam_ann(ee,:,:) = (/ totype(linint2(sam_ann&lon,sam_ann&lat,sam_ann,True,patcor_sam_ann&lon,patcor_sam_ann&lat,0),typeof(patcor_sam_ann)) /)
         
-        patcor_psa1_djf(ee,:,:) = (/ linint2(psa1_djf&lon,psa1_djf&lat,psa1_djf,True,patcor_psa1_djf&lon,patcor_psa1_djf&lat,0) /)
-        patcor_psa1_jja(ee,:,:) = (/ linint2(psa1_jja&lon,psa1_jja&lat,psa1_jja,True,patcor_psa1_jja&lon,patcor_psa1_jja&lat,0) /)
-        patcor_psa1_ann(ee,:,:) = (/ linint2(psa1_ann&lon,psa1_ann&lat,psa1_ann,True,patcor_psa1_ann&lon,patcor_psa1_ann&lat,0) /)
+        patcor_psa1_djf(ee,:,:) = (/ totype(linint2(psa1_djf&lon,psa1_djf&lat,psa1_djf,True,patcor_psa1_djf&lon,patcor_psa1_djf&lat,0),typeof(patcor_psa1_djf)) /)
+        patcor_psa1_jja(ee,:,:) = (/ totype(linint2(psa1_jja&lon,psa1_jja&lat,psa1_jja,True,patcor_psa1_jja&lon,patcor_psa1_jja&lat,0),typeof(patcor_psa1_jja)) /)
+        patcor_psa1_ann(ee,:,:) = (/ totype(linint2(psa1_ann&lon,psa1_ann&lat,psa1_ann,True,patcor_psa1_ann&lon,patcor_psa1_ann&lat,0),typeof(patcor_psa1_ann)) /)
         
-        patcor_psa2_djf(ee,:,:) = (/ linint2(psa2_djf&lon,psa2_djf&lat,psa2_djf,True,patcor_psa2_djf&lon,patcor_psa2_djf&lat,0) /)
-        patcor_psa2_jja(ee,:,:) = (/ linint2(psa2_jja&lon,psa2_jja&lat,psa2_jja,True,patcor_psa2_jja&lon,patcor_psa2_jja&lat,0) /)
-        patcor_psa2_ann(ee,:,:) = (/ linint2(psa2_ann&lon,psa2_ann&lat,psa2_ann,True,patcor_psa2_ann&lon,patcor_psa2_ann&lat,0) /)
+        patcor_psa2_djf(ee,:,:) = (/ totype(linint2(psa2_djf&lon,psa2_djf&lat,psa2_djf,True,patcor_psa2_djf&lon,patcor_psa2_djf&lat,0),typeof(patcor_psa2_djf)) /)
+        patcor_psa2_jja(ee,:,:) = (/ totype(linint2(psa2_jja&lon,psa2_jja&lat,psa2_jja,True,patcor_psa2_jja&lon,patcor_psa2_jja&lat,0),typeof(patcor_psa2_jja)) /)
+        patcor_psa2_ann(ee,:,:) = (/ totype(linint2(psa2_ann&lon,psa2_ann&lat,psa2_ann,True,patcor_psa2_ann&lon,patcor_psa2_ann&lat,0),typeof(patcor_psa2_ann)) /)
      end if
       
      res@gsnLeftString = syear(ee)+"-"+eyear(ee)
@@ -1626,7 +1658,7 @@ begin
         xyres@tmYLLabelFontHeightF = 0.018
         xyres@gsnStringFontHeightF = 0.024
      end if
-
+     xyres@gsnCenterStringOrthogonalPosF = 0.025
      xyres@vpXF = 0.05
      xyres@vpHeightF = 0.15
      if (SCALE_TIMESERIES.eq."True") then
@@ -1688,7 +1720,7 @@ begin
      delete(clim_eyear)
   end if
   
-  if (isfilepresent2("obs_psl")) then    ; for pattern correlation table  
+  if (isvar("patcor_sam_djf")) then    ; for pattern correlation table  
      clat = cos(0.01745329*patcor_sam_djf&lat)
      clat!0 = "lat"
      clat&lat = patcor_sam_djf&lat
