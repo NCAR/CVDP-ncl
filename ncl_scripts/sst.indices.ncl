@@ -1075,15 +1075,15 @@ begin
      xyres2@gsnXYBarChart = False
 
      xyres2@xyLineColor = "royalblue"
-     xyres2@trYMinF = 0.3    ; hard wire YMinF and YMaxF for running stddev plots
-     xyres2@trYMaxF = 1.8       
+     xyres2@trYMinF = 0.15    ; hard wire YMinF and YMaxF for running stddev plots
+     xyres2@trYMaxF = 1.95       
      if (wks_type.eq."png") then
         xyres2@xyLineThicknessF = 3.5
      else
         xyres2@xyLineThicknessF = 1.75
      end if
      delete(xyres2@gsnYRefLine)
-     xyres2@gsnYRefLine = (/.6,0.9,1.2,1.5/)
+     xyres2@gsnYRefLine = (/.3,.6,0.9,1.2,1.5,1.8/)
      xyres2@gsnYRefLineColor = "gray85"
      
      xyres3 = xyres            ; resource list for monthly nino3.4 standard deviations
@@ -1888,7 +1888,7 @@ begin
      gsn_panel2(wks_tio,xyiod,lp,panres)  
 
      panres@txString = "Atlantic Nin~H-13V2F35~D~FV-2H3F21~o3 (Monthly, "+title_socn+")"
-     gsn_panel2(wks_tio,xysocn,lp,panres) 
+     gsn_panel2(wks_tio,xyatl3,lp,panres) 
   end if
   delete(wks_tio) 
 

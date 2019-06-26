@@ -156,8 +156,9 @@ begin
      finarr&time = sstT&time
      finarr(0,:) = (/ natl_aa - global_aa /)
      finarr(1,:) = (/ runave(finarr(0,:),121,0) /)    ; originally 61
-     delete(natl_aa)
-     delete(global_aa)  
+ 
+     sstT = (/ sstT - conform(sstT, global_aa, 0) /)  ; remove global mean from each timestep of SST anomalies prior to regressions
+     delete([/natl_aa,global_aa/]) 
 
      finreg = sstT(0,:,:)
      finreg = (/ regCoef(finarr(0,:),sstT(lat|:,lon|:,time|:))  /) 
