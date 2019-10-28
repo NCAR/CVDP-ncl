@@ -309,8 +309,11 @@ begin
         z->amo_pattern_lowpass_mon = set_varAtts(lonFlip(finregLP),"AMO low-pass regression pattern (monthly)","","")   ; flip longitudes back to running from 0:360.
         amo_ts = finarr(0,:)
         amo_ts@units = "C"
+        amo_ts_LP = finarr(1,:)
+        amo_ts_LP@units = "C"
         z->amo_timeseries_mon = set_varAtts(amo_ts,"AMO timeseries (monthly)","","")
-        delete([/modname,fn,amo_ts/])
+        z->amo_timeseries_lowpass_mon = set_varAtts(amo_ts_LP,"AMO low-pass timeseries (monthly)","","")
+        delete([/modname,fn,amo_ts,amo_ts_LP/])
 
         if (tasreg_plot_flag.eq.0) then
            modname = str_sub_str(names_tas(ee)," ","_")
@@ -683,7 +686,7 @@ begin
         if (all(ismissing(patcor(hh,:,:)))) then
            finpr = finpr+sprintf(format2,9.99)+"/"+sprintf(format3,9.99)
         else
-           finpr = finpr+sprintf(format2,(pattern_cor(patcor(0,:,:),patcor(hh,:,:),clat,0)))+"/"+sprintf(format3,(dim_rmsd(ndtooned(NewCosWeight(patcor(0,:,:))),ndtooned(NewCosWeight(patcor(hh,:,:))))))
+           finpr = finpr+sprintf(format2,(pattern_cor(patcor(0,:,:),patcor(hh,:,:),clat,0)))+"/"+sprintf(format3,(wgt_arearmse(patcor(0,:,:),patcor(hh,:,:),clat,1.0,0)))
         end if
      end do
      if (dimsizes(tochar(line4)).ge.8190) then   ; system or fortran compiler limit
