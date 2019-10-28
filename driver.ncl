@@ -65,7 +65,7 @@
   machine_casesen = "True"  ; True = Your filesystem is case sensitive  (Default)
                              ; False = Your filesystem is case insensitive                                                          
 ;========END USER MODIFICATIONS===========================================================
-  version = "5.1.0"
+  version = "5.1.1"
 
   print("Starting: Climate Variability Diagnostics Package ("+systemfunc("date")+")")
 
@@ -96,7 +96,7 @@
   end if
 
   if (.not.isfilepresent2(outdir)) then
-     system("mkdir "+outdir)
+     system("mkdir -p "+outdir)
   end if
   envvar_str = "   export OUTDIR="+outdir+";   export OBS="+obs+";   export SCALE_TIMESERIES="+scale_timeseries+";   "+\
          "export OUTPUT_DATA="+output_data+";   export VERSION="+version+";   export PNG_SCALE="+png_scale+";   "+\

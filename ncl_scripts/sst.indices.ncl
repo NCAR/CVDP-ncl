@@ -1729,9 +1729,9 @@ begin
   end do
   
   if (isvar("patcor_tas")) then    ; for pattern correlation table  
-     clat_sst = cos(0.01745329*patcor_tas&lat)
+     clat_tas = cos(0.01745329*patcor_tas&lat)
      clat_psl = cos(0.01745329*patcor_psl&lat)
-     finpr_sst = "ENSO TAS (DJF+1)  "    ; Must be 18 characters long
+     finpr_tas = "ENSO TAS (DJF+1)  "    ; Must be 18 characters long
      finpr_psl = "ENSO PSL (DJF+1)  " 
      line3   = "                  "    ; Must be 18 characters long
      line4   = line3
@@ -1759,14 +1759,14 @@ begin
         line3 = line3+" "+ntb   
         line4 = line4+" "+ntc 
         if (all(ismissing(patcor_tas(hh,:,:)))) then
-           finpr_sst = finpr_sst+sprintf(format2,9.99)+"/"+sprintf(format3,9.99)
+           finpr_tas = finpr_tas+sprintf(format2,9.99)+"/"+sprintf(format3,9.99)
         else
-           finpr_sst = finpr_sst+sprintf(format2,(pattern_cor(patcor_tas(0,:,:),patcor_tas(hh,:,:),clat_sst,0)))+"/"+sprintf(format3,(dim_rmsd(ndtooned(NewCosWeight(patcor_tas(0,:,:))),ndtooned(NewCosWeight(patcor_tas(hh,:,:))))))
+           finpr_tas = finpr_tas+sprintf(format2,(pattern_cor(patcor_tas(0,:,:),patcor_tas(hh,:,:),clat_tas,0)))+"/"+sprintf(format3,(wgt_arearmse(patcor_tas(0,:,:),patcor_tas(hh,:,:),clat_tas,1.0,0)))
         end if
         if (all(ismissing(patcor_psl(hh,:,:)))) then
            finpr_psl = finpr_psl+sprintf(format2,9.99)+"/"+sprintf(format3,9.99)
         else
-           finpr_psl = finpr_psl+sprintf(format2,(pattern_cor(patcor_psl(0,:,:),patcor_psl(hh,:,:),clat_psl,0)))+"/"+sprintf(format3,(dim_rmsd(ndtooned(NewCosWeight(patcor_psl(0,:,:))),ndtooned(NewCosWeight(patcor_psl(hh,:,:))))))
+           finpr_psl = finpr_psl+sprintf(format2,(pattern_cor(patcor_psl(0,:,:),patcor_psl(hh,:,:),clat_psl,0)))+"/"+sprintf(format3,(wgt_arearmse(patcor_psl(0,:,:),patcor_psl(hh,:,:),clat_psl,1.0,0)))
         end if
      end do
      if (dimsizes(tochar(line4)).ge.8190) then   ; system or fortran compiler limit
@@ -1775,10 +1775,10 @@ begin
         write_table(getenv("OUTDIR")+"metrics.sst.indices.1.txt","w",[/header/],"%s")
         write_table(getenv("OUTDIR")+"metrics.sst.indices.1.txt","a",[/line3/],"%s")
         write_table(getenv("OUTDIR")+"metrics.sst.indices.1.txt","a",[/line4/],"%s")
-        write_table(getenv("OUTDIR")+"metrics.sst.indices.1.txt","a",[/finpr_sst/],"%s")
+        write_table(getenv("OUTDIR")+"metrics.sst.indices.1.txt","a",[/finpr_tas/],"%s")
         write_table(getenv("OUTDIR")+"metrics.sst.indices.1.txt","a",[/finpr_psl/],"%s")
      end if  
-     delete([/finpr_sst,finpr_psl,line3,line4,format2,format3,nchar,ntc,clat_sst,clat_psl,patcor_tas,patcor_psl,dimY,ntb,header/])
+     delete([/finpr_tas,finpr_psl,line3,line4,format2,format3,nchar,ntc,clat_tas,clat_psl,patcor_tas,patcor_psl,dimY,ntb,header/])
   end if
 
   if (isvar("patcor_hov_hi")) then           ; for pattern correlation table  
@@ -1812,12 +1812,12 @@ begin
         if (all(ismissing(patcor_hov_hi(hh,24:52,:)))) then                ; 24:52 refers to Jan+0->May+2, which is the range shown in the hovmoller plots.
            finpr_hi = finpr_hi+sprintf(format2,9.99)+"/"+sprintf(format3,9.99)
         else
-           finpr_hi = finpr_hi+sprintf(format2,(pattern_cor(patcor_hov_hi(0,24:52,:),patcor_hov_hi(hh,24:52,:),1.0,0)))+"/"+sprintf(format3,(dim_rmsd(ndtooned(patcor_hov_hi(0,24:52,:)),ndtooned(patcor_hov_hi(hh,24:52,:)))))
+           finpr_hi = finpr_hi+sprintf(format2,(pattern_cor(patcor_hov_hi(0,24:52,:),patcor_hov_hi(hh,24:52,:),1.0,0)))+"/"+sprintf(format3,(wgt_arearmse(patcor_hov_hi(0,24:52,:),patcor_hov_hi(hh,24:52,:),1.0,1.0,0)))
         end if
         if (all(ismissing(patcor_hov_lo(hh,24:52,:)))) then
            finpr_lo = finpr_lo+sprintf(format2,9.99)+"/"+sprintf(format3,9.99)
         else
-           finpr_lo = finpr_lo+sprintf(format2,(pattern_cor(patcor_hov_lo(0,24:52,:),patcor_hov_lo(hh,24:52,:),1.0,0)))+"/"+sprintf(format3,(dim_rmsd(ndtooned(patcor_hov_lo(0,24:52,:)),ndtooned(patcor_hov_lo(hh,24:52,:)))))
+           finpr_lo = finpr_lo+sprintf(format2,(pattern_cor(patcor_hov_lo(0,24:52,:),patcor_hov_lo(hh,24:52,:),1.0,0)))+"/"+sprintf(format3,(wgt_arearmse(patcor_hov_lo(0,24:52,:),patcor_hov_lo(hh,24:52,:),1.0,1.0,0)))
         end if
      end do
      if (dimsizes(tochar(line4)).ge.8190) then   ; system or fortran compiler limit
