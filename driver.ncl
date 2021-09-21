@@ -49,11 +49,11 @@
   
   ncl_exec = "ncl"       ; This can be changed to a different path if a different version of NCL needs to be used, such as "/different/path/to/bin/ncl"                           
                          
-  run_style = "parallel"   ; parallel = allow simple python-based parallelization to occur. X number of CVDP NCL scripts will be called at once. 
+  run_style = "parallel" ; parallel = allow simple python-based parallelization to occur. X number of CVDP NCL scripts will be called at once. 
                          ;            X is set via max_num_tasks. Terminal output will be harder to follow.
-                         ; serial = call CVDP NCL scripts serially. (Default)    
-                         
-  max_num_tasks = 4      ; if run_parallel = "parallel", how many CVDP NCL scripts can be called at once? (If unsure set to 3)     
+                         ; serial = call CVDP NCL scripts serially.    
+
+  max_num_tasks = 4      ; Set the number of CVDP NCL scripts that can be called at once. If greater than 1 the scripts will be called in parallel. (If unsure set to 3)     
   
   modular = "False"      ; True = Run only those CVDP scripts specified in modular_list.
                          ; False = Run all CVDP scripts (Default)
@@ -65,7 +65,7 @@
   machine_casesen = "True"  ; True = Your filesystem is case sensitive  (Default)
                              ; False = Your filesystem is case insensitive                                                          
 ;========END USER MODIFICATIONS===========================================================
-  version = "5.1.1"
+  version = "5.2.0"
 
   print("Starting: Climate Variability Diagnostics Package ("+systemfunc("date")+")")
 
@@ -75,11 +75,7 @@
 
   loadscript(zp+"functions.ncl")
   outfiles = (/"ts","trefht","psl","prect","snowdp","moc","maxnum","aice_nh","aice_sh"/)
-  do gg = 0,dimsizes(outfiles)-1
-     if (isfilepresent2("obs_"+outfiles(gg))) then
-        system("rm obs_"+outfiles(gg))
-     end if 
-  end do
+  rm_obsfiles(outfiles)
 
   if (isfilepresent2(outdir+"metrics_orig.txt")) then    ; remove metrics_orig.txt file if present
      system("rm "+outdir+"metrics_orig.txt")
@@ -109,105 +105,68 @@
   if (namelists_only.eq."True") then
      print("Variable namelists have been created. Examine files in namelist_byvar/ directory to verify CVDP file selection.")
      print("Finished: Climate Variability Diagnostics Package ("+systemfunc("date")+")")
-     do gg = 0,dimsizes(outfiles)-1
-        if (isfilepresent2("obs_"+outfiles(gg))) then
-           system("rm obs_"+outfiles(gg))
-        end if 
-     end do
+     rm_obsfiles(outfiles)
      exit
   end if   
-
+;------------------------------
+; Call CVDP calculation scripts
+;
   if (modular.eq."True") then
-     modular_list = str_sub_str(modular_list," ","")   ; remove spaces if present
-     modular_list = str_sub_str(modular_list,",",".ncl,")   ; add .ncl in to end of each script name
-     modular_list = modular_list+".ncl"                     ; add .ncl in to last script name
-     if (run_style.eq."parallel") then
-        modular_list = str_sub_str(modular_list,","," "+zp)
-        system(envvar_str+" python "+zp+"runTasks.py "+zp+modular_list)
-     else
-        modular_list = str_sub_str(modular_list,","," "+ncl_exec+" "+zp)
-        modular_list = str_sub_str(modular_list,".ncl",".ncl;")
-        system(envvar_str+" "+ncl_exec+" "+zp+modular_list) 
-     end if
+     cm_list = str_sub_str(modular_list," ","")   ; remove spaces if present
+     cm_list = str_sub_str(cm_list,",",".ncl,")   ; add .ncl in to end of each script name
   else
-     complete_list = str_sub_str(complete_list,",",".ncl,")   ; add .ncl in to end of each script name
-     complete_list = complete_list+".ncl"                     ; add .ncl in to last script name
-     if (run_style.eq."parallel") then
-        complete_list = str_sub_str(complete_list,","," "+zp)
-        system(envvar_str+" python "+zp+"runTasks.py "+zp+complete_list)		   
-     else
-        complete_list = str_sub_str(complete_list,","," "+ncl_exec+" "+zp)
-        complete_list = str_sub_str(complete_list,".ncl",".ncl;")
-        system(envvar_str+" "+ncl_exec+" "+zp+complete_list)                 
-     end if
+     cm_list = str_sub_str(complete_list,",",".ncl,")   ; add .ncl in to end of each script name
   end if
+  cm_list = cm_list+".ncl"                     ; add .ncl in to last script name
 
-  if (output_data.eq."True") then        
+  if (run_style.eq."parallel") then
+     cm_list = str_sub_str(cm_list,","," "+zp)
+     system(envvar_str+" python "+zp+"runTasks.py "+zp+cm_list)
+  else
+     cm_list = str_sub_str(cm_list,","," "+ncl_exec+" "+zp)
+     cm_list = str_sub_str(cm_list,".ncl",".ncl;")
+     system(envvar_str+" "+ncl_exec+" "+zp+cm_list) 
+  end if
+;-------------------------------
+; Finalize netCDF files, create metrics tables, and finalize images.
+
+  if (output_data.eq."True") then     ; finalize output nc files   
      system(envvar_str + " "+ncl_exec+" "+zp+"ncfiles.append.ncl")
   end if 
-      
-  if (output_type.eq."png") then
-     ofiles = systemfunc("ls "+outdir+"*.png")
-     do gg = 0,dimsizes(ofiles)-1
-        system("convert -trim +repage -border 8 -bordercolor white "+ofiles(gg)+" "+ofiles(gg))
-     end do
-  else
-     ofilesS = systemfunc("ls "+outdir+"*."+output_type)
-     ofilesT = systemfunc("ls -l "+outdir+"*."+output_type)
-     do gg = 0,dimsizes(ofilesT)-1    ; check for empty .ps files, remove
-        filesize =  tofloat(str_get_field(ofilesT(gg),5," "))
-        if (filesize.lt.10000) then
-           print("Removing: "+ofilesT(gg))
-           system("rm "+ofilesS(gg))
-        end if
-     end do
-     delete([/filesize,ofilesS,ofilesT/])
-     
-     ofiles = systemfunc("ls "+outdir+"*."+output_type)
-     ofiles_png = str_sub_str(ofiles,"."+output_type,".png")
-     d_opt = 144*png_scale
-     print("Converting "+output_type+" files to .png")
-     do gg = 0,dimsizes(ofiles)-1
-        system("convert -density "+d_opt+" -trim +repage -border 8 -bordercolor white -background white -flatten "+ofiles(gg)+" "+ofiles_png(gg))
-     end do
-     print("Done with "+output_type+"->png conversion")
+
+  met_files = systemfunc("ls "+outdir+"metrics.*.txt  2> /dev/null")
+  if (dimsizes(met_files).eq.9) then   ; if all 9 metrics text files are present, create metrics table(s)
+     system("   export OUTDIR="+outdir+"; "+ncl_exec+" "+zp+"metrics.ncl")
   end if
-  
+      
+  image_finalize(outdir,output_type,max_num_tasks,zp,toint(144*png_scale))    ; trim whitespace, convert to .png (if necessary) and apply watermarks to images
+ 
   system("cp "+zp+"cas-cvdp.png "+outdir)
   system("cp namelist_byvar/* "+outdir)
   system("cp namelist "+outdir)
   if (obs.eq."True") then
      system("cp namelist_obs "+outdir)
   end if
-
-  met_files = systemfunc("ls "+outdir+"metrics.*.txt  2> /dev/null")
-  if (dimsizes(met_files).eq.9) then   ; all 9 metrics text files are present, create metrics table(s)
-     system("   export OUTDIR="+outdir+"; "+ncl_exec+" "+zp+"metrics.ncl")
-  end if
-
+;-------------------------------
+; Create webpages
   quote = str_get_dq()
   system("   export OUTDIR="+outdir+";   export VERSION="+version+";   export OUTPUT_DATA="+output_data+";   "+\
          "export OPT_CLIMO="+opt_climo+";   export CLIMO_SYEAR="+climo_syear+";   export CLIMO_EYEAR="+climo_eyear+";   "+\
          "export OBS="+obs+";   export CVDP_SCRIPTS="+zp+"; "+ncl_exec+" 'webtitle="+quote+webpage_title+quote+"' "+zp+"webpage.ncl")
   delete(quote)
 ;-------------------------------
+; Create tar file
   if (tar_output.eq."True") then
      if (isfilepresent2(outdir+"cvdp.tar")) then
         system("rm "+outdir+"cvdp.tar")
      end if
-;     print("cd "+outdir+"; tar -cf cvdp.tar *")
      system("cd "+outdir+"; tar -cf cvdp.tar *")
      system("cd "+outdir+"; rm *.gif *.png *.ps *.txt *.html *.nc namelist*")
   end if
 ;-------------------------------
 ; Cleanup
-  do gg = 0,dimsizes(outfiles)-1
-     if (isfilepresent2("obs_"+outfiles(gg))) then
-        system("rm obs_"+outfiles(gg))
-     end if 
-  end do
-
-  delete([/ofiles,outfiles,outdir,obs,scale_timeseries,output_data,opt_climo,climo_syear,climo_eyear,\
+  rm_obsfiles(outfiles)
+  delete([/outfiles,outdir,obs,scale_timeseries,output_data,opt_climo,climo_syear,climo_eyear,\
            png_scale,webpage_title,compute_modes_mon,met_files/])
 
   print("Finished: Climate Variability Diagnostics Package ("+systemfunc("date")+")")

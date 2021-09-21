@@ -139,25 +139,37 @@ begin
   end if  
   
   if (case_sens.eq."True") then
-     tstring0 = "TS_,.TS.,ts_,.ts.,t_surf_,t_surf.,sst.,sst_"
-     tstring1 = "TS,ts,t_surf,sst"
+     tstring1 = "TS,ts,t_surf,sst"        ; list in order of likelihood/preference: CESM name, CMIP name, other
   else
-     tstring0 = "TS_,.TS.,t_surf_,t_surf.,sst.,sst_"
      tstring1 = "TS,t_surf,sst"
   end if
-  
+  sstr := str_split(tstring1,",")
+
   do gg = 0,nsim-1
-     fsst = systemfunc("bash -c 'ls "+paths(gg)+"*{"+tstring0+"}*.nc 2> /dev/null'")   ; /dev/null suppresses all standard error output
-     if (dimsizes(fsst).eq.1) then
-        namelist_ts(gg+maxnumobs) =  names(gg)+" | "+fsst(0)+" | "+syear(gg)+" | "+eyear(gg)   ; grab first file
-     else
-        tpath = str_sub_str(paths(gg),"/*/","/{"+tstring1+"}/")     ; explicitly specify TS,ts in directory structure to eliminate "/tsmin/" being used
-        namelist_ts(gg+maxnumobs) =  names(gg)+" | "+tpath+"*{"+tstring0+"}*.nc | "+syear(gg)+" | "+eyear(gg)
-        delete(tpath)
-     end if
-     delete(fsst)
+     do hh = 0,dimsizes(sstr)-1
+        namelist_ts(gg+maxnumobs) =  names(gg)+" | missing | "+syear(gg)+" | "+eyear(gg)  ; set to missing as default
+        fsst := systemfunc("bash -c 'ls "+paths(gg)+"*."+sstr(hh)+".*.nc 2> /dev/null'")   ; /dev/null suppresses all standard error output
+        if (.not.ismissing(fsst(0))) then
+           if (dimsizes(fsst).eq.1) then
+              fsst@path = fsst
+           else
+              fsst@path = paths(gg)+"*."+sstr(hh)+".*.nc"
+           end if
+           namelist_ts(gg+maxnumobs) =  names(gg)+" | "+fsst@path+" | "+syear(gg)+" | "+eyear(gg)
+           break
+        else  ; try different method to find files
+           tpath := str_sub_str(paths(gg),"/*/","/"+sstr(hh)+"/") 
+           tpath = str_sub_str(tpath,"/*_","/"+sstr(hh)+"_")
+           fsst2 := systemfunc("bash -c 'ls "+tpath+"*.nc 2> /dev/null'")
+           if (.not.ismissing(fsst2(0))) then
+              if (str_match_bool(fsst2(0),sstr(hh))) then
+                 namelist_ts(gg+maxnumobs) =  names(gg)+" | "+tpath+"*.nc | "+syear(gg)+" | "+eyear(gg)
+                 break
+              end if
+           end if
+        end if
+     end do
   end do  
-  delete([/tstring0,tstring1/])
   asciiwrite("namelist_byvar/namelist_ts",namelist_ts)
 ;------- PSL section----------------------------  
   namelist_psl = new(nsim+maxnumobs,string)
@@ -184,24 +196,37 @@ begin
   end if  
   
   if (case_sens.eq."True") then
-     tstring0 = "PSL_,PSL.,psl_,psl.,slp.,slp_"
-     tstring1 = "PSL,psl,SLP,slp"
+     tstring1 = "PSL,psl,SLP,slp"       ; list in order of likelihood/preference: CESM name, CMIP name, other
   else
-     tstring0 = "PSL_,PSL.,slp.,slp_"
      tstring1 = "PSL,slp"
   end if
+  sstr := str_split(tstring1,",")
+
   do gg = 0,nsim-1
-     fsst = systemfunc("bash -c 'ls "+paths(gg)+"*{"+tstring0+"}*.nc 2> /dev/null'")   ; /dev/null suppresses all standard error output
-     if (dimsizes(fsst).eq.1) then
-        namelist_psl(gg+maxnumobs) =  names(gg)+" | "+fsst(0)+" | "+syear(gg)+" | "+eyear(gg)   ; grab first file
-     else
-        tpath = str_sub_str(paths(gg),"/*/","/{"+tstring1+"}/")
-        namelist_psl(gg+maxnumobs) =  names(gg)+" | "+tpath+"*{"+tstring0+"}*.nc | "+syear(gg)+" | "+eyear(gg)  
-        delete(tpath)
-     end if
-     delete(fsst)
+     do hh = 0,dimsizes(sstr)-1
+        namelist_psl(gg+maxnumobs) =  names(gg)+" | missing | "+syear(gg)+" | "+eyear(gg)     ; set to missing as default
+        fsst := systemfunc("bash -c 'ls "+paths(gg)+"*."+sstr(hh)+".*.nc 2> /dev/null'")   ; /dev/null suppresses all standard error output
+        if (.not.ismissing(fsst(0))) then
+           if (dimsizes(fsst).eq.1) then
+              fsst@path = fsst
+           else
+              fsst@path = paths(gg)+"*."+sstr(hh)+".*.nc"
+           end if
+           namelist_psl(gg+maxnumobs) =  names(gg)+" | "+fsst@path+" | "+syear(gg)+" | "+eyear(gg)
+           break
+        else  ; try different method to find files
+           tpath := str_sub_str(paths(gg),"/*/","/"+sstr(hh)+"/") 
+           tpath = str_sub_str(tpath,"/*_","/"+sstr(hh)+"_")
+           fsst2 := systemfunc("bash -c 'ls "+tpath+"*.nc 2> /dev/null'")
+           if (.not.ismissing(fsst2(0))) then
+              if (str_match_bool(fsst2(0),sstr(hh))) then
+                 namelist_psl(gg+maxnumobs) =  names(gg)+" | "+tpath+"*.nc | "+syear(gg)+" | "+eyear(gg)
+                 break
+              end if
+           end if
+        end if
+     end do
   end do  
-  delete([/tstring0,tstring1/])
   asciiwrite("namelist_byvar/namelist_psl",namelist_psl)
 ;------- TREFHT section----------------------------  
   namelist_trefht = new(nsim+maxnumobs,string)
@@ -228,23 +253,37 @@ begin
   end if 
   
   if (case_sens.eq."True") then
-     tstring0 = "TREFHT_,TREFHT.,tas.,tas_,t_ref.,t_ref_,T2.,T2_"
-     tstring1 = "TREFHT,tas,t_ref,T2"
+     tstring1 = "TREFHT,tas,t_ref,T2"   ; list in order of likelihood/preference: CESM name, CMIP name, other
   else
-     tstring0 = "TREFHT_,TREFHT.,tas.,tas_,t_ref.,t_ref_,T2.,T2_"
      tstring1 = "TREFHT,tas,t_ref,T2"
   end if
+  sstr := str_split(tstring1,",")
+
   do gg = 0,nsim-1
-     fsst = systemfunc("bash -c 'ls "+paths(gg)+"*{"+tstring0+"}*.nc 2> /dev/null'")   ; /dev/null suppresses all standard error output
-     if (dimsizes(fsst).eq.1) then
-        namelist_trefht(gg+maxnumobs) =  names(gg)+" | "+fsst(0)+" | "+syear(gg)+" | "+eyear(gg)   ; grab first file
-     else
-        tpath = str_sub_str(paths(gg),"/*/","/{"+tstring1+"}/")
-        namelist_trefht(gg+maxnumobs) =  names(gg)+" | "+tpath+"*{"+tstring0+"}*.nc | "+syear(gg)+" | "+eyear(gg)
-        delete(tpath)
-     end if
-     delete(fsst)
-  end do  
+     do hh = 0,dimsizes(sstr)-1
+        namelist_trefht(gg+maxnumobs) =  names(gg)+" | missing | "+syear(gg)+" | "+eyear(gg)  ; set to missing as default
+        fsst := systemfunc("bash -c 'ls "+paths(gg)+"*."+sstr(hh)+".*.nc 2> /dev/null'")   ; /dev/null suppresses all standard error output
+        if (.not.ismissing(fsst(0))) then
+           if (dimsizes(fsst).eq.1) then
+              fsst@path = fsst
+           else
+              fsst@path = paths(gg)+"*."+sstr(hh)+".*.nc"
+           end if
+           namelist_trefht(gg+maxnumobs) =  names(gg)+" | "+fsst@path+" | "+syear(gg)+" | "+eyear(gg)
+           break
+        else  ; try different method to find files
+           tpath := str_sub_str(paths(gg),"/*/","/"+sstr(hh)+"/") 
+           tpath = str_sub_str(tpath,"/*_","/"+sstr(hh)+"_")
+           fsst2 := systemfunc("bash -c 'ls "+tpath+"*.nc 2> /dev/null'")
+           if (.not.ismissing(fsst2(0))) then    
+              if (str_match_bool(fsst2(0),sstr(hh))) then
+                 namelist_trefht(gg+maxnumobs) =  names(gg)+" | "+tpath+"*.nc | "+syear(gg)+" | "+eyear(gg)
+                 break
+              end if
+           end if
+        end if
+     end do
+  end do   
   asciiwrite("namelist_byvar/namelist_trefht",namelist_trefht)  
 ;------- PRECT section--(more complicated due to PRECC+PRECL, + pr being a common 2 letter combination)------  
   namelist_prect = new(nsim+maxnumobs,string)
@@ -269,52 +308,59 @@ begin
      end if
      delete(prect_i)
   end if 
+
+  if (case_sens.eq."True") then
+     tstring1 = "PRECT,PRECC,pr,precip,prate,prcp"   ; list in order of likelihood/preference: CESM name, CMIP name, other
+  else
+     tstring1 = "PRECT,PRECC,pr,precip,prate,prcp"
+  end if
+  sstr := str_split(tstring1,",")
+
   do gg = 0,nsim-1
-     pstring = (/"pr_*","pr.*","_pr_*",".pr.*","PRECT.*","PRECT_*","PRECC.*","PRECC_*","precip_*","precip.*","prcp_*","prcp.*","prate_*","prate.*"/)
-     do hh = 0,dimsizes(pstring)-1
-        if (isvar((/"fsst"/))) then
-           delete(fsst)
-        end if
-        fsst = systemfunc("bash -c 'ls "+paths(gg)+"*"+pstring(hh)+".nc 2> /dev/null'")   ; /dev/null suppresses all standard error output
-        if (dimsizes(fsst).eq.1) then
-           if (.not.ismissing(fsst)) then
-              if (pstring(hh).eq."PRECC.*".or.pstring(hh).eq."PRECC_*") then
-                 tpath = str_sub_str(paths(gg),"/*/","/{PRECC,PRECL}/")
-                 namelist_prect(gg+maxnumobs) =  names(gg)+" | "+tpath+"*{PRECC,PRECL}*.nc | "+syear(gg)+" | "+eyear(gg)
-                 delete(tpath)
+     do hh = 0,dimsizes(sstr)-1
+        namelist_prect(gg+maxnumobs) =  names(gg)+" | missing | "+syear(gg)+" | "+eyear(gg)  ; set to missing as default
+        fsst := systemfunc("bash -c 'ls "+paths(gg)+"*."+sstr(hh)+".*.nc 2> /dev/null'")   ; /dev/null suppresses all standard error output
+        if (.not.ismissing(fsst(0))) then
+           if (sstr(hh).eq."PRECC") then   ; add PRECL to search string
+              if (dimsizes(fsst).eq.1) then
+                 fsst@path = str_sub_str(fsst,".PRECC.",".{PRECC,PRECL}.")
               else
-                 namelist_prect(gg+maxnumobs) =  names(gg)+" | "+fsst(0)+" | "+syear(gg)+" | "+eyear(gg)   ; grab first file         
+                 fsst@path = str_sub_str(paths(gg)+"*."+sstr(hh)+".*.nc",".PRECC.",".{PRECC,PRECL}.")
               end if
-              break        
            else
-               namelist_prect(gg+maxnumobs) =  names(gg)+" | "+fsst(0)+" | "+syear(gg)+" | "+eyear(gg)   ; file is missing..          
-           end if
-        else
-           if (pstring(hh).eq."PRECC.*".or.pstring(hh).eq."PRECC_*") then
-              tpath = str_sub_str(paths(gg),"/*/","/{PRECC,PRECL}/")
-              namelist_prect(gg+maxnumobs) =  names(gg)+" | "+tpath+"*{PRECC,PRECL}*.nc | "+syear(gg)+" | "+eyear(gg)
-           else
-              if (pstring(hh).eq."pr_*".or.pstring(hh).eq."pr.*".or.pstring(hh).eq."*_pr_*".or.pstring(hh).eq."*.pr.*") then
-                 tpath = str_sub_str(paths(gg),"/*/","/pr/")
-              end if
-              if (pstring(hh).eq."PRECT.*".or.pstring(hh).eq."PRECT_*") then
-                 tpath = str_sub_str(paths(gg),"/*/","/PRECC/")
-              end if
-              if (isvar((/"tpath"/))) then
-                 namelist_prect(gg+maxnumobs) =  names(gg)+" | "+tpath+"*"+pstring(hh)+"*.nc | "+syear(gg)+" | "+eyear(gg)
-                 delete(tpath)
+              if (dimsizes(fsst).eq.1) then
+                 fsst@path = fsst
               else
-                 namelist_prect(gg+maxnumobs) =  names(gg)+" | missing"
+                 fsst@path = paths(gg)+"*."+sstr(hh)+".*.nc"
               end if
            end if
+           namelist_prect(gg+maxnumobs) =  names(gg)+" | "+fsst@path+" | "+syear(gg)+" | "+eyear(gg)
            break
+        else    ; if files have not been found, try the following
+           if (sstr(hh).eq."PRECC") then
+              tstring = "{PRECC,PRECL}"
+           else
+              tstring = sstr(hh)
+           end if
+           tpath := str_sub_str(paths(gg),"/*/","/"+tstring+"/") 
+           tpath = str_sub_str(tpath,"/*_","/"+tstring+"_")
+           fsst2 := systemfunc("bash -c 'ls "+tpath+"*.nc 2> /dev/null'")
+           if (.not.ismissing(fsst2(0))) then
+              if (str_match_bool(fsst2(0),tstring)) then
+                 x = addfile(fsst2(0),"r")
+                 if (isfilevar(x,sstr(hh))) then
+                    delete(x)
+                    namelist_prect(gg+maxnumobs) =  names(gg)+" | "+tpath+"*.nc | "+syear(gg)+" | "+eyear(gg)
+                    break
+                 else
+                    delete(x)
+                 end if
+              end if 
+           end if
+           delete([/tpath,tstring/])
         end if
      end do
   end do  
-  delete(pstring)
-  if (isvar((/"fsst"/))) then
-     delete(fsst)
-  end if
   asciiwrite("namelist_byvar/namelist_prect",namelist_prect)    
 ;----- SNOWDP section---------------
   namelist_snowdp = new(nsim+maxnumobs,string)
@@ -339,17 +385,34 @@ begin
      end if
      delete(snowdp_i)
   end if 
-  sn_string = "SNOWDP_,SNOWDP.,snd_,snd."
+
+  tstring1 = "SNOWDP,snd"       ; list in order of likelihood/preference: CESM name, CMIP name, other
+  sstr := str_split(tstring1,",")
+
   do gg = 0,nsim-1
-     fsst = systemfunc("bash -c 'ls "+paths(gg)+"*{"+sn_string+"}*.nc 2> /dev/null'")   ; /dev/null suppresses all standard error output
-     if (dimsizes(fsst).eq.1) then
-        namelist_snowdp(gg+maxnumobs) =  names(gg)+" | "+fsst(0)+" | "+syear(gg)+" | "+eyear(gg)   ; grab first file
-     else
-        tpath = str_sub_str(paths(gg),"/*/","/{SNOWDP,snd}/")     ; explicitly specify SNOWDP/snd in directory structure to eliminate "/sndmin/" being used
-        namelist_snowdp(gg+maxnumobs) =  names(gg)+" | "+tpath+"*{SNOWDP_,SNOWDP.,snd_,snd.}*.nc | "+syear(gg)+" | "+eyear(gg)
-        delete(tpath)
-     end if
-     delete(fsst)
+     do hh = 0,dimsizes(sstr)-1
+        namelist_snowdp(gg+maxnumobs) =  names(gg)+" | missing | "+syear(gg)+" | "+eyear(gg)     ; set to missing as default
+        fsst := systemfunc("bash -c 'ls "+paths(gg)+"*."+sstr(hh)+".*.nc 2> /dev/null'")   ; /dev/null suppresses all standard error output
+        if (.not.ismissing(fsst(0))) then
+           if (dimsizes(fsst).eq.1) then
+              fsst@path = fsst
+           else
+              fsst@path = paths(gg)+"*."+sstr(hh)+".*.nc"
+           end if
+           namelist_snowdp(gg+maxnumobs) =  names(gg)+" | "+fsst@path+" | "+syear(gg)+" | "+eyear(gg)
+           break
+        else  ; try different method to find files
+           tpath := str_sub_str(paths(gg),"/*/","/"+sstr(hh)+"/") 
+           tpath = str_sub_str(tpath,"/*_","/"+sstr(hh)+"_")
+           fsst2 := systemfunc("bash -c 'ls "+tpath+"*.nc 2> /dev/null'")
+           if (.not.ismissing(fsst2(0))) then
+              if (str_match_bool(fsst2(0),sstr(hh))) then
+                 namelist_snowdp(gg+maxnumobs) =  names(gg)+" | "+tpath+"*.nc | "+syear(gg)+" | "+eyear(gg)
+                 break
+              end if
+           end if
+        end if
+     end do
   end do  
   asciiwrite("namelist_byvar/namelist_snowdp",namelist_snowdp)
 ;------- MOC section----------------------------  
@@ -376,17 +439,38 @@ begin
      delete(moc_i)
   end if 
 
+  if (case_sens.eq."True") then
+     tstring1 = "MOC,msftmyz,msftmz,stfmmc"   ; list in order of likelihood/preference: CESM name, CMIP name, other
+  else
+     tstring1 = "MOC,msftmyz,msftmz,stfmmc"
+  end if
+  sstr := str_split(tstring1,",")
+
   do gg = 0,nsim-1
-     fsst = systemfunc("bash -c 'ls "+paths(gg)+"*{MOC_,MOC.,msftmyz.,msftmyz_,msftmz.,msftmz_,stfmmc.,stfmmc_}*.nc 2> /dev/null'")   ; /dev/null suppresses all standard error output
-     if (dimsizes(fsst).eq.1) then
-        namelist_moc(gg+maxnumobs) =  names(gg)+" | "+fsst(0)+" | "+syear(gg)+" | "+eyear(gg)   ; grab first file
-     else
-        tpath = str_sub_str(paths(gg),"/*/","/{MOC,msftmyz,msftmz,stfmmc}/")
-        namelist_moc(gg+maxnumobs) =  names(gg)+" | "+tpath+"*{MOC_,MOC.,msftmyz.,msftmyz_,msftmz.,msftmz_,stfmmc.,stfmmc_}*.nc | "+syear(gg)+" | "+eyear(gg)
-        delete(tpath)
-     end if
-     delete(fsst)
-  end do  
+     do hh = 0,dimsizes(sstr)-1
+        namelist_moc(gg+maxnumobs) =  names(gg)+" | missing | "+syear(gg)+" | "+eyear(gg)  ; set to missing as default
+        fsst := systemfunc("bash -c 'ls "+paths(gg)+"*."+sstr(hh)+".*.nc 2> /dev/null'")   ; /dev/null suppresses all standard error output
+        if (.not.ismissing(fsst(0))) then
+           if (dimsizes(fsst).eq.1) then
+              fsst@path = fsst
+           else
+              fsst@path = paths(gg)+"*."+sstr(hh)+".*.nc"
+           end if
+           namelist_moc(gg+maxnumobs) =  names(gg)+" | "+fsst@path+" | "+syear(gg)+" | "+eyear(gg)
+           break
+        else  ; try different method to find files
+           tpath := str_sub_str(paths(gg),"/*/","/"+sstr(hh)+"/") 
+           tpath = str_sub_str(tpath,"/*_","/"+sstr(hh)+"_")
+           fsst2 := systemfunc("bash -c 'ls "+tpath+"*.nc 2> /dev/null'")
+           if (.not.ismissing(fsst2(0))) then
+              if (str_match_bool(fsst2(0),sstr(hh))) then
+                 namelist_moc(gg+maxnumobs) =  names(gg)+" | "+tpath+"*.nc | "+syear(gg)+" | "+eyear(gg)
+                 break
+              end if
+           end if
+        end if
+     end do
+  end do   
   asciiwrite("namelist_byvar/namelist_moc",namelist_moc) 
 
 ;------- aice_nh section----------------------------  
@@ -413,16 +497,37 @@ begin
      delete(aice_nh_i)
   end if 
 
+  if (case_sens.eq."True") then
+     tstring1 = "aice_nh,aice,siconc,sic,CN"   ; list in order of likelihood/preference: CESM name, CMIP name, other
+  else                                         ; aice_nh (CESM1 nomenclature used in some data) should be checked before aice 
+     tstring1 = "aice_nh,aice,siconc,sic,CN"
+  end if
+  sstr := str_split(tstring1,",")
+
   do gg = 0,nsim-1
-     fsst = systemfunc("bash -c 'ls "+paths(gg)+"*{aice_nh.,aice.,sic_,sic.,.CN.,_CN_,siconc.,siconc_}*.nc 2> /dev/null'")   ; /dev/null suppresses all standard error output
-     if (dimsizes(fsst).eq.1) then
-        namelist_aice_nh(gg+maxnumobs) =  names(gg)+" | "+fsst(0)+" | "+syear(gg)+" | "+eyear(gg)   ; grab first file
-     else
-        tpath = str_sub_str(paths(gg),"/*/","/{aice,sic,aice_nh,CN,siconc}/")
-        namelist_aice_nh(gg+maxnumobs) =  names(gg)+" | "+tpath+"*{aice_nh.,aice.,sic_,sic.,.CN.,_CN_,siconc.,siconc_}*.nc | "+syear(gg)+" | "+eyear(gg)
-        delete(tpath)
-     end if
-     delete(fsst)
+     do hh = 0,dimsizes(sstr)-1
+        namelist_aice_nh(gg+maxnumobs) =  names(gg)+" | missing | "+syear(gg)+" | "+eyear(gg) ; set to missing as default
+        fsst := systemfunc("bash -c 'ls "+paths(gg)+"*."+sstr(hh)+".*.nc 2> /dev/null'")   ; /dev/null suppresses all standard error output
+        if (.not.ismissing(fsst(0))) then
+           if (dimsizes(fsst).eq.1) then
+              fsst@path = fsst
+           else
+              fsst@path = paths(gg)+"*."+sstr(hh)+".*.nc"
+           end if
+           namelist_aice_nh(gg+maxnumobs) =  names(gg)+" | "+fsst@path+" | "+syear(gg)+" | "+eyear(gg)
+           break
+        else  ; try different method to find files
+           tpath := str_sub_str(paths(gg),"/*/","/"+sstr(hh)+"/") 
+           tpath = str_sub_str(tpath,"/*_","/"+sstr(hh)+"_")
+           fsst2 := systemfunc("bash -c 'ls "+tpath+"*.nc 2> /dev/null'")
+           if (.not.ismissing(fsst2(0))) then
+              if (str_match_bool(fsst2(0),sstr(hh))) then
+                 namelist_aice_nh(gg+maxnumobs) =  names(gg)+" | "+tpath+"*.nc | "+syear(gg)+" | "+eyear(gg)
+                 break
+              end if
+           end if
+        end if
+     end do
   end do  
   asciiwrite("namelist_byvar/namelist_aice_nh",namelist_aice_nh) 
 ;------- aice_sh section----------------------------  
@@ -449,17 +554,38 @@ begin
      delete(aice_sh_i)
   end if 
 
+  if (case_sens.eq."True") then
+     tstring1 = "aice_sh,aice,siconc,sic,CN"   ; list in order of likelihood/preference: CESM name, CMIP name, other
+  else                                         ; aice_sh (CESM1 nomenclature used in some data) should be checked before aice 
+     tstring1 = "aice_sh,aice,siconc,sic,CN"
+  end if
+  sstr := str_split(tstring1,",")
+
   do gg = 0,nsim-1
-     fsst = systemfunc("bash -c 'ls "+paths(gg)+"*{aice_sh.,aice.,sic_,sic.,.CN.,_CN_,siconc.,siconc_}*.nc 2> /dev/null'")   ; /dev/null suppresses all standard error output
-     if (dimsizes(fsst).eq.1) then
-        namelist_aice_sh(gg+maxnumobs) =  names(gg)+" | "+fsst(0)+" | "+syear(gg)+" | "+eyear(gg)   ; grab first file
-     else
-        tpath = str_sub_str(paths(gg),"/*/","/{aice,sic,aice_sh,CN,siconc}/")
-        namelist_aice_sh(gg+maxnumobs) =  names(gg)+" | "+tpath+"*{aice_sh.,aice.,sic_,sic.,.CN.,_CN_,siconc.,siconc_}*.nc | "+syear(gg)+" | "+eyear(gg)
-        delete(tpath)
-     end if
-     delete(fsst)
-  end do  
+     do hh = 0,dimsizes(sstr)-1
+        namelist_aice_sh(gg+maxnumobs) =  names(gg)+" | missing | "+syear(gg)+" | "+eyear(gg) ; set to missing as default
+        fsst := systemfunc("bash -c 'ls "+paths(gg)+"*."+sstr(hh)+".*.nc 2> /dev/null'")   ; /dev/null suppresses all standard error output
+        if (.not.ismissing(fsst(0))) then
+           if (dimsizes(fsst).eq.1) then
+              fsst@path = fsst
+           else
+              fsst@path = paths(gg)+"*."+sstr(hh)+".*.nc"
+           end if
+           namelist_aice_sh(gg+maxnumobs) =  names(gg)+" | "+fsst@path+" | "+syear(gg)+" | "+eyear(gg)
+           break
+        else  ; try different method to find files
+           tpath := str_sub_str(paths(gg),"/*/","/"+sstr(hh)+"/") 
+           tpath = str_sub_str(tpath,"/*_","/"+sstr(hh)+"_")
+           fsst2 := systemfunc("bash -c 'ls "+tpath+"*.nc 2> /dev/null'")
+           if (.not.ismissing(fsst2(0))) then
+              if (str_match_bool(fsst2(0),sstr(hh))) then
+                 namelist_aice_sh(gg+maxnumobs) =  names(gg)+" | "+tpath+"*.nc | "+syear(gg)+" | "+eyear(gg)
+                 break
+              end if
+           end if
+        end if
+     end do
+  end do    
   asciiwrite("namelist_byvar/namelist_aice_sh",namelist_aice_sh) 
 ;----------------------------------------------------------------------------
   if (obsflag) then

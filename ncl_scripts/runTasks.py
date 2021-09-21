@@ -53,6 +53,6 @@ while len(tasks) > 0:
     time.sleep(POLL_INTERVAL)
 #    print "."      # Feedback to show the script is doing something; not necessary
 
-print "runTasks.py: Done with CVDP calculation scripts"
+print("runTasks.py: Done with CVDP calculation scripts")
 
 

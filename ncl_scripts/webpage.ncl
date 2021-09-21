@@ -28,11 +28,7 @@ begin
         subtxt = "Climatological Period Used: "+CLIMO_SYEAR+"-"+CLIMO_EYEAR
      end if
   end if
-  if (OBS.eq."True") then
-     namelist_txt = "Input Namelists: <a href="+quote+"namelist_obs"+quote+">Observations</a> | <a href="+quote+"namelist"+quote+">Models</a>"
-  else
-     namelist_txt = "Input Namelist: <a href="+quote+"namelist"+quote+">Models</a>"
-  end if
+
   nsim_noobs = numAsciiRow("namelist")
   na = asciiread("namelist",(/nsim_noobs/),"string")
   names = new(nsim_noobs,"string")
@@ -45,34 +41,51 @@ begin
   txt = new(700,"string")
   quote = str_get_dq()
   
-  txt(0) = "<HTML><HEAD><TITLE>Climate Variability Diagnostics Package</TITLE><STYLE>"
-  txt(1) = "body {background-color: WhiteSmoke; font-family: Verdana, Geneva, sans-serif}"
-  txt(2) = "img.title {width:990; height:105; align:left}"
-  txt(3) = "p.subtitle {font-size:20pt; color:black; text-align:center; font-weight:bold}"
-  txt(4) = "p.btext {font-size:11pt; text-align:left}"
-  txt(5) = "font.s1 {font-size:13.5pt; text-align:left}"
-  txt(7) = "td {text-align:center; font-size:12pt}"
-  txt(8) = "td.s1 {text-align:left; font-size:11pt}"
-  txt(9) = "td.s2 {border-bottom: 4px double darkgray}"
-  txt(10) = "CAPTION {text-align:left; font-size:14pt; font-weight:bold}"
-  txt(11) = "</STYLE></HEAD><BODY>"
-  txt(12) = "<img class=title src="+quote+"cas-cvdp.png"+quote+" alt="+quote+"CVDP logo"+quote+">"
-  txt(13) = "<TABLE width='990' border=0 padding=0 cellpadding=0>"
-  txt(14) = "<tr><td width='365' colspan=2><p class=btext><font class=s1><a href="+quote+"methodology.html"+quote+">Methodology and Definitions</a></font>"
+  txt(0) = "<html><head><title>Climate Variability Diagnostics Package</title>"
+  txt(1) = "<link rel="+quote+"stylesheet"+quote+" href="+quote+"https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"+quote+" integrity="+quote+"sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO"+quote+" crossorigin="+quote+"anonymous"+quote+">"
+  txt(2) = "<script src="+quote+"https://code.jquery.com/jquery-3.3.1.slim.min.js"+quote+" integrity="+quote+"sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"+quote+" crossorigin="+quote+"anonymous"+quote+"></script>"
+  txt(3) = "<script src="+quote+"https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js"+quote+" integrity="+quote+"sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49"+quote+" crossorigin="+quote+"anonymous"+quote+"></script>"
+  txt(4) = "<script src="+quote+"https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js"+quote+" integrity="+quote+"sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy"+quote+" crossorigin="+quote+"anonymous"+quote+"></script>"
+  txt(5) = "<style>body {background-color: WhiteSmoke; font-family: Verdana, Geneva, sans-serif}"
+  txt(6) = "img.title {width:990; height:105; align:left}"
+  txt(7) = "p.subtitle {font-size:20pt; color:black; text-align:center; font-weight:bold}"
+  txt(8) = "p.btext {font-size:11pt; text-align:left}"
+  txt(9) = "font.s1 {font-size:13.5pt; text-align:left}"
+  txt(10) = "td {text-align:center; font-size:12pt}"
+  txt(11) = "td.s1 {text-align:left; font-size:11pt}"
+  txt(12) = "td.s2 {border-bottom: 4px double darkgray}"
+  txt(13) = "CAPTION {text-align:left; font-size:14pt; font-weight:bold}"
+  txt(14) = "</style></head>"
+
+  txt(15) = "<body><div class="+quote+"container"+quote+">"
+	 txt(16) = "<div class="+quote+"row"+quote+">"
+		txt(17) = "<img class="+quote+"img-fluid"+quote+" src="+quote+"cas-cvdp.png"+quote+" alt="+quote+"CVDP logo"+quote+">"
+  txt(18) = "</div>"
+
+  txt(19) = "<div class="+quote+"row"+quote+"><div class="+quote+"col"+quote+"><table class="+quote+"table my-0"+quote+">"
+		txt(20) = "<tr><td class="+quote+"text-left"+quote+"><ul class="+quote+"list-inline my-0"+quote+"><li class="+quote+"list-inline-item"+quote+"><font class=s1><a href="+quote+"methodology.html"+quote+">Methodology and Definitions</a></font></li><br>"
   if (isfilepresent2(OUTDIR+"metrics.txt")) then
      if (isfilepresent2(OUTDIR+"metrics.table_1.gif")) then
-        txt(15) = "<br>Metrics Tables: <a href="+quote+"metrics.table_0.html"+quote+">Pattern Correlations</a> | <a href="+quote+"metrics.table_14.html"+quote+">RMS</a>"
+        txt(21) = "<li class="+quote+"list-inline-item"+quote+">Metrics Tables: <a href="+quote+"metrics.table_0.html"+quote+">Pattern Correlations</a> | <a href="+quote+"metrics.table_14.html"+quote+">RMS</a></li><br>"
      else
-        txt(15) = "<br><a href="+quote+"metrics.html"+quote+">Metrics Table</a>"
+        txt(21) = "<li class="+quote+"list-inline-item"+quote+"><a href="+quote+"metrics.html"+quote+">Metrics Table</a></li><br>"
      end if
   end if
-  txt(16) = "<br>"+namelist_txt+"</td><td rowspan=3><p class=subtitle>"+webtitle+"</p></td></tr>"
-  txt(17) = "<tr><td class=s1 width='90'>Derived<br>Namelists:</td><td class=s1 width='260'><a href="+quote+"namelist_moc"+quote+">MOC</a> | <a href="+quote+"namelist_prect"+quote+">PR</a> | <a href="+quote+"namelist_psl"+quote+">PSL</a> | <a href="+quote+"namelist_aice_nh"+quote+">SIC NH</a><br><a href="+quote+"namelist_aice_sh"+quote+">SIC SH</a> | <a href="+quote+"namelist_snowdp"+quote+">SND</a> | <a href="+quote+"namelist_trefht"+quote+">TAS</a> | <a href="+quote+"namelist_ts"+quote+">TS</a></td></tr>"
-  txt(18) = "<tr><td class=s1 width='365' colspan=2>"+subtxt+"<br>Created: "+systemfunc("date")+"<br>CVDP Version "+VERSION+"</td></tr></table><hr width=990 align=left>"
-  delete([/subtxt,namelist_txt/])
 
-  txt(26) = "<br><TABLE width='600' border=1 frame=void rules=all cellpadding=6 bordercolor=darkgray>"
-  txt(27) = "<CAPTION>Means</CAPTION>"
+  if (OBS.eq."True") then
+     txt(22) = "<li class="+quote+"list-inline-item"+quote+">Namelists: <a href="+quote+"namelist_obs.html"+quote+">Input</a> | <a href="+quote+"namelist_msftmz.html"+quote+">Derived</a></li><br>"
+  else
+     txt(22) = "<li class="+quote+"list-inline-item"+quote+">Namelists: <a href="+quote+"namelist_models.html"+quote+">Input</a> | <a href="+quote+"namelist_msftmz.html"+quote+">Derived</a></li><br>"
+  end if
+
+  txt(23) = "<li class="+quote+"list-inline-item"+quote+">"+subtxt+"</li><br><li class="+quote+"list-inline-item"+quote+">Created: "+systemfunc("date")+"</li><br><li class="+quote+"list-inline-item"+quote+">CVDP Version "+VERSION+"</li></ul></td>"
+
+  txt(24) = "<td><p class=subtitle>"+webtitle+"</p></td></tr></table></div></div>"
+  delete([/subtxt/])
+
+  txt(25) = "<div class="+quote+"row"+quote+"><div class="+quote+"col"+quote+">"
+  txt(26) = "<table class="+quote+"table table-striped table-bordered"+quote+">"
+  txt(27) = "<h3 class="+quote+"display-6"+quote+">Means</h3>"
   txt(28) = "<tr><td><b>SST</b></td><td>"+table_link_setup(OUTDIR,"sst.mean.djf.png","DJF")+"</td><td>"+table_link_setup(OUTDIR,"sst.mean.mam.png","MAM")+"</td><td>"+table_link_setup(OUTDIR,"sst.mean.jja.png","JJA")+"</td><td>"+table_link_setup(OUTDIR,"sst.mean.son.png","SON")+"</td><td>"+table_link_setup(OUTDIR,"sst.mean.ann.png","Annual")+"</td></tr>"    
   txt(29) = "<tr><td><b>TAS</b></td><td>"+table_link_setup(OUTDIR,"tas.mean.djf.png","DJF")+"</td><td>"+table_link_setup(OUTDIR,"tas.mean.mam.png","MAM")+"</td><td>"+table_link_setup(OUTDIR,"tas.mean.jja.png","JJA")+"</td><td>"+table_link_setup(OUTDIR,"tas.mean.son.png","SON")+"</td><td>"+table_link_setup(OUTDIR,"tas.mean.ann.png","Annual")+"</td></tr>"    
   txt(30) = "<tr><td><b>PSL</b></td><td>"+table_link_setup(OUTDIR,"psl.mean.djf.png","DJF")+"</td><td>"+table_link_setup(OUTDIR,"psl.mean.mam.png","MAM")+"</td><td>"+table_link_setup(OUTDIR,"psl.mean.jja.png","JJA")+"</td><td>"+table_link_setup(OUTDIR,"psl.mean.son.png","SON")+"</td><td>"+table_link_setup(OUTDIR,"psl.mean.ann.png","Annual")+"</td></tr>"    
@@ -81,11 +94,12 @@ begin
   txt(33) = "<tr><td><b>SND</b></td><td>"+table_link_setup(OUTDIR,"snd.mean.djf.png","DJF")+"</td><td>"+table_link_setup(OUTDIR,"snd.mean.mam.png","MAM")+"</td><td>"+table_link_setup(OUTDIR,"snd.mean.jja.png","JJA")+"</td><td>"+table_link_setup(OUTDIR,"snd.mean.son.png","SON")+"</td><td>"+table_link_setup(OUTDIR,"snd.mean.ann.png","Annual")+"</td></tr>"      
   txt(34) = "<tr><td><b>SIC NH</b></td><td>"+table_link_setup(OUTDIR,"aice.mean.nh.djf.png","DJF")+"</td><td>"+table_link_setup(OUTDIR,"aice.mean.nh.mam.png","MAM")+"</td><td>"+table_link_setup(OUTDIR,"aice.mean.nh.jja.png","JJA")+"</td><td>"+table_link_setup(OUTDIR,"aice.mean.nh.son.png","SON")+"</td><td>"+table_link_setup(OUTDIR,"aice.mean.nh.ann.png","Annual")+"</td></tr>"      
   txt(35) = "<tr><td><b>SIC SH</b></td><td>"+table_link_setup(OUTDIR,"aice.mean.sh.djf.png","DJF")+"</td><td>"+table_link_setup(OUTDIR,"aice.mean.sh.mam.png","MAM")+"</td><td>"+table_link_setup(OUTDIR,"aice.mean.sh.jja.png","JJA")+"</td><td>"+table_link_setup(OUTDIR,"aice.mean.sh.son.png","SON")+"</td><td>"+table_link_setup(OUTDIR,"aice.mean.sh.ann.png","Annual")+"</td></tr>"      
-  txt(36) = "</table>"  
+  txt(36) = "</table></div></div>"  
   
-  txt(39) = ""
-  txt(40) = "<br><TABLE width='600' border=1 frame=void rules=all cellpadding=6 bordercolor=darkgray>"
-  txt(41) = "<CAPTION>Standard Deviations</CAPTION>"
+  txt(38) = "<div class="+quote+"row"+quote+">"
+  txt(39) = "<div class="+quote+"col"+quote+">"
+  txt(40) = "<table class="+quote+"table table-striped table-bordered"+quote+">"
+  txt(41) = "<h3 class="+quote+"display-6"+quote+">Standard Deviations</h3>"
   txt(42) = "<tr><td><b>SST</b></td><td>"+table_link_setup(OUTDIR,"sst.stddev.djf.png","DJF")+"</td><td>"+table_link_setup(OUTDIR,"sst.stddev.mam.png","MAM")+"</td><td>"+table_link_setup(OUTDIR,"sst.stddev.jja.png","JJA")+"</td><td>"+table_link_setup(OUTDIR,"sst.stddev.son.png","SON")+"</td><td>"+table_link_setup(OUTDIR,"sst.stddev.ann.png","Annual")+"</td></tr>"    
   txt(43) = "<tr><td><b>TAS</b></td><td>"+table_link_setup(OUTDIR,"tas.stddev.djf.png","DJF")+"</td><td>"+table_link_setup(OUTDIR,"tas.stddev.mam.png","MAM")+"</td><td>"+table_link_setup(OUTDIR,"tas.stddev.jja.png","JJA")+"</td><td>"+table_link_setup(OUTDIR,"tas.stddev.son.png","SON")+"</td><td>"+table_link_setup(OUTDIR,"tas.stddev.ann.png","Annual")+"</td></tr>"    
   txt(44) = "<tr><td><b>PSL</b></td><td>"+table_link_setup(OUTDIR,"psl.stddev.djf.png","DJF")+"</td><td>"+table_link_setup(OUTDIR,"psl.stddev.mam.png","MAM")+"</td><td>"+table_link_setup(OUTDIR,"psl.stddev.jja.png","JJA")+"</td><td>"+table_link_setup(OUTDIR,"psl.stddev.son.png","SON")+"</td><td>"+table_link_setup(OUTDIR,"psl.stddev.ann.png","Annual")+"</td></tr>"    
@@ -93,47 +107,50 @@ begin
   txt(46) = "<tr><td><b>SND</b></td><td>"+table_link_setup(OUTDIR,"snd.stddev.djf.png","DJF")+"</td><td>"+table_link_setup(OUTDIR,"snd.stddev.mam.png","MAM")+"</td><td>"+table_link_setup(OUTDIR,"snd.stddev.jja.png","JJA")+"</td><td>"+table_link_setup(OUTDIR,"snd.stddev.son.png","SON")+"</td><td>"+table_link_setup(OUTDIR,"snd.stddev.ann.png","Annual")+"</td></tr>"    
   txt(47) = "<tr><td><b>SIC NH</b></td><td>"+table_link_setup(OUTDIR,"aice.stddev.nh.djf.png","DJF")+"</td><td>"+table_link_setup(OUTDIR,"aice.stddev.nh.mam.png","MAM")+"</td><td>"+table_link_setup(OUTDIR,"aice.stddev.nh.jja.png","JJA")+"</td><td>"+table_link_setup(OUTDIR,"aice.stddev.nh.son.png","SON")+"</td><td>"+table_link_setup(OUTDIR,"aice.stddev.nh.ann.png","Annual")+"</td></tr>"      
   txt(48) = "<tr><td><b>SIC SH</b></td><td>"+table_link_setup(OUTDIR,"aice.stddev.sh.djf.png","DJF")+"</td><td>"+table_link_setup(OUTDIR,"aice.stddev.sh.mam.png","MAM")+"</td><td>"+table_link_setup(OUTDIR,"aice.stddev.sh.jja.png","JJA")+"</td><td>"+table_link_setup(OUTDIR,"aice.stddev.sh.son.png","SON")+"</td><td>"+table_link_setup(OUTDIR,"aice.stddev.sh.ann.png","Annual")+"</td></tr>"      
-  txt(49) = "</table>"  
+  txt(49) = "</table></div></div>"  
   
-  txt(69) = ""
-  txt(70) = "<br><TABLE width='600' border=1 frame=void rules=all cellpadding=6 bordercolor=darkgray>"
-  txt(71) = "<CAPTION>Coupled Modes of Variability</CAPTION>"  
-  txt(72) = "<tr><td class=s2 rowspan=5><b>ENSO</b></td>"
+  txt(68) = "<div class="+quote+"row"+quote+">"
+  txt(69) = "<div class="+quote+"col"+quote+">"  
+  txt(70) = "<table class="+quote+"table table-bordered"+quote+">"
+  txt(71) = "<h3 class="+quote+"display-6"+quote+">Coupled Modes of Variability</h3>"  
+  txt(72) = "<tr><td rowspan=5><b>ENSO</b></td>"
   txt(73) = "<td rowspan=2>Spatial Composites</td><td>SST/TAS/PSL<br>"+table_link_setup(OUTDIR,"nino34.spatialcomp.jja0.png","JJA<sup>0</sup>")+" "+table_link_setup(OUTDIR,"nino34.spatialcomp.son0.png","SON<sup>0</sup>")+"<br>"+table_link_setup(OUTDIR,"nino34.spatialcomp.djf1.png","DJF<sup>+1</sup>")+" "+table_link_setup(OUTDIR,"nino34.spatialcomp.mam1.png","MAM<sup>+1</sup>")+"</td>"
   txt(74) = "<td>PR<br>"+table_link_setup(OUTDIR,"nino34.spatialcomp.pr.jja0.png","JJA<sup>0</sup>")+" "+table_link_setup(OUTDIR,"nino34.spatialcomp.pr.son0.png","SON<sup>0</sup>")+"<br>"+table_link_setup(OUTDIR,"nino34.spatialcomp.pr.djf1.png","DJF<sup>+1</sup>")+" "+table_link_setup(OUTDIR,"nino34.spatialcomp.pr.mam1.png","MAM<sup>+1</sup>")+"</td></tr>"
   txt(75) = "<tr><td>"+table_link_setup(OUTDIR,"nino34.hov.elnino.png","El Ni&ntilde;o Hovm&ouml;ller")+"</td><td>"+table_link_setup(OUTDIR,"nino34.hov.lanina.png","La Ni&ntilde;a Hovm&ouml;ller")+"</td></tr>"
-  txt(76) = "<tr class=s1><td class=s2 rowspan=3>Ni&ntilde;o3.4</td><td>"+table_link_setup(OUTDIR,"nino34.timeseries.png","Timeseries")+"</td><td>"+table_link_setup(OUTDIR,"nino34.powspec.png","Power Spectra")+"</td></tr>"
+  txt(76) = "<tr class=s1><td rowspan=3>Ni&ntilde;o3.4</td><td>"+table_link_setup(OUTDIR,"nino34.timeseries.png","Timeseries")+"</td><td>"+table_link_setup(OUTDIR,"nino34.powspec.png","Power Spectra")+"</td></tr>"
   txt(77) = "<tr><td>"+table_link_setup(OUTDIR,"nino34.monstddev.png","Monthly  Std. Dev.")+"</td><td>"+table_link_setup(OUTDIR,"nino34.runstddev.png","Running Std. Dev.")+"</td></tr>"
-  txt(78) = "<tr><td class=s2>"+table_link_setup(OUTDIR,"nino34.autocor.png","Autocorrelation")+"</td><td class=s2>"+table_link_setup(OUTDIR,"nino34.wavelet.png","Wavelet Analysis")+"</td></tr>"
+  txt(78) = "<tr><td>"+table_link_setup(OUTDIR,"nino34.autocor.png","Autocorrelation")+"</td><td>"+table_link_setup(OUTDIR,"nino34.wavelet.png","Wavelet Analysis")+"</td></tr>"
 
   txt(90) = "<tr><td><b>PDO</b></td>"  
   txt(91) = "<td>Regr: &nbsp;"+table_link_setup(OUTDIR,"pdo.png","SST")+"&nbsp;"+table_link_setup(OUTDIR,"pdo.tasreg.png","TAS")+"&nbsp;"+table_link_setup(OUTDIR,"pdo.prreg.png","PR")+"</td>"
   txt(92) = "<td>"+table_link_setup(OUTDIR,"pdo.timeseries.png","Timeseries")+"</td>"
   txt(93) = "<td>"+table_link_setup(OUTDIR,"pdo.powspec.png","Power Spectra")+"</td></tr>" 
-  txt(94) = "<tr><td class=s2><b>IPO</b></td>"  
-  txt(95) = "<td class=s2>Regr: &nbsp;"+table_link_setup(OUTDIR,"ipo.png","SST")+"&nbsp"+table_link_setup(OUTDIR,"ipo.tasreg.png","TAS")+"&nbsp;"+table_link_setup(OUTDIR,"ipo.prreg.png","PR")+"</td>"
-  txt(96) = "<td class=s2>"+table_link_setup(OUTDIR,"ipo.timeseries.png","Timeseries")+"</td>"
-  txt(97) = "<td class=s2>"+table_link_setup(OUTDIR,"ipo.powspec.png","Power Spectra")+"</td></tr>" 
+  txt(94) = "<tr><td><b>IPO</b></td>"  
+  txt(95) = "<td>Regr: &nbsp;"+table_link_setup(OUTDIR,"ipo.png","SST")+"&nbsp"+table_link_setup(OUTDIR,"ipo.tasreg.png","TAS")+"&nbsp;"+table_link_setup(OUTDIR,"ipo.prreg.png","PR")+"</td>"
+  txt(96) = "<td>"+table_link_setup(OUTDIR,"ipo.timeseries.png","Timeseries")+"</td>"
+  txt(97) = "<td>"+table_link_setup(OUTDIR,"ipo.powspec.png","Power Spectra")+"</td></tr>" 
 
   txt(101) = "<tr><td rowspan=2><b>AMO</b></td>"  
   txt(102) = "<td>Regr: &nbsp;"+table_link_setup(OUTDIR,"amo.png","SST")+"&nbsp;"+table_link_setup(OUTDIR,"amo.tasreg.png","TAS")+"&nbsp;"+table_link_setup(OUTDIR,"amo.prreg.png","PR")+"</td>"
   txt(103) = "<td rowspan=2>"+table_link_setup(OUTDIR,"amo.timeseries.png","Timeseries")+"</td>"
   txt(104) = "<td rowspan=2>"+table_link_setup(OUTDIR,"amo.powspec.png","Power Spectra")+"</td></tr>" 
   txt(105) = "<tr><td>Regr LP: &nbsp;"+table_link_setup(OUTDIR,"amo.lp.png","SST")+"&nbsp;"+table_link_setup(OUTDIR,"amo.lp.tasreg.png","TAS")+"&nbsp;"+table_link_setup(OUTDIR,"amo.lp.prreg.png","PR")+"</td></tr>"
-  txt(106) = "<tr><td class=s2 rowspan=3><b>AMOC</b></td>"  
+  txt(106) = "<tr><td rowspan=3><b>AMOC</b></td>"  
   txt(107) = "<td>"+table_link_setup(OUTDIR,"amoc.mean.ann.png","Means")+"</td>"
   txt(108) = "<td>"+table_link_setup(OUTDIR,"amoc.stddev.ann.png","Standard Deviations")+"</td>"
   txt(109) = "<td>"+table_link_setup(OUTDIR,"amoc.ann.png","Patterns")+"</td></tr>"
   txt(110) = "<tr><td>"+table_link_setup(OUTDIR,"amoc.timeseries.ann.png","Timeseries")+"</td>"
   txt(111) = "<td>"+table_link_setup(OUTDIR,"amoc.sstreg.ann.png","SST Regressions")+"</td>"
   txt(112) = "<td>"+table_link_setup(OUTDIR,"amoc.tasreg.ann.png","TAS Regressions")+"</td></tr>"
-  txt(113) = "<tr><td class=s2>"+table_link_setup(OUTDIR,"amoc.powspec.ann.png","Spectra")+"</td>"
-  txt(114) = "<td class=s2 colspan=2>"+table_link_setup(OUTDIR,"amoc_amo.leadlag.ann.png","AMO/AMOC Lag Correlations")+"</td></tr></table>" 
+  txt(113) = "<tr><td>"+table_link_setup(OUTDIR,"amoc.powspec.ann.png","Spectra")+"</td>"
+  txt(114) = "<td colspan=2>"+table_link_setup(OUTDIR,"amoc_amo.leadlag.ann.png","AMO/AMOC Lag Correlations")+"</td></tr></table></div></div>" 
 
 
-
-  txt(130) = "<br><TABLE width='600' border=1 frame=void rules=all cellpadding=6 bordercolor=darkgray><CAPTION>Atmospheric Modes of Variability</CAPTION>"  
-  txt(131) = "<tr><td rowspan=4 class=s2><b>NAM</b></td>"
+  txt(127) = "<div class="+quote+"row"+quote+">"
+  txt(128) = "<div class="+quote+"col"+quote+">"
+  txt(129) = "<table class="+quote+"table table-striped table-bordered"+quote+">"
+  txt(130) = "<h3 class="+quote+"display-6"+quote+">Atmospheric Modes of Variability</h3>"  
+  txt(131) = "<tr><td rowspan=4><b>NAM</b></td>"
   txt(132) = "<td>Patterns</td><td>"+table_link_setup(OUTDIR,"nam.djf.png","DJF")+"</td><td>"+table_link_setup(OUTDIR,"nam.mam.png","MAM")+"</td>"
   txt(133) = "<td>"+table_link_setup(OUTDIR,"nam.jja.png","JJA")+"</td><td>"+table_link_setup(OUTDIR,"nam.son.png","SON")+"</td>"
   txt(134) = "<td>"+table_link_setup(OUTDIR,"nam.ann.png","Annual")+"</td><td>"+table_link_setup(OUTDIR,"nam.mon.png","Monthly")+"</td></tr>"
@@ -143,12 +160,12 @@ begin
   txt(138) = "<tr><td>SST/TAS Regressions</td><td>"+table_link_setup(OUTDIR,"nam.tempreg.djf.png","DJF")+"</td><td>"+table_link_setup(OUTDIR,"nam.tempreg.mam.png","MAM")+"</td>"
   txt(139) = "<td>"+table_link_setup(OUTDIR,"nam.tempreg.jja.png","JJA")+"</td><td>"+table_link_setup(OUTDIR,"nam.tempreg.son.png","SON")+"</td>"
   txt(140) = "<td>"+table_link_setup(OUTDIR,"nam.tempreg.ann.png","Annual")+"</td><td>"+table_link_setup(OUTDIR,"nam.tempreg.mon.png","Monthly")+"</td></tr>"
-  txt(141) = "<tr><td class=s2>PR Regressions</td><td class=s2>"+table_link_setup(OUTDIR,"nam.prreg.djf.png","DJF")+"</td><td class=s2>"+table_link_setup(OUTDIR,"nam.prreg.mam.png","MAM")+"</td>"
-  txt(142) = "<td class=s2>"+table_link_setup(OUTDIR,"nam.prreg.jja.png","JJA")+"</td><td class=s2>"+table_link_setup(OUTDIR,"nam.prreg.son.png","SON")+"</td>"
-  txt(143) = "<td class=s2>"+table_link_setup(OUTDIR,"nam.prreg.ann.png","Annual")+"</td><td class=s2>"+table_link_setup(OUTDIR,"nam.prreg.mon.png","Monthly")+"</td></tr>"
+  txt(141) = "<tr><td>PR Regressions</td><td>"+table_link_setup(OUTDIR,"nam.prreg.djf.png","DJF")+"</td><td>"+table_link_setup(OUTDIR,"nam.prreg.mam.png","MAM")+"</td>"
+  txt(142) = "<td>"+table_link_setup(OUTDIR,"nam.prreg.jja.png","JJA")+"</td><td>"+table_link_setup(OUTDIR,"nam.prreg.son.png","SON")+"</td>"
+  txt(143) = "<td>"+table_link_setup(OUTDIR,"nam.prreg.ann.png","Annual")+"</td><td>"+table_link_setup(OUTDIR,"nam.prreg.mon.png","Monthly")+"</td></tr>"
 
   txt(159) = ""
-  txt(160) = "<tr><td rowspan=4 class=s2><b>SAM</b></td>"
+  txt(160) = "<tr><td rowspan=4><b>SAM</b></td>"
   txt(161) = "<td>Patterns</td><td>"+table_link_setup(OUTDIR,"sam.djf.png","DJF")+"</td><td>"+table_link_setup(OUTDIR,"sam.mam.png","MAM")+"</td>"
   txt(162) = "<td>"+table_link_setup(OUTDIR,"sam.jja.png","JJA")+"</td><td>"+table_link_setup(OUTDIR,"sam.son.png","SON")+"</td>"
   txt(163) = "<td>"+table_link_setup(OUTDIR,"sam.ann.png","Annual")+"</td><td>"+table_link_setup(OUTDIR,"sam.mon.png","Monthly")+"</td></tr>"
@@ -158,12 +175,12 @@ begin
   txt(167) = "<tr><td>SST/TAS Regressions</td><td>"+table_link_setup(OUTDIR,"sam.tempreg.djf.png","DJF")+"</td><td>"+table_link_setup(OUTDIR,"sam.tempreg.mam.png","MAM")+"</td>"
   txt(168) = "<td>"+table_link_setup(OUTDIR,"sam.tempreg.jja.png","JJA")+"</td><td>"+table_link_setup(OUTDIR,"sam.tempreg.son.png","SON")+"</td>"
   txt(169) = "<td>"+table_link_setup(OUTDIR,"sam.tempreg.ann.png","Annual")+"</td><td>"+table_link_setup(OUTDIR,"sam.tempreg.mon.png","Monthly")+"</td></tr>"
-  txt(170) = "<tr><td class=s2>PR Regressions</td><td class=s2>"+table_link_setup(OUTDIR,"sam.prreg.djf.png","DJF")+"</td><td class=s2>"+table_link_setup(OUTDIR,"sam.prreg.mam.png","MAM")+"</td>"
-  txt(171) = "<td class=s2>"+table_link_setup(OUTDIR,"sam.prreg.jja.png","JJA")+"</td><td class=s2>"+table_link_setup(OUTDIR,"sam.prreg.son.png","SON")+"</td>"
-  txt(172) = "<td class=s2>"+table_link_setup(OUTDIR,"sam.prreg.ann.png","Annual")+"</td><td class=s2>"+table_link_setup(OUTDIR,"sam.prreg.mon.png","Monthly")+"</td></tr>"
+  txt(170) = "<tr><td>PR Regressions</td><td>"+table_link_setup(OUTDIR,"sam.prreg.djf.png","DJF")+"</td><td>"+table_link_setup(OUTDIR,"sam.prreg.mam.png","MAM")+"</td>"
+  txt(171) = "<td>"+table_link_setup(OUTDIR,"sam.prreg.jja.png","JJA")+"</td><td>"+table_link_setup(OUTDIR,"sam.prreg.son.png","SON")+"</td>"
+  txt(172) = "<td>"+table_link_setup(OUTDIR,"sam.prreg.ann.png","Annual")+"</td><td>"+table_link_setup(OUTDIR,"sam.prreg.mon.png","Monthly")+"</td></tr>"
 
   txt(189) = ""
-  txt(190) = "<tr><td rowspan=4 class=s2><b>NAO</b></td>"
+  txt(190) = "<tr><td rowspan=4><b>NAO</b></td>"
   txt(191) = "<td>Patterns</td><td>"+table_link_setup(OUTDIR,"nao.djf.png","DJF")+"</td><td>"+table_link_setup(OUTDIR,"nao.mam.png","MAM")+"</td>"
   txt(192) = "<td>"+table_link_setup(OUTDIR,"nao.jja.png","JJA")+"</td><td>"+table_link_setup(OUTDIR,"nao.son.png","SON")+"</td>"
   txt(193) = "<td>"+table_link_setup(OUTDIR,"nao.ann.png","Annual")+"</td><td>"+table_link_setup(OUTDIR,"nao.mon.png","Monthly")+"</td></tr>"
@@ -173,12 +190,12 @@ begin
   txt(197) = "<tr><td>SST/TAS Regressions</td><td>"+table_link_setup(OUTDIR,"nao.tempreg.djf.png","DJF")+"</td><td>"+table_link_setup(OUTDIR,"nao.tempreg.mam.png","MAM")+"</td>"
   txt(198) = "<td>"+table_link_setup(OUTDIR,"nao.tempreg.jja.png","JJA")+"</td><td>"+table_link_setup(OUTDIR,"nao.tempreg.son.png","SON")+"</td>"
   txt(199) = "<td>"+table_link_setup(OUTDIR,"nao.tempreg.ann.png","Annual")+"</td><td>"+table_link_setup(OUTDIR,"nao.tempreg.mon.png","Monthly")+"</td></tr>"
-  txt(200) = "<tr><td class=s2>PR Regressions</td><td class=s2>"+table_link_setup(OUTDIR,"nao.prreg.djf.png","DJF")+"</td><td class=s2>"+table_link_setup(OUTDIR,"nao.prreg.mam.png","MAM")+"</td>"
-  txt(201) = "<td class=s2>"+table_link_setup(OUTDIR,"nao.prreg.jja.png","JJA")+"</td><td class=s2>"+table_link_setup(OUTDIR,"nao.prreg.son.png","SON")+"</td>"
-  txt(202) = "<td class=s2>"+table_link_setup(OUTDIR,"nao.prreg.ann.png","Annual")+"</td><td class=s2>"+table_link_setup(OUTDIR,"nao.prreg.mon.png","Monthly")+"</td></tr>"
+  txt(200) = "<tr><td>PR Regressions</td><td>"+table_link_setup(OUTDIR,"nao.prreg.djf.png","DJF")+"</td><td>"+table_link_setup(OUTDIR,"nao.prreg.mam.png","MAM")+"</td>"
+  txt(201) = "<td>"+table_link_setup(OUTDIR,"nao.prreg.jja.png","JJA")+"</td><td>"+table_link_setup(OUTDIR,"nao.prreg.son.png","SON")+"</td>"
+  txt(202) = "<td>"+table_link_setup(OUTDIR,"nao.prreg.ann.png","Annual")+"</td><td>"+table_link_setup(OUTDIR,"nao.prreg.mon.png","Monthly")+"</td></tr>"
 
   txt(219) = ""
-  txt(220) = "<tr><td rowspan=4 class=s2><b>PNA</b></td>"
+  txt(220) = "<tr><td rowspan=4><b>PNA</b></td>"
   txt(221) = "<td>Patterns</td><td>"+table_link_setup(OUTDIR,"pna.djf.png","DJF")+"</td><td>"+table_link_setup(OUTDIR,"pna.mam.png","MAM")+"</td>"
   txt(222) = "<td>"+table_link_setup(OUTDIR,"pna.jja.png","JJA")+"</td><td>"+table_link_setup(OUTDIR,"pna.son.png","SON")+"</td>"
   txt(223) = "<td>"+table_link_setup(OUTDIR,"pna.ann.png","Annual")+"</td><td>"+table_link_setup(OUTDIR,"pna.mon.png","Monthly")+"</td></tr>"
@@ -188,12 +205,12 @@ begin
   txt(227) = "<tr><td>SST/TAS Regressions</td><td>"+table_link_setup(OUTDIR,"pna.tempreg.djf.png","DJF")+"</td><td>"+table_link_setup(OUTDIR,"pna.tempreg.mam.png","MAM")+"</td>"
   txt(228) = "<td>"+table_link_setup(OUTDIR,"pna.tempreg.jja.png","JJA")+"</td><td>"+table_link_setup(OUTDIR,"pna.tempreg.son.png","SON")+"</td>"
   txt(229) = "<td>"+table_link_setup(OUTDIR,"pna.tempreg.ann.png","Annual")+"</td><td>"+table_link_setup(OUTDIR,"pna.tempreg.mon.png","Monthly")+"</td></tr>"
-  txt(230) = "<tr><td class=s2>PR Regressions</td><td class=s2>"+table_link_setup(OUTDIR,"pna.prreg.djf.png","DJF")+"</td><td class=s2>"+table_link_setup(OUTDIR,"pna.prreg.mam.png","MAM")+"</td>"
-  txt(231) = "<td class=s2>"+table_link_setup(OUTDIR,"pna.prreg.jja.png","JJA")+"</td><td class=s2>"+table_link_setup(OUTDIR,"pna.prreg.son.png","SON")+"</td>"
-  txt(232) = "<td class=s2>"+table_link_setup(OUTDIR,"pna.prreg.ann.png","Annual")+"</td><td class=s2>"+table_link_setup(OUTDIR,"pna.prreg.mon.png","Monthly")+"</td></tr>"
+  txt(230) = "<tr><td>PR Regressions</td><td>"+table_link_setup(OUTDIR,"pna.prreg.djf.png","DJF")+"</td><td>"+table_link_setup(OUTDIR,"pna.prreg.mam.png","MAM")+"</td>"
+  txt(231) = "<td>"+table_link_setup(OUTDIR,"pna.prreg.jja.png","JJA")+"</td><td>"+table_link_setup(OUTDIR,"pna.prreg.son.png","SON")+"</td>"
+  txt(232) = "<td>"+table_link_setup(OUTDIR,"pna.prreg.ann.png","Annual")+"</td><td>"+table_link_setup(OUTDIR,"pna.prreg.mon.png","Monthly")+"</td></tr>"
 
   txt(249) = ""
-  txt(250) = "<tr><td rowspan=4 class=s2><b>NPO</b></td>"
+  txt(250) = "<tr><td rowspan=4><b>NPO</b></td>"
   txt(251) = "<td>Patterns</td><td>"+table_link_setup(OUTDIR,"npo.djf.png","DJF")+"</td><td>"+table_link_setup(OUTDIR,"npo.mam.png","MAM")+"</td>"
   txt(252) = "<td>"+table_link_setup(OUTDIR,"npo.jja.png","JJA")+"</td><td>"+table_link_setup(OUTDIR,"npo.son.png","SON")+"</td>"
   txt(253) = "<td>"+table_link_setup(OUTDIR,"npo.ann.png","Annual")+"</td><td>"+table_link_setup(OUTDIR,"npo.mon.png","Monthly")+"</td></tr>"
@@ -203,12 +220,12 @@ begin
   txt(257) = "<tr><td>SST/TAS Regressions</td><td>"+table_link_setup(OUTDIR,"npo.tempreg.djf.png","DJF")+"</td><td>"+table_link_setup(OUTDIR,"npo.tempreg.mam.png","MAM")+"</td>"
   txt(258) = "<td>"+table_link_setup(OUTDIR,"npo.tempreg.jja.png","JJA")+"</td><td>"+table_link_setup(OUTDIR,"npo.tempreg.son.png","SON")+"</td>"
   txt(259) = "<td>"+table_link_setup(OUTDIR,"npo.tempreg.ann.png","Annual")+"</td><td>"+table_link_setup(OUTDIR,"npo.tempreg.mon.png","Monthly")+"</td></tr>"
-  txt(260) = "<tr><td class=s2>PR Regressions</td><td class=s2>"+table_link_setup(OUTDIR,"npo.prreg.djf.png","DJF")+"</td><td class=s2>"+table_link_setup(OUTDIR,"npo.prreg.mam.png","MAM")+"</td>"
-  txt(261) = "<td class=s2>"+table_link_setup(OUTDIR,"npo.prreg.jja.png","JJA")+"</td><td class=s2>"+table_link_setup(OUTDIR,"npo.prreg.son.png","SON")+"</td>"
-  txt(262) = "<td class=s2>"+table_link_setup(OUTDIR,"npo.prreg.ann.png","Annual")+"</td><td class=s2>"+table_link_setup(OUTDIR,"npo.prreg.mon.png","Monthly")+"</td></tr>"
+  txt(260) = "<tr><td>PR Regressions</td><td>"+table_link_setup(OUTDIR,"npo.prreg.djf.png","DJF")+"</td><td>"+table_link_setup(OUTDIR,"npo.prreg.mam.png","MAM")+"</td>"
+  txt(261) = "<td>"+table_link_setup(OUTDIR,"npo.prreg.jja.png","JJA")+"</td><td>"+table_link_setup(OUTDIR,"npo.prreg.son.png","SON")+"</td>"
+  txt(262) = "<td>"+table_link_setup(OUTDIR,"npo.prreg.ann.png","Annual")+"</td><td>"+table_link_setup(OUTDIR,"npo.prreg.mon.png","Monthly")+"</td></tr>"
 
   txt(279) = ""
-  txt(280) = "<tr><td rowspan=4 class=s2><b>PSA1</b></td>"
+  txt(280) = "<tr><td rowspan=4><b>PSA1</b></td>"
   txt(281) = "<td>Patterns</td><td>"+table_link_setup(OUTDIR,"psa1.djf.png","DJF")+"</td><td>"+table_link_setup(OUTDIR,"psa1.mam.png","MAM")+"</td>"
   txt(282) = "<td>"+table_link_setup(OUTDIR,"psa1.jja.png","JJA")+"</td><td>"+table_link_setup(OUTDIR,"psa1.son.png","SON")+"</td>"
   txt(283) = "<td>"+table_link_setup(OUTDIR,"psa1.ann.png","Annual")+"</td><td>"+table_link_setup(OUTDIR,"psa1.mon.png","Monthly")+"</td></tr>"
@@ -218,9 +235,9 @@ begin
   txt(287) = "<tr><td>SST/TAS Regressions</td><td>"+table_link_setup(OUTDIR,"psa1.tempreg.djf.png","DJF")+"</td><td>"+table_link_setup(OUTDIR,"psa1.tempreg.mam.png","MAM")+"</td>"
   txt(288) = "<td>"+table_link_setup(OUTDIR,"psa1.tempreg.jja.png","JJA")+"</td><td>"+table_link_setup(OUTDIR,"psa1.tempreg.son.png","SON")+"</td>"
   txt(289) = "<td>"+table_link_setup(OUTDIR,"psa1.tempreg.ann.png","Annual")+"</td><td>"+table_link_setup(OUTDIR,"psa1.tempreg.mon.png","Monthly")+"</td></tr>"
-  txt(290) = "<tr><td class=s2>PR Regressions</td><td class=s2>"+table_link_setup(OUTDIR,"psa1.prreg.djf.png","DJF")+"</td><td class=s2>"+table_link_setup(OUTDIR,"psa1.prreg.mam.png","MAM")+"</td>"
-  txt(291) = "<td class=s2>"+table_link_setup(OUTDIR,"psa1.prreg.jja.png","JJA")+"</td><td class=s2>"+table_link_setup(OUTDIR,"psa1.prreg.son.png","SON")+"</td>"
-  txt(292) = "<td class=s2>"+table_link_setup(OUTDIR,"psa1.prreg.ann.png","Annual")+"</td><td class=s2>"+table_link_setup(OUTDIR,"psa1.prreg.mon.png","Monthly")+"</td></tr>"
+  txt(290) = "<tr><td>PR Regressions</td><td>"+table_link_setup(OUTDIR,"psa1.prreg.djf.png","DJF")+"</td><td>"+table_link_setup(OUTDIR,"psa1.prreg.mam.png","MAM")+"</td>"
+  txt(291) = "<td>"+table_link_setup(OUTDIR,"psa1.prreg.jja.png","JJA")+"</td><td>"+table_link_setup(OUTDIR,"psa1.prreg.son.png","SON")+"</td>"
+  txt(292) = "<td>"+table_link_setup(OUTDIR,"psa1.prreg.ann.png","Annual")+"</td><td>"+table_link_setup(OUTDIR,"psa1.prreg.mon.png","Monthly")+"</td></tr>"
 
   txt(309) = ""
   txt(310) = "<tr><td rowspan=4><b>PSA2</b></td>"
@@ -236,11 +253,12 @@ begin
   txt(320) = "<tr><td>PR Regressions</td><td>"+table_link_setup(OUTDIR,"psa2.prreg.djf.png","DJF")+"</td><td>"+table_link_setup(OUTDIR,"psa2.prreg.mam.png","MAM")+"</td>"
   txt(321) = "<td>"+table_link_setup(OUTDIR,"psa2.prreg.jja.png","JJA")+"</td><td>"+table_link_setup(OUTDIR,"psa2.prreg.son.png","SON")+"</td>"
   txt(322) = "<td>"+table_link_setup(OUTDIR,"psa2.prreg.ann.png","Annual")+"</td><td>"+table_link_setup(OUTDIR,"psa2.prreg.mon.png","Monthly")+"</td></tr>"
-  txt(323) = "</tr></table>"
+  txt(323) = "</tr></table></div></div>"
 
-  txt(330) = ""
-  txt(331) = "<br><TABLE width='600' border=1 frame=void rules=all cellpadding=6 bordercolor=darkgray>"
-  txt(332) = "<CAPTION>Ice Extent Timeseries</CAPTION>"
+  txt(329) = "<div class="+quote+"row"+quote+">"
+  txt(330) = "<div class="+quote+"col"+quote+">"
+  txt(331) = "<table class="+quote+"table table-striped table-bordered"+quote+">"
+  txt(332) = "<h3 class="+quote+"display-6"+quote+">Ice Extent Timeseries</h3>"
   txt(333) = "<tr><td rowspan=2><b>SIC NH</b></td><td>"+table_link_setup(OUTDIR,"aice.extent.nh.djf.png","DJF")+"</td>"
   txt(334) = "<td>"+table_link_setup(OUTDIR,"aice.extent.nh.mam.png","MAM")+"</td>"
   txt(335) = "<td>"+table_link_setup(OUTDIR,"aice.extent.nh.jja.png","JJA")+"</td>"
@@ -258,12 +276,13 @@ begin
   txt(348) = "<td>"+table_link_setup(OUTDIR,"aice.extent.sh.mon.png","Monthly")+"</td></tr>"
   txt(349) = "<tr><td colspan=2>"+table_link_setup(OUTDIR,"aice.extent.sh.feb.png","Feb")+"&nbsp;&nbsp;"+table_link_setup(OUTDIR,"aice.extent.sh.mar.png","Mar")+"&nbsp;&nbsp;"+table_link_setup(OUTDIR,"aice.extent.sh.sep.png","Sep")+"</td>"
   txt(351) = "<td colspan=2>"+table_link_setup(OUTDIR,"aice.extent.anom.sh.mon.png","Monthly Anomalies")+"</td>"
-  txt(352) = "<td colspan=2>"+table_link_setup(OUTDIR,"aice.extent.sh.climo.png","Climatology")+"</td></tr></table>"
+  txt(352) = "<td colspan=2>"+table_link_setup(OUTDIR,"aice.extent.sh.climo.png","Climatology")+"</td></tr></table></div></div>"
 
 
-  txt(361) = ""
-  txt(362) = "<br><TABLE width='600' border=1 frame=void rules=all cellpadding=6 bordercolor=darkgray>"
-  txt(363) = "<CAPTION>Global Trend Maps</CAPTION>"
+  txt(360) = "<div class="+quote+"row"+quote+">"
+  txt(361) = "<div class="+quote+"col"+quote+">"
+  txt(362) = "<table class="+quote+"table table-striped table-bordered"+quote+">"
+  txt(363) = "<h3 class="+quote+"display-6"+quote+">Global Trend Maps</h3>"
   txt(364) = "<tr><td><b>SST</b></td><td>"+table_link_setup(OUTDIR,"sst.trends.djf.png","DJF")+"</td>"
   txt(365) = "<td>"+table_link_setup(OUTDIR,"sst.trends.mam.png","MAM")+"</td>"
   txt(366) = "<td>"+table_link_setup(OUTDIR,"sst.trends.jja.png","JJA")+"</td>"
@@ -305,11 +324,12 @@ begin
   txt(402) = "<td>"+table_link_setup(OUTDIR,"aice.trends.sh.jja.png","JJA")+"</td>"
   txt(403) = "<td>"+table_link_setup(OUTDIR,"aice.trends.sh.son.png","SON")+"</td>"
   txt(404) = "<td>"+table_link_setup(OUTDIR,"aice.trends.sh.ann.png","Annual")+"</td>"
-  txt(405) = "<td>"+table_link_setup(OUTDIR,"aice.trends.sh.mon.png","Monthly")+"</td></tr></table>"
+  txt(405) = "<td>"+table_link_setup(OUTDIR,"aice.trends.sh.mon.png","Monthly")+"</td></tr></table></div></div>"
 
-  txt(429) = ""
-  txt(430) = "<br><TABLE width='600' border=1 frame=void rules=all cellpadding=6 bordercolor=darkgray>"
-  txt(431) = "<CAPTION>Globally-Averaged Timeseries</CAPTION>"
+  txt(428) = "<div class="+quote+"row"+quote+">"
+  txt(429) = "<div class="+quote+"col"+quote+">"
+  txt(430) = "<table class="+quote+"table table-striped table-bordered"+quote+">"
+  txt(431) = "<h3 class="+quote+"display-6"+quote+">Globally-Averaged Timeseries</h3>"
   txt(432) = "<tr><td><b>SST</b></td><td>"+table_link_setup(OUTDIR,"sst.timeseries.djf.png","DJF")+"</td>"
   txt(433) = "<td>"+table_link_setup(OUTDIR,"sst.timeseries.mam.png","MAM")+"</td>"
   txt(434) = "<td>"+table_link_setup(OUTDIR,"sst.timeseries.jja.png","JJA")+"</td>"
@@ -328,11 +348,12 @@ begin
   txt(447) = "<td>"+table_link_setup(OUTDIR,"pr.timeseries.son.png","SON")+"</td>"
   txt(448) = "<td>"+table_link_setup(OUTDIR,"pr.timeseries.ann.png","Annual")+"</td>"
   txt(449) = "<td>"+table_link_setup(OUTDIR,"pr.timeseries.mon.png","Monthly")+"</td></tr>"
-  txt(450) = "</table>"
+  txt(450) = "</table></div></div>"
 
-  txt(574) = ""
-  txt(575) = "<br><TABLE width='600' border=1 frame=void rules=all cellpadding=6 bordercolor=darkgray>"
-  txt(576) = "<CAPTION>Running Trends of Globally-Averaged Monthly Timeseries</CAPTION>"
+  txt(573) = "<div class="+quote+"row"+quote+">"
+  txt(574) = "<div class="+quote+"col"+quote+">"
+  txt(575) = "<table class="+quote+"table table-striped table-bordered"+quote+">"
+  txt(576) = "<h3 class="+quote+"display-6"+quote+">Running Trends of Globally-Averaged Monthly Timeseries</h3>"
   txt(577) = "<tr><td><b>SST</b></td><td>"+table_link_setup(OUTDIR,"sst.8yr_runtrend.mon.png","8yr")+"</td>"
   txt(578) = "<td>"+table_link_setup(OUTDIR,"sst.10yr_runtrend.mon.png","10yr")+"</td>"
   txt(579) = "<td>"+table_link_setup(OUTDIR,"sst.12yr_runtrend.mon.png","12yr")+"</td>"
@@ -343,11 +364,12 @@ begin
   txt(584) = "<td>"+table_link_setup(OUTDIR,"tas.12yr_runtrend.mon.png","12yr")+"</td>"
   txt(585) = "<td>"+table_link_setup(OUTDIR,"tas.14yr_runtrend.mon.png","14yr")+"</td>"
   txt(586) = "<td>"+table_link_setup(OUTDIR,"tas.16yr_runtrend.mon.png","16yr")+"</td></tr>"
-  txt(587) = "</table>"
+  txt(587) = "</table></div></div>"
   
-  txt(609) = ""
-  txt(610) = "<br><TABLE width='600' border=1 frame=void rules=all cellpadding=6 bordercolor=darkgray>"
-  txt(611) = "<CAPTION>Additional Indices</CAPTION>"
+  txt(608) = "<div class="+quote+"row"+quote+">"
+  txt(609) = "<div class="+quote+"col"+quote+">"
+  txt(610) = "<table class="+quote+"table table-striped table-bordered"+quote+">"
+  txt(611) = "<h3 class="+quote+"display-6"+quote+">Additional Indices</h3>"
   txt(612) = "<tr><td>"+table_link_setup(OUTDIR,"amm.timeseries.png","Atlantic Meridional Mode")+"</td>"
   txt(613) = "<td>"+table_link_setup(OUTDIR,"atl3.timeseries.png","Atlantic Ni&ntilde;o (ATL3)")+"</td>"
   txt(614) = "<td>"+table_link_setup(OUTDIR,"tna.timeseries.png","Tropical North Atlantic SST")+"</td>"
@@ -359,7 +381,7 @@ begin
   txt(620) = "<tr><td>"+table_link_setup(OUTDIR,"iod.timeseries.png","Indian Ocean SST Dipole")+"</td>"
   txt(621) = "<td>"+table_link_setup(OUTDIR,"tio.timeseries.png","Tropical Indian Ocean SST")+"</td>"
   txt(622) = "<td>"+table_link_setup(OUTDIR,"socn.timeseries.png","Southern Ocean SST")+"</td></tr>"
-  txt(623) = "</table>"
+  txt(623) = "</table></div></div>"
   
 ;  if (OT.eq."True") then
 ;     txt(265) = "<p class=btext>Output timeseries written to "+OUTDIR+"</p>"
@@ -380,39 +402,44 @@ begin
   txt = new(200,"string")
   quote = str_get_dq()
   
-  txt(0) = "<HTML><HEAD><TITLE>Climate Variability Diagnostics Package</TITLE><STYLE>"
-  txt(1) = "body {background-color: WhiteSmoke; font-family: Verdana, Geneva, sans-serif}"
-  txt(2) = "img.title {width:990; height:105; align:left}"
-  txt(3) = "p.title {font-size:20pt; color:black; font-weight:bold; text-align:center}"
-  txt(4) = "p.subtitle1 {font-size:12pt; color:gray}"
-  txt(5) = "p.subtitle {font-size:16pt; color:black; font-weight:bold; text-align:left}"
-  txt(6) = "p.btext {font-size:9pt}"
-  txt(7) = "td {text-align:left; font-size:12pt}"
-  txt(8) = "td.s1 {text-align:left; font-size:11pt}"
-  txt(9) = "CAPTION {text-align:left; font-size:14pt; font-weight:bold}"
-  txt(10) = "</STYLE></HEAD><BODY>"
-  txt(11) = "<img class=title src="+quote+"cas-cvdp.png"+quote+" alt="+quote+"CVDP logo"+quote+">"  
-  txt(12) = "<TABLE width='990' border=0 cellpadding=6><tr><td class=s1 width='300'><a href="+quote+"index.html"+quote+">Back to Diagnostics Plots</a></td>"
-  txt(13) = "<td><p class=title>Methodology and Definitions</p></td></tr></table><hr width=990 align=left>" 
+  txt(0) = "<html><head><title>Climate Variability Diagnostics Package</title>"
+  txt(1) = "<link rel="+quote+"stylesheet"+quote+" href="+quote+"https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"+quote+" integrity="+quote+"sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO"+quote+" crossorigin="+quote+"anonymous"+quote+">"
+  txt(2) = "<script src="+quote+"https://code.jquery.com/jquery-3.3.1.slim.min.js"+quote+" integrity="+quote+"sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"+quote+" crossorigin="+quote+"anonymous"+quote+"></script>"
+  txt(3) = "<script src="+quote+"https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js"+quote+" integrity="+quote+"sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49"+quote+" crossorigin="+quote+"anonymous"+quote+"></script>"
+  txt(4) = "<script src="+quote+"https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js"+quote+" integrity="+quote+"sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy"+quote+" crossorigin="+quote+"anonymous"+quote+"></script>"
 
-  txt(15) = "<p class=subtitle>General Notes</p>"
-  txt(16) = "<TABLE width='800' border=1 frame=void rules=all cellpadding=6 bordercolor=darkgray>"
-  txt(17) = "<tr><td><ul><li>TS is surface ("+quote+"skin"+quote+") temperature and is used in lieu of sea surface temperatures (SSTs), TAS is 2m air temperature (CESM equivalent = TREFHT)."
-  txt(18) = "<li>PR is total precipitation (CESM equivalent = PRECC+PRECL), PSL is sea level pressure, SND is snow depth (SNOWDP), and SIC is ice concentration (aice)."
-  txt(19) = "<li>The annual cycle is removed prior to every calculation by subtracting the long-term monthly means. Exception: The annual cycle is not removed for mean spatial maps."
-  txt(20) = "<li>Area-averages are always based on cosine of latitude weighting."
-  txt(21) = "<li>The following calculations use linearly detrended data: standard deviations, nino3.4 spectra, ENSO spatial composites, and ENSO Hovm&ouml;llers."
-  txt(22) = "<li>For visual clarity, the Y-axis <i>may</i> differ amongst individual panels on a particular plot."
-  txt(23) = "<li>Climatological Zonal Averages: Climatological means are zonally averaged over the globe." 
-  txt(24) = "<li>Power Spectra: The best-fit first-order Markov red noise spectrum (red curve) and its 95% (blue curve) and 99% (green curve) confidence bounds are shown on each panel. Top X-axis shows the period (in years), and the bottom X-axis shows the frequency (cycles/mo). If calculated, the observational spectrum is overlaid in gray on each model spectrum. The spectra are displayed in variance-conserving form." 
-  txt(25) = "<li>Wavelet Analysis: A wavelet transform is computed using a Morlet wavelet with a wavenumber of 6. Areas significant at the 95% based on a chi-square test are stippled and the “cone of influence” is hatched. See Torrence, C. and G. P. Compo, 1998: A Practical Guide to Wavelet Analysis. Bull. Amer. Meteor. Soc., 79, 61-78. doi: http://dx.doi.org/10.1175/1520-0477(1998)079<0061:APGTWA>2.0.CO;2."
-  txt(26) = "<li>Running Trends: N-year running trends are computed by calculating the linear trend over the N-year interval beginning at each successive timestep.  For instance, for a global timeseries that runs from 1970-2012, the 8yr running trend value for January 1970 is the linear trend during January 1970 - December 1977, and the value for January 2005 is the linear trend during January 2005 - December 2012."
-  txt(27) = "<li>Running Standard Deviations: 30-year running standard deviations are computed by calculating the standard deviation centered over the 30 year interval at each successive timestep, with a minimum of 35 years of data required. For example, for a timeseries that runs from 1920-2010, the 30yr running standard deviation value for January 1935 is calculated over the period January 1920-December 1949. The right subtitle shows the minimum / mean / maximum of the computed timeseries." 
-  txt(28) = "<li>Metrics Tables: Area-weighted pattern correlations and rms differences are calculated between observations and each model simulation (regridded to match the observational grid) for 11 climate metrics. The Total Score column shows the average of the 11 pattern correlations (Z-transformed) and rms differences. The following domains are used to compute the pattern correlations and rms differences: Means, standard deviations, ENSO, AMO, and PDO: Global; global for means, standard deviations, ENSO, AMO, and PDO; entire longitude/temporal range shown for El Nino and La Nina Hovm&ouml;llers; entire domain shown for NAM (20:90&deg;N) and SAM (20:90&deg;S)."
-  txt(29) = "<li>EOF significance: If an eigenvalue is significantly seperated from neighboring values a star is appended to the percent variance explained on the plot. Significance is calculated following North et al. (MWR, 1982)."
-  txt(30) = "<li>Ice Extent: Any grid cell defined as having a value at or above 15% is assumed to be 100% ice covered. The area of these grid cells is summed to create ice extent. For data sets with a northern hemisphere pole hole the CVDP looks for an attribute named pole_hole_area that is attached to the AREA variable in the netCDF file. The format of pole_hole_area should be start month (YYYYMM), end month (YYYYMM), area value, (repeat as necessary). If pole_hole_area is detected the CVDP will add the area value to the calculated northern hemisphere ice extent timeseries from the specified start month to the specified end month, and a * is placed after the dataset name in the ice extent plots."    
-  txt(31) = "<li>For more information on observational datasets and climate indices, see the <a href="+quote+"http://climatedataguide.ucar.edu/"+quote+" target="+quote+"_blank"+quote+">Climate Data Guide</a>.</ul>"
-  txt(32) = "</td></tr></table>"
+  txt(5) = "<style>body {background-color: WhiteSmoke; font-family: Verdana, Geneva, sans-serif}"
+  txt(6) = "img.title {width:990; height:105; align:left}"
+  txt(7) = "p.title {font-size:20pt; color:black; font-weight:bold; text-align:center}"
+  txt(8) = "p.subtitle1 {font-size:12pt; color:gray}"
+  txt(9) = "p.subtitle {font-size:16pt; color:black; font-weight:bold; text-align:left}"
+  txt(10) = "p.btext {font-size:9pt}"
+  txt(11) = "td {text-align:left; font-size:12pt}"
+  txt(12) = "td.s1 {text-align:left; font-size:11pt}"
+  txt(13) = "CAPTION {text-align:left; font-size:14pt; font-weight:bold}"
+  txt(14) = "</style></head><BODY>"
+  txt(15) = "<img class=title src="+quote+"cas-cvdp.png"+quote+" alt="+quote+"CVDP logo"+quote+">"  
+  txt(16) = "<TABLE width='990' border=0 cellpadding=6><tr><td class=s1 width='300'><a href="+quote+"index.html"+quote+">Back to Diagnostics Plots</a></td>"
+  txt(17) = "<td><p class=title>Methodology and Definitions</p></td></tr></table><hr width=990 align=left>" 
+
+  txt(20) = "<p class=subtitle>General Notes</p>"
+  txt(21) = "<TABLE width='800' border=1 frame=void rules=all cellpadding=6 bordercolor=darkgray>"
+  txt(22) = "<tr><td><ul><li>TS is surface ("+quote+"skin"+quote+") temperature and is used in lieu of sea surface temperatures (SSTs), TAS is 2m air temperature (CESM equivalent = TREFHT)."
+  txt(23) = "<li>PR is total precipitation (CESM equivalent = PRECC+PRECL), PSL is sea level pressure, SND is snow depth (SNOWDP), and SIC is ice concentration (aice)."
+  txt(24) = "<li>The annual cycle is removed prior to every calculation by subtracting the long-term monthly means. Exception: The annual cycle is not removed for mean spatial maps."
+  txt(25) = "<li>Area-averages are always based on cosine of latitude weighting."
+  txt(26) = "<li>The following calculations use linearly detrended data: standard deviations, nino3.4 spectra, nino3.4 autocorrelations, ENSO spatial composites, and ENSO Hovm&ouml;llers."
+  txt(27) = "<li>For visual clarity, the Y-axis <i>may</i> differ amongst individual panels on a particular plot."
+  txt(28) = "<li>Climatological Zonal Averages: Climatological means are zonally averaged over the globe." 
+  txt(29) = "<li>Power Spectra: The best-fit first-order Markov red noise spectrum (red curve) and its 95% (blue curve) and 99% (green curve) confidence bounds are shown on each panel. Top X-axis shows the period (in years), and the bottom X-axis shows the frequency (cycles/mo). If calculated, the observational spectrum is overlaid in gray on each model spectrum. The spectra are displayed in variance-conserving form." 
+  txt(30) = "<li>Wavelet Analysis: A wavelet transform is computed using a Morlet wavelet with a wavenumber of 6. Areas significant at the 95% based on a chi-square test are stippled and the “cone of influence” is hatched. See Torrence, C. and G. P. Compo, 1998: A Practical Guide to Wavelet Analysis. Bull. Amer. Meteor. Soc., 79, 61-78. doi: http://dx.doi.org/10.1175/1520-0477(1998)079<0061:APGTWA>2.0.CO;2."
+  txt(31) = "<li>Running Trends: N-year running trends are computed by calculating the linear trend over the N-year interval beginning at each successive timestep.  For instance, for a global timeseries that runs from 1970-2012, the 8yr running trend value for January 1970 is the linear trend during January 1970 - December 1977, and the value for January 2005 is the linear trend during January 2005 - December 2012."
+  txt(32) = "<li>Running Standard Deviations: 30-year running standard deviations are computed by calculating the standard deviation centered over the 30 year interval at each successive timestep, with a minimum of 35 years of data required. For example, for a timeseries that runs from 1920-2010, the 30yr running standard deviation value for January 1935 is calculated over the period January 1920-December 1949. The right subtitle shows the minimum / mean / maximum of the computed timeseries." 
+  txt(33) = "<li>Metrics Tables: Area-weighted pattern correlations and rms differences are calculated between observations and each model simulation (regridded to match the observational grid) for 11 climate metrics. The Total Score column shows the average of the 11 pattern correlations (Z-transformed) and rms differences. The following domains are used to compute the pattern correlations and rms differences: Means, standard deviations, ENSO, AMO, and PDO: Global; global for means, standard deviations, ENSO, AMO, and PDO; entire longitude/temporal range shown for El Nino and La Nina Hovm&ouml;llers; entire domain shown for NAM (20:90&deg;N) and SAM (20:90&deg;S)."
+  txt(34) = "<li>EOF significance: If an eigenvalue is significantly seperated from neighboring values a star is appended to the percent variance explained on the plot. Significance is calculated following North et al. (MWR, 1982)."
+  txt(35) = "<li>Ice Extent: Any grid cell defined as having a value at or above 15% is assumed to be 100% ice covered. The area of these grid cells is summed to create ice extent. For data sets with a northern hemisphere pole hole the CVDP looks for an attribute named pole_hole_area that is attached to the AREA variable in the netCDF file. The format of pole_hole_area should be start month (YYYYMM), end month (YYYYMM), area value, (repeat as necessary). If pole_hole_area is detected the CVDP will add the area value to the calculated northern hemisphere ice extent timeseries from the specified start month to the specified end month, and a * is placed after the dataset name in the ice extent plots."    
+  txt(36) = "<li>For more information on observational datasets and climate indices, see the <a href="+quote+"http://climatedataguide.ucar.edu/"+quote+" target="+quote+"_blank"+quote+">Climate Data Guide</a>.</ul>"
+  txt(37) = "</td></tr></table>"
 
   txt(40) = "<p class=subtitle>Modes of Variability</p>"
   txt(41) = "<TABLE width='800' border=1 frame=void rules=all cellpadding=6 bordercolor=darkgray>"
@@ -493,21 +520,26 @@ begin
      txt = new(500,"string")  
      quote = str_get_dq()
   
-     txt(0) = "<HTML><HEAD><TITLE>Climate Variability Diagnostics Package</TITLE><STYLE>"
-     txt(1) = "body {background-color: WhiteSmoke; font-family: Verdana, Geneva, sans-serif}"
-     txt(2) = "img.title {width:990; height:105; align:left}"
-     txt(3) = "p.subtitle1 {font-size:15pt; color:gray}"
-     txt(4) = "p.subtitle {font-size:20pt; color:black; text-align:center; font-weight:bold}"
-     txt(5) = "p.btext {font-size:12pt; text-align:left}"
-     txt(6) = "p.btext2 {font-size:9pt; text-align:left}"
-     txt(7) = "td {text-align:center; font-size:12pt}"
-     txt(8) = "td.s1 {text-align:left; font-size:11pt}"
-     txt(9) = "CAPTION {text-align:left; font-size:14pt; font-weight:bold}"
-     txt(10) = "</STYLE></HEAD><BODY>"
-     txt(11) = "<img class=title src="+quote+"cas-cvdp.png"+quote+" alt="+quote+"CVDP logo"+quote+">"
-     txt(12)= "<TABLE width='990' border=0 cellpadding=6>"
-     txt(13) = "<tr><td width='300'><p class=btext><a href="+quote+"index.html"+quote+">Back to Diagnostics Plots</a></p></td>"
-     txt(14) = "<td><p class=subtitle>"+webtitle+"</p></td></tr></table><hr width=990 align=left><p class=subtitle1>Metrics Table</p>" 
+     txt(0) = "<html><head><title>Climate Variability Diagnostics Package</title>"
+     txt(1) = "<link rel="+quote+"stylesheet"+quote+" href="+quote+"https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"+quote+" integrity="+quote+"sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO"+quote+" crossorigin="+quote+"anonymous"+quote+">"
+     txt(2) = "<script src="+quote+"https://code.jquery.com/jquery-3.3.1.slim.min.js"+quote+" integrity="+quote+"sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"+quote+" crossorigin="+quote+"anonymous"+quote+"></script>"
+     txt(3) = "<script src="+quote+"https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js"+quote+" integrity="+quote+"sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49"+quote+" crossorigin="+quote+"anonymous"+quote+"></script>"
+     txt(4) = "<script src="+quote+"https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js"+quote+" integrity="+quote+"sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy"+quote+" crossorigin="+quote+"anonymous"+quote+"></script>"
+
+     txt(5) = "<style>body {background-color: WhiteSmoke; font-family: Verdana, Geneva, sans-serif}"
+     txt(6) = "img.title {width:990; height:105; align:left}"
+     txt(7) = "p.subtitle1 {font-size:15pt; color:gray}"
+     txt(8) = "p.subtitle {font-size:20pt; color:black; text-align:center; font-weight:bold}"
+     txt(9) = "p.btext {font-size:12pt; text-align:left}"
+     txt(10) = "p.btext2 {font-size:9pt; text-align:left}"
+     txt(11) = "td {text-align:center; font-size:12pt}"
+     txt(12) = "td.s1 {text-align:left; font-size:11pt}"
+     txt(13) = "CAPTION {text-align:left; font-size:14pt; font-weight:bold}"
+     txt(14) = "</style></head><BODY>"
+     txt(15) = "<img class=title src="+quote+"cas-cvdp.png"+quote+" alt="+quote+"CVDP logo"+quote+">"
+     txt(16)= "<TABLE width='990' border=0 cellpadding=6>"
+     txt(17) = "<tr><td width='300'><p class=btext><a href="+quote+"index.html"+quote+">Back to Diagnostics Plots</a></p></td>"
+     txt(18) = "<td><p class=subtitle>"+webtitle+"</p></td></tr></table><hr width=990 align=left><p class=subtitle1>Metrics Table</p>" 
      
      z = asciiread(OUTDIR+"metrics.txt",(/-1/),"string")
      nlines = dimsizes(z)
@@ -530,20 +562,24 @@ begin
      txt = new(500,"string")  
      quote = str_get_dq()
   
-     txt(0) = "<HTML><HEAD><TITLE>Climate Variability Diagnostics Package</TITLE><STYLE>"
-     txt(1) = "body {background-color: WhiteSmoke; font-family: Verdana, Geneva, sans-serif}"
-     txt(2) = "img.title {width:990; height:105; align:left}"
-     txt(3) = "p.subtitle1 {font-size:20pt; color:darkgray}"
-     txt(4) = "p.subtitle {font-size:20pt; color:black; text-align:center; font-weight:bold}"
-     txt(5) = "p.btext {font-size:12pt; text-align:left}"
-     txt(6) = "p.btext2 {font-size:9pt; text-align:left}"
-     txt(7) = "td {text-align:center; font-size:12pt}"
-     txt(8) = "td.s1 {text-align:left; font-size:11pt}"
-     txt(9) = "td.tablehdr {text-align:center; font-size:17pt}"
-     txt(10) = "CAPTION {text-align:left; font-size:14pt; font-weight:bold}"
-     txt(11) = "</STYLE></HEAD><BODY>"
-     txt(12) = "<img class=title src="+quote+"cas-cvdp.png"+quote+" alt="+quote+"CVDP logo"+quote+">"
-     txt(13)= "<TABLE width='990' border=0 cellpadding=6>"
+     txt(0) = "<html><head><title>Climate Variability Diagnostics Package</title>"
+     txt(1) = "<link rel="+quote+"stylesheet"+quote+" href="+quote+"https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"+quote+" integrity="+quote+"sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO"+quote+" crossorigin="+quote+"anonymous"+quote+">"
+     txt(2) = "<script src="+quote+"https://code.jquery.com/jquery-3.3.1.slim.min.js"+quote+" integrity="+quote+"sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"+quote+" crossorigin="+quote+"anonymous"+quote+"></script>"
+     txt(3) = "<script src="+quote+"https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js"+quote+" integrity="+quote+"sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49"+quote+" crossorigin="+quote+"anonymous"+quote+"></script>"
+     txt(4) = "<script src="+quote+"https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js"+quote+" integrity="+quote+"sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy"+quote+" crossorigin="+quote+"anonymous"+quote+"></script>"
+
+     txt(5) = "<style>body {background-color: WhiteSmoke; font-family: Verdana, Geneva, sans-serif}"
+     txt(6) = "img.title {width:990; height:105; align:left}"
+     txt(7) = "p.subtitle1 {font-size:20pt; color:darkgray}"
+     txt(8) = "p.subtitle {font-size:20pt; color:black; text-align:center; font-weight:bold}"
+     txt(9) = "p.btext {font-size:12pt; text-align:left}"
+     txt(10) = "p.btext2 {font-size:9pt; text-align:left}"
+     txt(11) = "td {text-align:center; font-size:12pt}"
+     txt(12) = "td.s1 {text-align:left; font-size:11pt}"
+     txt(13) = "td.tablehdr {text-align:center; font-size:17pt}"
+     txt(14) = "CAPTION {text-align:left; font-size:14pt; font-weight:bold}</style></head><BODY>"
+     txt(15) = "<img class=title src="+quote+"cas-cvdp.png"+quote+" alt="+quote+"CVDP logo"+quote+">"
+     txt(16)= "<TABLE width='990' border=0 cellpadding=6>"
 
 
      sort_txt = (/"<a href="+quote+"metrics.table_0.html"+quote+">Namelist (default)</a> | ","<a href="+quote+"metrics.table_1.html"+quote+">Namelist (Alphabetically)</a> | ","<a href="+quote+"metrics.table_2.html"+quote+">ENSO TAS</a> | ","<a href="+quote+"metrics.table_3.html"+quote+">ENSO PSL</a> | ", \
@@ -561,8 +597,8 @@ begin
      strarr = " | "
      strarr(13) = " "
      do gg = 0,13
-           txt(14) = "<tr><td width='50'><p class=btext>Go to:</p></td><td class=s1 width='300'><a href="+quote+"methodology.html"+quote+">Methodology and Definitions</a><br><a href="+quote+"index.html"+quote+">Diagnostics Plots</a><br><a href="+quote+"metrics.table_"+(gg+14)+".html"+quote+">RMS Metric Tables</a></td>"
-           txt(15) = "<td><p class=subtitle>"+webtitle+"</p></td></tr></table><hr width=990 align=left>"
+           txt(17) = "<tr><td width='50'><p class=btext>Go to:</p></td><td class=s1 width='300'><a href="+quote+"methodology.html"+quote+">Methodology and Definitions</a><br><a href="+quote+"index.html"+quote+">Diagnostics Plots</a><br><a href="+quote+"metrics.table_"+(gg+14)+".html"+quote+">RMS Metric Tables</a></td>"
+           txt(18) = "<td><p class=subtitle>"+webtitle+"</p></td></tr></table><hr width=990 align=left>"
            sort_txtT = sort_txt
            sort_txtT(gg) = "<b>"+sort_txt2(gg)+"</b>"+strarr(gg)
            txt(24) = "<p class=subtitle1><b>Pattern Correlation Metrics Tables</b></p>"
@@ -580,8 +616,8 @@ begin
 
      
      do gg = 0,13
-           txt(14) = "<tr><td width='50'><p class=btext>Go to:</p></td><td class=s1 width='300'><a href="+quote+"methodology.html"+quote+">Methodology and Definitions</a><br><a href="+quote+"index.html"+quote+">Diagnostics Plots</a><br><a href="+quote+"metrics.table_"+gg+".html"+quote+">Pattern Correlation Metric Tables</a></td>"
-           txt(15) = "<td><p class=subtitle>"+webtitle+"</p></td></tr></table><hr width=990 align=left>"
+           txt(17) = "<tr><td width='50'><p class=btext>Go to:</p></td><td class=s1 width='300'><a href="+quote+"methodology.html"+quote+">Methodology and Definitions</a><br><a href="+quote+"index.html"+quote+">Diagnostics Plots</a><br><a href="+quote+"metrics.table_"+gg+".html"+quote+">Pattern Correlation Metric Tables</a></td>"
+           txt(18) = "<td><p class=subtitle>"+webtitle+"</p></td></tr></table><hr width=990 align=left>"
            sort_txtT = sort_txtA
            sort_txtT(gg) = "<b>"+sort_txt2(gg)+"</b>"+strarr(gg)
            txt(24) = "<p class=subtitle1><b>RMS Metrics Tables</b></p>"
@@ -598,7 +634,227 @@ begin
      end do
      delete([/txt,strarr/])
   end if
-  delete(OUTDIR)
+;----------------------------------------------------------------------------
+; Namelist pages
+  txt := new(500,"string")  
+  
+  txt(0) = "<HTML><HEAD><TITLE>Climate Variability Diagnostics Package</TITLE><STYLE>"
+  txt(1) = "body {background-color: WhiteSmoke; font-family: Verdana, Geneva, sans-serif}"
+  txt(2) = "img.title {width:990; height:105; align:left}"
+  txt(3) = "p.subtitle1 {font-size:20pt; color:darkgray}"
+  txt(4) = "p.subtitle {font-size:20pt; color:black; text-align:center; font-weight:bold}"
+  txt(5) = "p.btext {font-size:12pt; text-align:left}"
+  txt(6) = "p.btext2 {font-size:9pt; text-align:left}"
+  txt(7) = "p.c {font-size:9pt; text-align:left, white-space:pre}"
+  txt(9) = "td.s1 {text-align:left; font-size:11pt}"
+  
+  txt(20) = "td {text-align:center; font-size:12pt}"
+  txt(21) = "td.s1 {text-align:left; font-size:11pt}"
+  txt(22) = "td.tablehdr {text-align:center; font-size:17pt}"
+  txt(23) = "CAPTION {text-align:left; font-size:14pt; font-weight:bold}"
+  txt(24) = "</STYLE></HEAD><BODY>"
+  txt(25) = "<img class="+quote+"img-fluid"+quote+" src="+quote+"cas-cvdp.png"+quote+" alt="+quote+"CVDP logo"+quote+">"
+  txt(26)= "<TABLE width='990' border=0 cellpadding=6>"
+  txt(27) = "<tr><td width='30'><p class=btext>Go to:</p></td><td class=s1 width='380'><a href="+quote+"index.html"+quote+">Diagnostics Plots</a><br><hr>"
+
+  namelist_obs_qtxt = "Input Namelists: "
+  if (OBS.eq."True") then
+     txt(28) = "Input Namelists: <b>Observations</b> | <a href="+quote+"namelist_simulations.html"+quote+">Simulations</a><br>"
+     txt(29) = "Derived Namelists: <a href="+quote+"namelist_msftmz.html"+quote+">MSFTMZ</a> | <a href="+quote+"namelist_pr.html"+quote+">PR</a> | <a href="+quote+"namelist_psl.html"+quote+">PSL</a> | "
+     txt(30) = "<br><a href="+quote+"namelist_siconc_nh.html"+quote+">SICONC NH</a> | <a href="+quote+"namelist_siconc_sh.html"+quote+">SICONC SH</a> | <a href="+quote+"namelist_snd.html"+quote+">SND</a> | <a href="+quote+"namelist_tas.html"+quote+">TAS</a> |"
+     txt(31) = "<a href="+quote+"namelist_ts.html"+quote+">TS</a></td><td><h2 class="+quote+"text-center"+quote+">"+webtitle+"</h2></td></tr></table><hr width=990 align=left>"
+     txt(32) = "<p class=subtitle1>Input Namelist: Observations</p>" 
+     z := asciiread(OUTDIR+"namelist_obs",(/-1/),"string")
+     nlines = dimsizes(z)
+     txt(33) = "<p class=c>"
+     do gg = 0,nlines-1
+        txt(33+gg) = z(gg)+"<br>"
+     end do
+     txt(34+nlines) = "</p>"
+     txt(34+nlines+1) = "Created "+systemfunc("date")
+     txt(34+nlines+2) = "<p class=btext2>CVDP Version "+VERSION+"</p></body></html>"
+     tt := ind(.not.ismissing(txt))
+     txt2 := txt(:tt(dimsizes(tt)-1)+1)
+     txt2 = where(ismissing(txt2),"",txt2)
+     asciiwrite(OUTDIR+"namelist_obs.html",txt2)
+
+     namelist_obs_qtxt = "Input Namelists: <a href="+quote+"namelist_obs.html"+quote+">Observations</a> | "
+  end if
+  txt(28:) = txt@_FillValue
+
+  txt(28) = namelist_obs_qtxt+"<b>Simulations</b><br>"
+  txt(29) = "Derived Namelists: <a href="+quote+"namelist_msftmz.html"+quote+">MSFTMZ</a> | <a href="+quote+"namelist_pr.html"+quote+">PR</a> | <a href="+quote+"namelist_psl.html"+quote+">PSL</a> | "
+  txt(30) = "<br><a href="+quote+"namelist_siconc_nh.html"+quote+">SICONC NH</a> | <a href="+quote+"namelist_siconc_sh.html"+quote+">SICONC SH</a> | <a href="+quote+"namelist_snd.html"+quote+">SND</a> | <a href="+quote+"namelist_tas.html"+quote+">TAS</a> |"
+  txt(31) = "<a href="+quote+"namelist_ts.html"+quote+">TS</a></td><td><h2 class="+quote+"text-center"+quote+">"+webtitle+"</h2></td></tr></table><hr width=990 align=left>"
+  txt(32) = "<p class=subtitle1>Input Namelist: Simulations</p>" 
+  z := asciiread(OUTDIR+"namelist",(/-1/),"string")
+  nlines = dimsizes(z)
+  txt(33) = "<p class=c>"
+  do gg = 0,nlines-1
+     txt(33+gg) = z(gg)+"<br>"
+  end do
+  txt(34+nlines) = "</p>"
+  txt(34+nlines+1) = "Created "+systemfunc("date")
+  txt(34+nlines+2) = "<p class=btext2>CVDP Version "+VERSION+"</p></body></html>"
+  tt := ind(.not.ismissing(txt))
+  txt2 := txt(:tt(dimsizes(tt)-1)+1)
+  txt2 = where(ismissing(txt2),"",txt2)
+  asciiwrite(OUTDIR+"namelist_simulations.html",txt2)
+  txt(28:) = txt@_FillValue
+
+  txt(28) = namelist_obs_qtxt+"<a href="+quote+"namelist_simulations.html"+quote+">Simulations</a><br>"
+  txt(29) = "Derived Namelists: <b>MSFTMZ</b> | <a href="+quote+"namelist_pr.html"+quote+">PR</a> | <a href="+quote+"namelist_psl.html"+quote+">PSL</a> | "
+  txt(30) = "<br><a href="+quote+"namelist_siconc_nh.html"+quote+">SICONC NH</a> | <a href="+quote+"namelist_siconc_sh.html"+quote+">SICONC SH</a> | <a href="+quote+"namelist_snd.html"+quote+">SND</a> | <a href="+quote+"namelist_tas.html"+quote+">TAS</a> |"
+  txt(31) = "<a href="+quote+"namelist_ts.html"+quote+">TS</a></td><td><h2 class="+quote+"text-center"+quote+">"+webtitle+"</h2></td></tr></table><hr width=990 align=left>"
+  txt(32) = "<p class=subtitle1>Derived Namelist: MSFTMZ</p>" 
+  z := asciiread(OUTDIR+"namelist_moc",(/-1/),"string")
+  nlines = dimsizes(z)
+  txt(33) = "<p class=c>"
+  do gg = 0,nlines-1
+     txt(33+gg) = z(gg)+"<br>"
+  end do
+  txt(34+nlines) = "</p>"
+  txt(34+nlines+1) = "Created "+systemfunc("date")
+  txt(34+nlines+2) = "<p class=btext2>CVDP Version "+VERSION+"</p></body></html>"
+  tt := ind(.not.ismissing(txt))
+  txt2 := txt(:tt(dimsizes(tt)-1)+1)
+  txt2 = where(ismissing(txt2),"",txt2)
+  asciiwrite(OUTDIR+"namelist_msftmz.html",txt2)
+
+  txt(28) = namelist_obs_qtxt+"<a href="+quote+"namelist_simulations.html"+quote+">Simulations</a><br>"
+  txt(29) = "Derived Namelists: <a href="+quote+"namelist_msftmz.html"+quote+">MSFTMZ</a> | <b>PR</b> | <a href="+quote+"namelist_psl.html"+quote+">PSL</a> | "
+  txt(30) = "<br><a href="+quote+"namelist_siconc_nh.html"+quote+">SICONC NH</a> | <a href="+quote+"namelist_siconc_sh.html"+quote+">SICONC SH</a> | <a href="+quote+"namelist_snd.html"+quote+">SND</a> | <a href="+quote+"namelist_tas.html"+quote+">TAS</a> |"
+  txt(31) = "<a href="+quote+"namelist_ts.html"+quote+">TS</a></td><td><h2 class="+quote+"text-center"+quote+">"+webtitle+"</h2></td></tr></table><hr width=990 align=left>"
+  txt(32) = "<p class=subtitle1>Derived Namelist: PR</p>" 
+  z := asciiread(OUTDIR+"namelist_prect",(/-1/),"string")
+  nlines = dimsizes(z)
+  txt(33) = "<p class=c>"
+  do gg = 0,nlines-1
+     txt(33+gg) = z(gg)+"<br>"
+  end do
+  txt(34+nlines) = "</p>"
+  txt(34+nlines+1) = "Created "+systemfunc("date")
+  txt(34+nlines+2) = "<p class=btext2>CVDP Version "+VERSION+"</p></body></html>"
+  tt := ind(.not.ismissing(txt))
+  txt2 := txt(:tt(dimsizes(tt)-1)+1)
+  txt2 = where(ismissing(txt2),"",txt2)
+  asciiwrite(OUTDIR+"namelist_pr.html",txt2)
+
+  txt(28) = namelist_obs_qtxt+"<a href="+quote+"namelist_simulations.html"+quote+">Simulations</a><br>"
+  txt(29) = "Derived Namelists: <a href="+quote+"namelist_msftmz.html"+quote+">MSFTMZ</a> | <a href="+quote+"namelist_pr.html"+quote+">PR</a> | <b>PSL</b> | "
+  txt(30) = "<br><a href="+quote+"namelist_siconc_nh.html"+quote+">SICONC NH</a> | <a href="+quote+"namelist_siconc_sh.html"+quote+">SICONC SH</a> | <a href="+quote+"namelist_snd.html"+quote+">SND</a> | <a href="+quote+"namelist_tas.html"+quote+">TAS</a> |"
+  txt(31) = "<a href="+quote+"namelist_ts.html"+quote+">TS</a></td><td><h2 class="+quote+"text-center"+quote+">"+webtitle+"</h2></td></tr></table><hr width=990 align=left>"
+  txt(32) = "<p class=subtitle1>Derived Namelist: PSL</p>" 
+  z := asciiread(OUTDIR+"namelist_psl",(/-1/),"string")
+  nlines = dimsizes(z)
+  txt(33) = "<p class=c>"
+  do gg = 0,nlines-1
+     txt(33+gg) = z(gg)+"<br>"
+  end do
+  txt(34+nlines) = "</p>"
+  txt(34+nlines+1) = "Created "+systemfunc("date")
+  txt(34+nlines+2) = "<p class=btext2>CVDP Version "+VERSION+"</p></body></html>"
+  tt := ind(.not.ismissing(txt))
+  txt2 := txt(:tt(dimsizes(tt)-1)+1)
+  txt2 = where(ismissing(txt2),"",txt2)
+  asciiwrite(OUTDIR+"namelist_psl.html",txt2)
+
+  txt(28) = namelist_obs_qtxt+"<a href="+quote+"namelist_simulations.html"+quote+">Simulations</a><br>"
+  txt(29) = "Derived Namelists: <a href="+quote+"namelist_msftmz.html"+quote+">MSFTMZ</a> | <a href="+quote+"namelist_pr.html"+quote+">PR</a> | <a href="+quote+"namelist_psl.html"+quote+">PSL</a> | "
+  txt(30) = "<br></b>SICONC NH</b> | <a href="+quote+"namelist_siconc_sh.html"+quote+">SICONC SH</a> | <a href="+quote+"namelist_snd.html"+quote+">SND</a> | <a href="+quote+"namelist_tas.html"+quote+">TAS</a> |"
+  txt(31) = "<a href="+quote+"namelist_ts.html"+quote+">TS</a></td><td><h2 class="+quote+"text-center"+quote+">"+webtitle+"</h2></td></tr></table><hr width=990 align=left>"
+  txt(32) = "<p class=subtitle1>Derived Namelist: SICONC NH</p>" 
+  z := asciiread(OUTDIR+"namelist_aice_nh",(/-1/),"string")
+  nlines = dimsizes(z)
+  txt(33) = "<p class=c>"
+  do gg = 0,nlines-1
+     txt(33+gg) = z(gg)+"<br>"
+  end do
+  txt(34+nlines) = "</p>"
+  txt(34+nlines+1) = "Created "+systemfunc("date")
+  txt(34+nlines+2) = "<p class=btext2>CVDP Version "+VERSION+"</p></body></html>"
+  tt := ind(.not.ismissing(txt))
+  txt2 := txt(:tt(dimsizes(tt)-1)+1)
+  txt2 = where(ismissing(txt2),"",txt2)
+  asciiwrite(OUTDIR+"namelist_siconc_nh.html",txt2)
+
+  txt(28) = namelist_obs_qtxt+"<a href="+quote+"namelist_simulations.html"+quote+">Simulations</a><br>"
+  txt(29) = "Derived Namelists: <a href="+quote+"namelist_msftmz.html"+quote+">MSFTMZ</a> | <a href="+quote+"namelist_pr.html"+quote+">PR</a> | <a href="+quote+"namelist_psl.html"+quote+">PSL</a> | "
+  txt(30) = "<br><a href="+quote+"namelist_siconc_nh.html"+quote+">SICONC NH</a> | <b>SICONC SH</b> | <a href="+quote+"namelist_snd.html"+quote+">SND</a> | <a href="+quote+"namelist_tas.html"+quote+">TAS</a> |"
+  txt(31) = "<a href="+quote+"namelist_ts.html"+quote+">TS</a></td><td><h2 class="+quote+"text-center"+quote+">"+webtitle+"</h2></td></tr></table><hr width=990 align=left>"
+  txt(32) = "<p class=subtitle1>Derived Namelist: SICONC SH</p>" 
+  z := asciiread(OUTDIR+"namelist_aice_sh",(/-1/),"string")
+  nlines = dimsizes(z)
+  txt(33) = "<p class=c>"
+  do gg = 0,nlines-1
+     txt(33+gg) = z(gg)+"<br>"
+  end do
+  txt(34+nlines) = "</p>"
+  txt(34+nlines+1) = "Created "+systemfunc("date")
+  txt(34+nlines+2) = "<p class=btext2>CVDP Version "+VERSION+"</p></body></html>"
+  tt := ind(.not.ismissing(txt))
+  txt2 := txt(:tt(dimsizes(tt)-1)+1)
+  txt2 = where(ismissing(txt2),"",txt2)
+  asciiwrite(OUTDIR+"namelist_siconc_sh.html",txt2)
+
+  txt(28) = namelist_obs_qtxt+"<a href="+quote+"namelist_simulations.html"+quote+">Simulations</a><br>"
+  txt(29) = "Derived Namelists: <a href="+quote+"namelist_msftmz.html"+quote+">MSFTMZ</a> | <a href="+quote+"namelist_pr.html"+quote+">PR</a> | <a href="+quote+"namelist_psl.html"+quote+">PSL</a> | "
+  txt(30) = "<br><a href="+quote+"namelist_siconc_nh.html"+quote+">SICONC NH</a> | <a href="+quote+"namelist_siconc_sh.html"+quote+">SICONC SH</a> | <b>SND</b> | <a href="+quote+"namelist_tas.html"+quote+">TAS</a> |"
+  txt(31) = "<a href="+quote+"namelist_ts.html"+quote+">TS</a></td><td><h2 class="+quote+"text-center"+quote+">"+webtitle+"</h2></td></tr></table><hr width=990 align=left>"
+  txt(32) = "<p class=subtitle1>Derived Namelist: SND</p>" 
+  z := asciiread(OUTDIR+"namelist_snowdp",(/-1/),"string")
+  nlines = dimsizes(z)
+  txt(33) = "<p class=c>"
+  do gg = 0,nlines-1
+     txt(33+gg) = z(gg)+"<br>"
+  end do
+  txt(34+nlines) = "</p>"
+  txt(34+nlines+1) = "Created "+systemfunc("date")
+  txt(34+nlines+2) = "<p class=btext2>CVDP Version "+VERSION+"</p></body></html>"
+  tt := ind(.not.ismissing(txt))
+  txt2 := txt(:tt(dimsizes(tt)-1)+1)
+  txt2 = where(ismissing(txt2),"",txt2)
+  asciiwrite(OUTDIR+"namelist_snd.html",txt2)
+
+  txt(28) = namelist_obs_qtxt+"<a href="+quote+"namelist_simulations.html"+quote+">Simulations</a><br>"
+  txt(29) = "Derived Namelists: <a href="+quote+"namelist_msftmz.html"+quote+">MSFTMZ</a> | <a href="+quote+"namelist_pr.html"+quote+">PR</a> | <a href="+quote+"namelist_psl.html"+quote+">PSL</a> | "
+  txt(30) = "<br><a href="+quote+"namelist_siconc_nh.html"+quote+">SICONC NH</a> | <a href="+quote+"namelist_siconc_sh.html"+quote+">SICONC SH</a> | <a href="+quote+"namelist_snd.html"+quote+">SND</a> | <b>TAS</b> |"
+  txt(31) = "<a href="+quote+"namelist_ts.html"+quote+">TS</a></td><td><h2 class="+quote+"text-center"+quote+">"+webtitle+"</h2></td></tr></table><hr width=990 align=left>"
+  txt(32) = "<p class=subtitle1>Derived Namelist: TAS</p>" 
+  z := asciiread(OUTDIR+"namelist_trefht",(/-1/),"string")
+  nlines = dimsizes(z)
+  txt(33) = "<p class=c>"
+  do gg = 0,nlines-1
+     txt(33+gg) = z(gg)+"<br>"
+  end do
+  txt(34+nlines) = "</p>"
+  txt(34+nlines+1) = "Created "+systemfunc("date")
+  txt(34+nlines+2) = "<p class=btext2>CVDP Version "+VERSION+"</p></body></html>"
+  tt := ind(.not.ismissing(txt))
+  txt2 := txt(:tt(dimsizes(tt)-1)+1)
+  txt2 = where(ismissing(txt2),"",txt2)
+  asciiwrite(OUTDIR+"namelist_tas.html",txt2)
+
+  txt(28) = namelist_obs_qtxt+"<a href="+quote+"namelist_simulations.html"+quote+">Simulations</a><br>"
+  txt(29) = "Derived Namelists: <a href="+quote+"namelist_msftmz.html"+quote+">MSFTMZ</a> | <a href="+quote+"namelist_pr.html"+quote+">PR</a> | <a href="+quote+"namelist_psl.html"+quote+">PSL</a> | "
+  txt(30) = "<br><a href="+quote+"namelist_siconc_nh.html"+quote+">SICONC NH</a> | <a href="+quote+"namelist_siconc_sh.html"+quote+">SICONC SH</a> | <a href="+quote+"namelist_snd.html"+quote+">SND</a> | <a href="+quote+"namelist_tas.html"+quote+">TAS</a> |"
+  txt(31) = "<b>TS</b></td><td><h2 class="+quote+"text-center"+quote+">"+webtitle+"</h2></td></tr></table><hr width=990 align=left>"
+  txt(32) = "<p class=subtitle1>Derived Namelist: TS</p>" 
+  z := asciiread(OUTDIR+"namelist_ts",(/-1/),"string")
+  nlines = dimsizes(z)
+  txt(33) = "<p class=c>"
+  do gg = 0,nlines-1
+     txt(33+gg) = z(gg)+"<br>"
+  end do
+  txt(34+nlines) = "</p>"
+  txt(34+nlines+1) = "Created "+systemfunc("date")
+  txt(34+nlines+2) = "<p class=btext2>CVDP Version "+VERSION+"</p></body></html>"
+  tt := ind(.not.ismissing(txt))
+  txt2 := txt(:tt(dimsizes(tt)-1)+1)
+  txt2 = where(ismissing(txt2),"",txt2)
+  asciiwrite(OUTDIR+"namelist_ts.html",txt2)
+
   print("Finished: webpage.ncl")  
 end
+
 

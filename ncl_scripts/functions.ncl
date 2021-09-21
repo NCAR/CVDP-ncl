@@ -54,7 +54,7 @@ end
 undef("data_read_in")
 function data_read_in(zpath:string,vn:string,yearS:integer,yearE:integer)
 ; path for TS file(s), variable name, start year, and end year are read in.
-local zpath,vn,cpath0,ta,tfiles,c,arr,farr,yearS,yearE,mocheck,fils_precc,fils_precl
+local zpath,vn,cpath0,tfiles,c,arr,farr,yearS,yearE,mocheck,fils_precc,fils_precl
 begin
   if (vn.eq."TS") then
      vname = (/"TS","ts","sst","t_surf","skt"/)
@@ -81,8 +81,7 @@ begin
      emdata = 12
   else
      cpath0 = stringtochar(zpath)
-     ta = stringtochar("*")
-     if (any(cpath0.eq.ta(0)).or.any(cpath0.eq."{")) then   ; check for "*" and "{" denoting multiple files
+     if (any(cpath0.eq.tochar("*")).or.any(cpath0.eq.tochar("{"))) then   ; check for "*" and "{" denoting multiple files
         tfiles = systemfunc("ls "+zpath+" 2> /dev/null")   ; /dev/null suppresses all standard error output
         if (vn.eq."PRECT") then   ; special section for precip, as might need to do PRECC+PRECL
            b = addfile(tfiles(0),"r")   ; check for PRECC
@@ -153,7 +152,7 @@ begin
         delete([/cpath,nchar/])
 ;        delete(c)     
      end if
-     delete([/ta,cpath0/])
+     delete([/cpath0/])
   end if
   
   if (isvar("arr").eq.False) then
@@ -1166,5 +1165,105 @@ begin
   end if
 
   return(zarr)
+end
+;=================================================================================================================
+; For all images in outdir, trim white space, conver to .png (if necessary) and add watermark
+; odir = Output directory, otype = output file type (.ps, .png, .eps), max_nt = max number of tasks allowed at once,
+; zp0 = path of CVDP scripts, pngsize = size (in ImageMagick units) of png converted from ps
+;
+undef("image_finalize")
+procedure image_finalize(odir[1]:string,otype[1]:string,max_nt[1]:integer,zp0[1]:string,pngsize[1]:integer)
+local odir,otype,max_nt,zp0,pngsize,ofiles,ofilesS,ofilesT,gg,filesize,ofiles_png,numPlotsCompleted,numJobsActive,pid,command
+begin
+  ofiles = systemfunc("ls "+odir+"*."+otype)
+  if (otype.ne."png") then
+     ofilesS = systemfunc("ls "+outdir+"*."+output_type)
+     ofilesT = systemfunc("ls -l "+outdir+"*."+output_type)
+     do gg = 0,dimsizes(ofilesT)-1    ; check for empty .ps files, remove
+        filesize =  tofloat(str_get_field(ofilesT(gg),5," "))
+        if (filesize.lt.10000) then
+           print("Removing: "+ofilesT(gg))
+           system("rm "+ofilesS(gg))
+        end if
+     end do
+     ofiles_png = str_sub_str(ofiles,"."+otype,".png")
+     oreso = "-density "+pngsize+" -trim +repage -border 8"
+  else
+     ofiles_png = ofiles
+     oreso = "-trim +repage -border 15x30"
+  end if
+
+  do ff = 0,1  ; first time through trim and add border, second time through add watermark
+     numPlotsCompleted = 0
+     numJobsActive = 0
+     do gg = 0,dimsizes(ofiles)-1
+        do while (numJobsActive.ge.(max_num_tasks*2))
+           pid = subprocess_wait(0, True) ; check if any tasks have completed; block until something completes...
+           if (pid.gt.0) then
+              numPlotsCompleted = numPlotsCompleted + 1
+              numJobsActive = numJobsActive - 1
+              break
+           end if
+        end do
+        if (ff.eq.0) then
+           if (otype.eq."png") then
+              command = "convert "+oreso+" -bordercolor white -background white -flatten "+ofiles(gg)+" "+ofiles_png(gg)
+           else
+              command = "ps2epsi "+ofiles(gg)+" "+str_sub_str(ofiles(gg),"."+otype,".eps")+"; convert "+oreso+" -bordercolor white -background white -flatten "+str_sub_str(ofiles(gg),"."+otype,".eps")+" "+ofiles_png(gg)
+           end if
+        else
+           command = "composite -dissolve 50% -gravity northeast "+zp0+"copyright.gif "+ofiles_png(gg)+" "+ofiles_png(gg)
+        end if
+        pid = subprocess(command)
+        numJobsActive = numJobsActive + 1
+     end do
+     sleep(10)   ; wait 10 seconds for last batch of conversions to complete
+  end do
+;---------------------------------------
+; Add watermark to metrics graphics
+  
+  ofiles := systemfunc("ls "+odir+"*.gif")
+  numPlotsCompleted = 0
+  numJobsActive = 0
+  if (.not.ismissing(ofiles(0))) then
+     do gg = 0,dimsizes(ofiles)-1
+        do while (numJobsActive.ge.(max_num_tasks*2))
+           pid = subprocess_wait(0, True) ; check if any tasks have completed; block until something completes...
+           if (pid.gt.0) then
+              numPlotsCompleted = numPlotsCompleted + 1
+              numJobsActive = numJobsActive - 1
+              break
+           end if
+        end do
+        command = "composite -dissolve 100% -gravity northeast "+zp0+"copyright2.gif "+ofiles(gg)+" "+ofiles(gg)
+        pid = subprocess(command)
+        numJobsActive = numJobsActive + 1
+     end do
+     sleep(10)   ; wait 10 seconds for last batch of conversions to complete
+  end if
+;---------------------------------------
+; Cleanup .eps files and ESMF regridding logs
+;
+  if (otype.eq."ps") then
+     system("rm "+odir+"*.eps")
+  end if
+  if (isfilepresent2("PET0.RegridWeightGen.Log")) then
+     system("rm PET0.RegridWeightGen.Log")
+  end if
+end
+;=================================================================================================================
+; For all images in outdir, trim white space, conver to .png (if necessary) and add watermark
+; odir = Output directory, otype = output file type (.ps, .png, .eps), max_nt = max number of tasks allowed at once,
+; zp0 = path of CVDP scripts, pngsize = size (in ImageMagick units) of png converted from ps
+;
+undef("rm_obsfiles")
+procedure rm_obsfiles(ofi:string)
+local ofi
+begin
+   do gg = 0,dimsizes(ofi)-1
+      if (isfilepresent2("obs_"+ofi(gg))) then
+         system("rm obs_"+ofi(gg))
+      end if 
+   end do
 end
 

@@ -327,7 +327,8 @@ begin
      socn@comment_cvdp = "area average domain (-70:-50N, 0:360E)"
      copy_VarCoords(nino34,socn)
      socn@units = sst@units
-     socn@long_name = "Southern Ocean Index (monthly)"       
+     socn@long_name = "Southern Ocean Index (monthly)"    
+     delete(coswgt)   
 ;---------------------------------------------------------------------------------------------     
      if (OUTPUT_DATA.eq."True") then
         modname = str_sub_str(names(ee)," ","_")
@@ -384,74 +385,74 @@ begin
 
      sst = (/ dtrend_msg_n(ispan(0,nyr(ee)*12-1,1),sst,False,False,0) /) ; detrend the sst array
      
-     sstr = sst(:,{-3:3},{120:280})                        ; ENSO hovmuellers based on NDJ nino34
-     ; delete(sst)
-     finsst_hi = sstr(:60,0,:)    ; for Jan-2 -> Jan+3
-     finsst_hi!0 = "time"
-     finsst_hi&time = ispan(0,60,1)
-     finsst_hi = 0.
-     finsst_lo = finsst_hi
-     finsst_mid = finsst_hi
-     cntr_hi = 0
-     cntr_lo = 0
-     cntr_mid = 0
-     cntr_lo@_FillValue = default_fillvalue(typeof(cntr_lo)) 
-     cntr_mid@_FillValue = default_fillvalue(typeof(cntr_mid)) 
-     cntr_hi@_FillValue = default_fillvalue(typeof(cntr_hi)) 
+     if (nyr(ee).ge.15) then   ; 15+ years needed for composites
+        sstr = sst(:,{-3:3},{120:280})                        ; ENSO hovmuellers based on NDJ nino34
+        finsst_hi = sstr(:60,0,:)    ; for Jan-2 -> Jan+3
+        finsst_hi!0 = "time"
+        finsst_hi&time = ispan(0,60,1)
+        finsst_hi = 0.
+        finsst_lo = finsst_hi
+        finsst_mid = finsst_hi
+        cntr_hi = 0
+        cntr_lo = 0
+        cntr_mid = 0
+        cntr_lo@_FillValue = default_fillvalue(typeof(cntr_lo)) 
+        cntr_mid@_FillValue = default_fillvalue(typeof(cntr_mid)) 
+        cntr_hi@_FillValue = default_fillvalue(typeof(cntr_hi)) 
         
-     mocntr = 24   ; note: if this is set at 24 gg should start at 2
-     do gg = 2,dimsizes(nino34_ndj)-3   ; remember that Dec is month 11. End @ -3 because we need to grab + 3 yrs and 1 month from there (nino34_ndj already ends at eyear-1)
-        if (.not.ismissing(nino34_ndj(gg))) then    ; note that finsst_* indices 24:52 (Jan+0 -> May +2) are all that is shown in the hovmoller plots 
-           if (nino34_ndj(gg).ge.1.) then
-              finsst_hi = (/ finsst_hi+dim_avg_n(sstr(mocntr-24:mocntr+36,:,:),1) /)    ; nino34_ndj value is at sstr index mocntr+11     
-              cntr_hi = cntr_hi+1
+        mocntr = 24   ; note: if this is set at 24 gg should start at 2
+        do gg = 2,dimsizes(nino34_ndj)-3   ; remember that Dec is month 11. End @ -3 because we need to grab + 3 yrs and 1 month from there (nino34_ndj already ends at eyear-1)
+           if (.not.ismissing(nino34_ndj(gg))) then    ; note that finsst_* indices 24:52 (Jan+0 -> May +2) are all that is shown in the hovmoller plots 
+              if (nino34_ndj(gg).ge.1.) then
+                 finsst_hi = (/ finsst_hi+dim_avg_n(sstr(mocntr-24:mocntr+36,:,:),1) /)    ; nino34_ndj value is at sstr index mocntr+11     
+                 cntr_hi = cntr_hi+1
+              end if
+              if (nino34_ndj(gg).ge.-0.5.and.nino34_ndj(gg).le.0.5) then
+                 finsst_mid = (/ finsst_mid+dim_avg_n(sstr(mocntr-24:mocntr+36,:,:),1) /)          
+                 cntr_mid = cntr_mid+1
+              end if
+              if (nino34_ndj(gg).le.-1.) then
+                 finsst_lo = (/ finsst_lo+dim_avg_n(sstr(mocntr-24:mocntr+36,:,:),1) /)            
+                 cntr_lo = cntr_lo+1
+              end if
            end if
-           if (nino34_ndj(gg).ge.-0.5.and.nino34_ndj(gg).le.0.5) then
-              finsst_mid = (/ finsst_mid+dim_avg_n(sstr(mocntr-24:mocntr+36,:,:),1) /)          
-              cntr_mid = cntr_mid+1
-           end if
-           if (nino34_ndj(gg).le.-1.) then
-              finsst_lo = (/ finsst_lo+dim_avg_n(sstr(mocntr-24:mocntr+36,:,:),1) /)            
-              cntr_lo = cntr_lo+1
-           end if
-        end if
-        mocntr = mocntr+12
-     end do
-     delete([/sstr,mocntr/])
+           mocntr = mocntr+12
+        end do
+        delete([/sstr,mocntr/])
 
-     cntr_hi  = where(cntr_hi.eq.0, cntr_hi@_FillValue, cntr_hi)
-     cntr_mid = where(cntr_mid.eq.0,cntr_mid@_FillValue,cntr_mid)
-     cntr_lo  = where(cntr_lo.eq.0, cntr_lo@_FillValue, cntr_lo)
-     finsst_hi  = (/ finsst_hi/cntr_hi /)
-     finsst_mid = (/ finsst_mid/cntr_mid /)
-     finsst_lo  = (/ finsst_lo/cntr_lo /)
-     delete([/coswgt/])
+        cntr_hi  = where(cntr_hi.eq.0, cntr_hi@_FillValue, cntr_hi)
+        cntr_mid = where(cntr_mid.eq.0,cntr_mid@_FillValue,cntr_mid)
+        cntr_lo  = where(cntr_lo.eq.0, cntr_lo@_FillValue, cntr_lo)
+        finsst_hi  = (/ finsst_hi/cntr_hi /)
+        finsst_mid = (/ finsst_mid/cntr_mid /)
+        finsst_lo  = (/ finsst_lo/cntr_lo /)
      
-     if (OUTPUT_DATA.eq."True") then
-        hov_hi = (/ finsst_hi(24:52,:) /)  ; 24:52 runs from Jan+0->May+2 and matches range shown in plot
-        time_mon1 = ispan(0,28,1)
-        time_mon1@units = "months since 0000-01-01 00:00:00"
-        time_mon1@long_name = "Time"
-        time_mon1@standard_name = "time"
-        time_mon1@calendar = "standard"
-        time_mon1!0 = "time_mon1"
-        time_mon1&time_mon1 = time_mon1
-        hov_hi!0 = "time_mon1"
-        hov_hi&time_mon1 = time_mon1
-        longitude = finsst_hi&lon
-        longitude@standard_name = "longitude"
-        hov_hi!1 = "longitude"
-        hov_hi&longitude = longitude
-        delete([/time_mon1,longitude/])
-        hov_lo = (/ finsst_lo(24:52,:) /)  ; 24:52 runs from Jan+0->May+2 and matches range shown in plot
-        copy_VarCoords(hov_hi,hov_lo)
-        hov_hi@number_of_events = cntr_hi
-        hov_lo@number_of_events = cntr_lo
-        hov_hi@units = "C"
-        hov_lo@units = "C"
-        z->nino34_hov_elnino = set_varAtts(hov_hi,"nino3.4 El Nino Hovmoller sst composite","","")
-        z->nino34_hov_lanina = set_varAtts(hov_lo,"nino3.4 La Nina Hovmoller sst composite","","")
-        delete([/hov_hi,hov_lo/])
+        if (OUTPUT_DATA.eq."True") then
+           hov_hi = (/ finsst_hi(24:52,:) /)  ; 24:52 runs from Jan+0->May+2 and matches range shown in plot
+           time_mon1 = ispan(0,28,1)
+           time_mon1@units = "months since 0000-01-01 00:00:00"
+           time_mon1@long_name = "Time"
+           time_mon1@standard_name = "time"
+           time_mon1@calendar = "standard"
+           time_mon1!0 = "time_mon1"
+           time_mon1&time_mon1 = time_mon1
+           hov_hi!0 = "time_mon1"
+           hov_hi&time_mon1 = time_mon1
+           longitude = finsst_hi&lon
+           longitude@standard_name = "longitude"
+           hov_hi!1 = "longitude"
+           hov_hi&longitude = longitude
+           delete([/time_mon1,longitude/])
+           hov_lo = (/ finsst_lo(24:52,:) /)  ; 24:52 runs from Jan+0->May+2 and matches range shown in plot
+           copy_VarCoords(hov_hi,hov_lo)
+           hov_hi@number_of_events = cntr_hi
+           hov_lo@number_of_events = cntr_lo
+           hov_hi@units = "C"
+           hov_lo@units = "C"
+           z->nino34_hov_elnino = set_varAtts(hov_hi,"nino3.4 El Nino Hovmoller sst composite","","")
+           z->nino34_hov_lanina = set_varAtts(hov_lo,"nino3.4 La Nina Hovmoller sst composite","","")
+           delete([/hov_hi,hov_lo/])
+        end if
      end if     
 ;- - - - - -nino3.4 spatial composite section- - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
      if (any(ismissing((/syear(ee),syear_trefht(ee),syear_psl(ee),eyear(ee),eyear_trefht(ee),eyear_psl(ee)/)))) then
@@ -956,7 +957,6 @@ begin
         nino34_mon_sd(hh) = (/ dim_stddev(nino34_dt(hh::12)) /)
      end do
      nino34_mon_sd@units = "C"
-     delete(nino34_dt)    
      if (OUTPUT_DATA.eq."True") then
         time_mon2 = ispan(0,11,1)
         time_mon2@units = "months since 0000-01-01 00:00:00"
@@ -1003,7 +1003,7 @@ begin
         sig34@units        = ""
         delete([/N,mother,param,dt,s0,dj,jtot,npad,nadof,noise,siglvl,isigtest/])
 
-        ac34 = esacr(nino34,48)
+        ac34 = esacr(nino34_dt,48)
         time_mon3 = ispan(0,48,1)
         time_mon3@units = "months since 0000-01-01 00:00:00"
         time_mon3@long_name = "Time"
@@ -1023,6 +1023,7 @@ begin
            ac34_obs = ac34
         end if
      end if
+     delete(nino34_dt)    
      if (isvar("z")) then
         delete(z)
      end if
@@ -1146,9 +1147,6 @@ begin
      xyres4@gsnRightStringParallelPosF = 0.96
      xyres4@gsnCenterStringOrthogonalPosF = 0.025
 
-
-     xyres@gsnXYAboveFillColors = "red"
-     xyres@gsnXYBelowFillColors = "blue"
      xyres@gsnLeftString = names(ee)
      arr = new((/2,dimsizes(nino34)/),typeof(nino34))
    
@@ -1333,7 +1331,7 @@ begin
      res@gsnCenterString= ""
      res@gsnRightString = ""
 
-     if (isfilepresent2("obs_ts").and.ee.eq.0) then    ; for metrics table
+     if (isfilepresent2("obs_ts").and.ee.eq.0.and.isvar("finsst_hi")) then      ; for metrics table
         patcor_hov_hi = new((/nsim,dimsizes(finsst_hi&time),dimsizes(finsst_hi&lon)/),typeof(finsst_hi))
         patcor_hov_hi!1 = "time"
         patcor_hov_hi&time = finsst_hi&time
@@ -1345,7 +1343,7 @@ begin
         patcor_hov_hi(ee,:,:) = (/ finsst_hi /)
         patcor_hov_lo(ee,:,:) = (/ finsst_lo /)
      end if
-     if (isfilepresent2("obs_ts").and.ee.ge.1.and.isvar("patcor_hov_hi")) then           
+     if (isfilepresent2("obs_ts").and.ee.ge.1.and.isvar("patcor_hov_hi").and.isvar("finsst_hi")) then    
         dimT = dimsizes(finsst_hi&time)
         do hh = 0,dimT-1     ; need to loop over each timestep, using linint1 to interpolate to set longitudes. 
            patcor_hov_hi(ee,hh,:) = (/ totype(linint1(finsst_hi&lon,finsst_hi(hh,:),False,patcor_hov_hi&lon,0),typeof(patcor_hov_hi)) /)
@@ -1353,13 +1351,15 @@ begin
         end do
      end if
 
-     res@gsnCenterString = names(ee)   ;"El Nin~H-13V2F35~D~FV-2H3F21~o"
-     res@gsnRightString = cntr_hi
-     plot_n34hi(ee) = gsn_csm_hov(wks_n34_tlon_hi,finsst_hi,res)
+     if (isvar("finsst_hi")) then    
+        res@gsnCenterString = names(ee)   ;"El Nin~H-13V2F35~D~FV-2H3F21~o"
+        res@gsnRightString = cntr_hi
+        plot_n34hi(ee) = gsn_csm_hov(wks_n34_tlon_hi,finsst_hi,res)
      
-     res@gsnRightString = cntr_lo
-     plot_n34lo(ee) = gsn_csm_hov(wks_n34_tlon_lo,finsst_lo,res)
-     delete([/finsst_hi,finsst_lo,finsst_mid/])
+        res@gsnRightString = cntr_lo
+        plot_n34lo(ee) = gsn_csm_hov(wks_n34_tlon_lo,finsst_lo,res)
+        delete([/finsst_hi,finsst_lo,finsst_mid/])
+     end if
      delete(res)
 ;- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
      wres = True
@@ -1591,13 +1591,18 @@ begin
      scres@gsnLeftStringParallelPosF = .005
      scres@gsnRightStringOrthogonalPosF = -0.05
      scres@gsnRightStringParallelPosF = 0.96
-     scres@gsnRightString = cntr_hi+"/"+cntr_lo  ; list number of El Nino / La Nina events that formed composites
+     if (isvar("cntr_hi")) then
+        scres@gsnRightString = cntr_hi+"/"+cntr_lo  ; list number of El Nino / La Nina events that formed composites
+        delete([/cntr_hi,cntr_lo,cntr_mid/])
+     else
+        scres@gsnRightString = ""
+     end if
      scres@gsnLeftString = ""
      scres@gsnLeftStringFontHeightF = 0.014
      scres@gsnCenterStringFontHeightF = 0.018
      scres@gsnRightStringFontHeightF = 0.014
 
-     delete([/cntr_hi,cntr_lo,cntr_mid/])
+
 
      scres4 = scres    ; scres4 = ppt composite resources     
      delete(scres4@cnLevels)
