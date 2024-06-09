@@ -7,7 +7,7 @@ The Climate Variability Diagnostics Package (CVDP) developed by NCAR's Climate A
 The CVDP is the predecessor to the <a href="https://github.com/NCAR/CVDP-LE">CVDP-LE</a>, a similar tool that explores internal and forced contributions to climate variability and change in coupled model “initial-condition” Large Ensembles and observations. Note that while many of the individual simulation metrics are similar between the CVDP and CVDP-LE, the CVDP-LE has more of a focus on ensemble metrics. For example, the CVDP-LE calculates the ensemble-mean (i.e., forced response) and ensemble-spread (i.e., internal variability) of each model, as well as quantitative metrics comparing the models to observations. 
 
 # Getting Started
-View the <a href="https://github.com/NCAR/CVDP-ncl/blob/master/CVDP_readme.pdf">readme file</a> for details on how to run the CVDP. 
+View the <a href="https://www.cesm.ucar.edu/projects/cvdp/documentation">CVDP documentation page</a> for details on how to run CVDP v6.0.0. 
 
 # Input data
 The CVDP can read in the following data types as input:
@@ -18,4 +18,4 @@ The CVDP can read in the following data types as input:
 - Observations with file names and data array names matching CMIP conventions.
 
 # Getting help
-If the <a href="https://github.com/NCAR/CVDP-ncl/blob/master/CVDP_readme.pdf">readme file</a> and the <a href="https://www.cesm.ucar.edu/working_groups/CVC/cvdp/">CVDP Website</a> do not answer your query or if you have a bug report or suggestion, it is recommended that you <a href="https://github.com/NCAR/CVDP-ncl/issues">open an issue on Github</a>. 
+If the <a href="https://www.cesm.ucar.edu/projects/cvdp/documentation">CVDP documentation page</a> and the <a href="https://www.cesm.ucar.edu/working_groups/CVC/cvdp/">CVDP Website</a> do not answer your query or if you have a bug report or suggestion, it is recommended that you <a href="https://github.com/NCAR/CVDP-ncl/issues">open an issue on Github</a>. 
