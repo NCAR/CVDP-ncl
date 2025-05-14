@@ -1,27 +1,26 @@
-TS | ERSSTv5 | /project/cas/asphilli/DSets/ersstv5.185401-202412.nc | 1950 | 2023
-PSL | ERA5 | /project/cas/asphilli/CVDP-OBS/era5.msl.rg1x1.194001-202312.nc | 1950 | 2023
-TREFHT | BEST | /project/cas/asphilli/DSets/best.tas.185001-202401.nc | 1950 | 2023
-PRECT | ERA5 | /project/cas/asphilli/CVDP-OBS/era5.tp.rg1x1.194001-202312.nc | 1950 | 2023
+TS | ERSSTv5 | /project/mojave/observations/OBS-SST/ersstv5.185401-202412.nc | 1950 | 2024
+PSL | ERA5 | /project/cas/asphilli/CVDP-OBS/era5.msl.rg1x1.194001-202412.nc | 1950 | 2024
+TREFHT | BEST | /project/mojave/observations/OBS-TAS/best.tas.185001-202412.nc | 1950 | 2024
+PRECT | ERA5 | /project/cas/asphilli/CVDP-OBS/era5.tp.rg1x1.194001-202412.nc | 1950 | 2024
 aice_nh | NASA CDR NH | /project/cas/asphilli/NSIDC/seaice_conc_monthly_nh_NOAA_NSIDC_CDR.v04r00.197811-202312.nc | 1979 | 2023
-aice_sh | NASA Bootstrap SH | /project/cas/asphilli/NSIDC/seaice_conc_monthly_sh_Bootstrap.nsidc.v04r00.197811-202312.nc | 1979 | 2023
-MOC | CESM1 Forced Ocean Simulation | /project/cas/asphilli/CESM1.1_DPlgens/g.e11_LENS.GECOIAF.T62_g16.009.pop.h.MOC.194801-201512.nc | 1950 | 2015
-SSH | ORAS4 | /project/mojave/observations/ORAS4/zos_oras4_1m_grid_1x1.195801-201712.nc | 1958 | 2017
-
-TS | ERSSTv5 | /project/cas/asphilli/DSets/ersstv5.185401-202412.nc | 1900 | 2023
-PSL | ERA20c_ERA5_comb | /project/cas/asphilli/ECMWF_reanalysis_comb/era20c_era5.mon.mean.msl.190001-202312.nc | 1900 | 2023
-TREFHT | GISTEMP | /project/mojave/observations/OBS-TAS/gistemp.tas.188001-202402.nc | 1900 | 2023
-PRECT | GPCC | /project/mojave/observations/OBS-PR/GPCC/gpcc.pr.10.v2022_monitoring_2021-2024.189101-202402.nc | 1900 | 2023
-aice_nh | NASA Bootstrap NH | /project/cas/asphilli/NSIDC/seaice_conc_monthly_nh_Bootstrap.nsidc.v04r00.197811-202312.nc | 1979 | 2023
 aice_sh | NASA CDR SH | /project/cas/asphilli/NSIDC/seaice_conc_monthly_sh_NOAA_NSIDC_CDR.v04r00.197811-202312.nc | 1979 | 2023
 MOC | CESM1 Forced Ocean Simulation | /project/cas/asphilli/CESM1.1_DPlgens/g.e11_LENS.GECOIAF.T62_g16.009.pop.h.MOC.194801-201512.nc | 1950 | 2015
-SSH | ORAS4 | /project/mojave/observations/ORAS4/zos_oras4_1m_grid_1x1.195801-201712.nc | 1958 | 2017
+SSH | ORAS5-dsl | /project/cas/asphilli/CVDP-OBS/zos_dsl_ORAS5_monthly.rg1x1.195801-202412.nc | 1958 | 2024
 
-TS | HadISSTv1 | /project/mojave/observations/OBS-SST/hadisst.187001-202412.nc | 1979 | 2023
-PSL | ERA5 | /project/cas/asphilli/CVDP-OBS/era5.msl.rg1x1.194001-202312.nc | 1979 | 2023
-TREFHT | HadCRUT5.0.2 | /project/mojave/observations/OBS-TAS/HadCRUT.5.0.2.0.ensmean.185001-202402.nc | 1979 | 2023
-PRECT | GPCP | /project/mojave/observations/OBS-PR/GPCP/gpcp.mon.mean.197901-202403.nc | 1979 | 2023
+TS | ERSSTv5 | /project/mojave/observations/OBS-SST/ersstv5.185401-202412.nc | 1900 | 2024
+PSL | ERA20c_ERA5_comb | /project/cas/asphilli/ECMWF_reanalysis_comb/era20c_era5.mon.mean.msl.190001-202412.nc | 1900 | 2024
+TREFHT | GISTEMPv4 | /project/mojave/observations/OBS-TAS/gistempv4.tas.188001-202412.nc | 1900 | 2024
+PRECT | GPCC | /project/mojave/observations/OBS-PR/GPCC/gpcc.pr.10.v2022_monitoring_2021-2024.189101-202412.nc | 1900 | 2024
+aice_nh | NASA Bootstrap NH | /project/cas/asphilli/NSIDC/seaice_conc_monthly_nh_Bootstrap.nsidc.v04r00.197811-202312.nc | 1979 | 2023
+aice_sh | NASA Bootstrap SH | /project/cas/asphilli/NSIDC/seaice_conc_monthly_sh_Bootstrap.nsidc.v04r00.197811-202312.nc | 1979 | 2023
+MOC | CESM1 Forced Ocean Simulation | /project/cas/asphilli/CESM1.1_DPlgens/g.e11_LENS.GECOIAF.T62_g16.009.pop.h.MOC.194801-201512.nc | 1950 | 2015
+SSH | ORAS5-dsl | /project/cas/asphilli/CVDP-OBS/zos_dsl_ORAS5_monthly.rg1x1.195801-202412.nc | 1958 | 2024
+
+TS | HadISSTv1 | /project/mojave/observations/OBS-SST/hadisst.187001-202412.nc | 1979 | 2024
+PSL | ERA5 | /project/cas/asphilli/CVDP-OBS/era5.msl.rg1x1.194001-202412.nc | 1979 | 2024
+TREFHT | HadCRUT5.0.2 | /project/mojave/observations/OBS-TAS/HadCRUT.5.0.2.0.ensmean.185001-202412.nc | 1979 | 2024
+PRECT | GPCP | /project/mojave/observations/OBS-PR/GPCP/gpcp.mon.mean.197901-202412.nc | 1979 | 2024
 aice_nh | NASA Team NH | /project/cas/asphilli/NSIDC/seaice_conc_monthly_nh_NASA_Team.nsidc.v04r00.197811-202312.nc | 1979 | 2023
 aice_sh | NASA Team SH | /project/cas/asphilli/NSIDC/seaice_conc_monthly_sh_NASA_Team.nsidc.v04r00.197811-202312.nc | 1979 | 2023
 MOC | CESM1 Forced Ocean Simulation | /project/cas/asphilli/CESM1.1_DPlgens/g.e11_LENS.GECOIAF.T62_g16.009.pop.h.MOC.194801-201512.nc | 1979 | 2015
-SSH | ORAS4 | /project/mojave/observations/ORAS4/zos_oras4_1m_grid_1x1.195801-201712.nc | 1979 | 2017
-
+SSH | ORAS5-dsl | /project/cas/asphilli/CVDP-OBS/zos_dsl_ORAS5_monthly.rg1x1.195801-202412.nc | 1979 | 2024

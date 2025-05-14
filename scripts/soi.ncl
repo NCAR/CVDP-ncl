@@ -15,6 +15,8 @@ begin
   REMOVE_TREND_OBS = getenv("REMOVE_TREND_OBS") 
   REMOVE_TREND_MODEL = getenv("REMOVE_TREND_MODEL") 
   ENSEMBLE_MEAN_DIR = getenv("ENSEMBLE_MEAN_DIR")
+  MONTHLY_MODES = getenv("MONTHLY_MODES")
+  IM_COMMAND = getenv("IM_COMMAND")
   
   nsim = numAsciiRow("namelist_byvar/namelist_psl")
 
@@ -100,7 +102,7 @@ begin
      arr_12mo := runave_n_Wrap(arr,12,0,0)
      finarr := arr(:6,:,:)
      finarr = finarr@_FillValue
-     finarr@units = "hPa"
+     finarr@units = "hPa/hPa"
      si = (/0,1,3,6,7,9/)
      do hh = 0,5
         finarr(hh,:,:) = (/ regCoef_n(soi(hh,:),arr_3mo(si(hh)::12,:,:),0,0) /)
@@ -116,15 +118,36 @@ begin
      z->$(/"so_timeseries_jja"/)$ = set_varAtts(soi(3,:),"Southern Oscillation Index (JJA)","","")
      z->$(/"so_timeseries_jas"/)$ = set_varAtts(soi(4,:),"Southern Oscillation Index (JAS)","","")
      z->$(/"so_timeseries_son"/)$ = set_varAtts(soi(5,:),"Southern Oscillation Index (SON)","","")
-     z->$(/"so_timeseries_ann"/)$ = set_varAtts(soi(6,:),"Southern Oscillation Index (annual)","","")
+     z->$(/"so_timeseries_ann"/)$ = set_varAtts(soi(6,:),"Southern Oscillation Index (ANN)","","")
      z->$(/"so_pattern_djf"/)$    = set_varAtts(finarr(0,:,:),"Southern Oscillation spatial pattern (DJF)","","")
      z->$(/"so_pattern_jfm"/)$    = set_varAtts(finarr(1,:,:),"Southern Oscillation spatial pattern (JFM)","","")
      z->$(/"so_pattern_mam"/)$    = set_varAtts(finarr(2,:,:),"Southern Oscillation spatial pattern (MAM)","","")
      z->$(/"so_pattern_jja"/)$    = set_varAtts(finarr(3,:,:),"Southern Oscillation spatial pattern (JJA)","","")
      z->$(/"so_pattern_jas"/)$    = set_varAtts(finarr(4,:,:),"Southern Oscillation spatial pattern (JAS)","","")
      z->$(/"so_pattern_son"/)$    = set_varAtts(finarr(5,:,:),"Southern Oscillation spatial pattern (SON)","","")
-     z->$(/"so_pattern_ann"/)$    = set_varAtts(finarr(6,:,:),"Southern Oscillation spatial pattern (annual)","","")
-     delete([/fnt,fnt2,finarr,z,arr,soi,arr_3mo,arr_12mo,arr_west,arr_east/])
+     z->$(/"so_pattern_ann"/)$    = set_varAtts(finarr(6,:,:),"Southern Oscillation spatial pattern (ANN)","","")
+     delete([/soi,arr_3mo,arr_12mo,arr_west,arr_east/])
+
+     if (MONTHLY_MODES.eq."True")then
+        pi = 4.*atan(1.0)
+        rad = (pi/180.)
+        coswgt:=cos(rad*arr&lat)
+        coswgt!0 = "lat"
+        coswgt&lat= arr&lat
+        arr_west_mon = wgt_areaave(arr(:,{-30:0},{70:170}),coswgt({-30:0}),1.0,0)
+        arr_east_mon = wgt_areaave(arr(:,{-30:0},{200:280}),coswgt({-30:0}),1.0,0)
+        soi_mon = (/ arr_west_mon - arr_east_mon /)
+        soi_mon!0 = "time"
+        soi_mon&time = arr&time
+        soi_mon@detrend_option = arr@detrend_option
+        finarr_mon = regCoef_n(soi_mon,arr,0,0)
+        copy_VarMeta(arr(0,:,:),finarr_mon)
+        finarr_mon@units = "hPa/hPa"
+        z->$(/"so_timeseries_mon"/)$ = set_varAtts(soi_mon,"Southern Oscillation Index (mon)","","")
+        z->$(/"so_pattern_mon"/)$    = set_varAtts(finarr_mon,"Southern Oscillation spatial pattern (mon)","","")
+        delete([/pi,rad,coswgt,arr_west_mon,arr_east_mon,soi_mon,finarr_mon/])
+     end if
+     delete([/fnt,fnt2,finarr,z,arr/])
   end do  
 
   if (CREATE_GRAPHICS.eq."False") then
@@ -435,7 +458,7 @@ begin
         if (nEM.ge.1) then   ; in ensemble mode (runstyle=2)
            system("mv "+OUTDIR+"so.000003.png "+OUTDIR+variname(dd)+".summary.png")
            if (PNG_SCALE_SUMMARY.ne.100) then
-              system("convert -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+variname(dd)+".summary.png "+OUTDIR+variname(dd)+".summary.png")
+              system(IM_COMMAND+" "+OUTDIR+variname(dd)+".summary.png -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+variname(dd)+".summary.png")
            end if
         end if
      else
@@ -793,7 +816,7 @@ begin
            system("mv "+OUTDIR+"so.timeseries.000001.png "+OUTDIR+variname(dd)+".indmem.png")
            system("mv "+OUTDIR+"so.timeseries.000002.png "+OUTDIR+variname(dd)+".summary.png")
            if (PNG_SCALE_SUMMARY.ne.100) then
-              system("convert -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+variname(dd)+".summary.png "+OUTDIR+variname(dd)+".summary.png")
+              system(IM_COMMAND+" "+OUTDIR+variname(dd)+".summary.png -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+variname(dd)+".summary.png")
            end if
         end if
      else

@@ -15,6 +15,7 @@ begin
   REMOVE_TREND_OBS  = getenv("REMOVE_TREND_OBS") 
   REMOVE_TREND_MODEL= getenv("REMOVE_TREND_MODEL") 
   ENSEMBLE_MEAN_DIR = getenv("ENSEMBLE_MEAN_DIR")
+  IM_COMMAND = getenv("IM_COMMAND")
   
   nsim = numAsciiRow("namelist_byvar/namelist_psl")
 
@@ -423,7 +424,7 @@ begin
         if (nEM.ge.1) then   ; in ensemble mode (runstyle=2)
            system("mv "+OUTDIR+"psl.trends.000003.png "+OUTDIR+variname(dd)+".summary.png")
            if (PNG_SCALE_SUMMARY.ne.100) then
-              system("convert -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+variname(dd)+".summary.png "+OUTDIR+variname(dd)+".summary.png")
+              system(IM_COMMAND+" "+OUTDIR+variname(dd)+".summary.png -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+variname(dd)+".summary.png")
            end if
         end if
      else
@@ -659,7 +660,7 @@ begin
         if (nEM.ge.1) then   ; in ensemble mode (runstyle=2)
            system("mv "+OUTDIR+"psl.trends.000003.png "+OUTDIR+variname(dd)+".summary.png")
            if (PNG_SCALE_SUMMARY.ne.100) then
-              system("convert -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+variname(dd)+".summary.png "+OUTDIR+variname(dd)+".summary.png")
+              system(IM_COMMAND+" "+OUTDIR+variname(dd)+".summary.png -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+variname(dd)+".summary.png")
            end if
         end if
      else
@@ -1018,7 +1019,7 @@ begin
            system("mv "+OUTDIR+"psl.timeseries.000001.png "+OUTDIR+variname(dd)+".indmem.png")
            system("mv "+OUTDIR+"psl.timeseries.000002.png "+OUTDIR+variname(dd)+".summary.png")
            if (PNG_SCALE_SUMMARY.ne.100) then
-              system("convert -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+variname(dd)+".summary.png "+OUTDIR+variname(dd)+".summary.png")
+              system(IM_COMMAND+" "+OUTDIR+variname(dd)+".summary.png -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+variname(dd)+".summary.png")
            end if
         end if
      else

@@ -15,6 +15,8 @@ begin
   REMOVE_TREND_OBS = getenv("REMOVE_TREND_OBS") 
   REMOVE_TREND_MODEL = getenv("REMOVE_TREND_MODEL") 
   ENSEMBLE_MEAN_DIR = getenv("ENSEMBLE_MEAN_DIR")
+  MONTHLY_MODES = getenv("MONTHLY_MODES")
+  IM_COMMAND = getenv("IM_COMMAND")
 
   nsim = numAsciiRow("namelist_byvar/namelist_psl")
 
@@ -132,7 +134,44 @@ begin
         z->$(/"nao_pattern_"+changeCaseChar(seas(gg))/)$     = set_varAtts(pattern2,"NAO spatial pattern ("+seas(gg)+")","","")
         delete([/pattern,pattern2/])
      end do
-     delete([/fnt,fnt2,fineof,z,arr,fineof,pcts/])
+     delete([/fineof,pcts/])
+
+     if (MONTHLY_MODES.eq."True")then
+        fineof_mon := calculate_eofs_mon(arr,20.,80,-90,40,3)
+        fineof_mon = lonFlip(fineof_mon)
+
+        pcts_mon := new((/1,dimsizes(arr&time)/),typeof(arr))
+        pcts_mon!1 = "time"
+        pcts_mon&time = arr&time
+        pcts_mon@detrend_option = arr@detrend_option
+        pcts_mon(0,:) = (/ fineof_mon@pc1 /)
+
+        if (.not.ismissing(fineof_mon(0,{70},{350}))) then    ; attempt to make all plots have the same sign
+           if (fineof_mon(0,{70},{350}).ge.0) then
+              fineof_mon(0,:,:) = fineof_mon(0,:,:)*-1.
+              pcts_mon(0,:) = pcts_mon(0,:)*-1
+           end if
+        end if
+        z->nao_timeseries_mon = set_varAtts(pcts_mon(0,:),"NAO normalized principal component timeseries (mon)","1","")
+
+        pattern_mon := fineof_mon(0,:,:)
+        pcvar_mon := str_split(fineof_mon@pcvar,",")
+        pattern_mon@pcvar = sprintf("%4.1f", tofloat(pcvar_mon(0)))+"%"
+        if (isatt(fineof_mon,"pcvar_signif")) then
+           signif_mon := str_split(fineof_mon@pcvar_signif,",")
+           if (signif_mon(0).eq.True) then
+              pattern_mon@pcvar = pattern_mon@pcvar+"*"
+           end if
+        end if
+        pattern_mon2 := (/ pattern_mon /)
+        copy_VarCoords(pattern_mon,pattern_mon2)
+        pattern_mon2@units = pattern_mon@units
+        pattern_mon2@pcvar = pattern_mon@pcvar
+
+        z->nao_pattern_mon     = set_varAtts(pattern_mon2,"NAO spatial pattern (mon)","","")
+        delete([/pattern_mon,pattern_mon2,fineof_mon,pcts_mon,signif_mon/])
+     end if
+     delete([/fnt,fnt2,z,arr/])
   end do    
 
   if (CREATE_GRAPHICS.eq."False") then
@@ -462,7 +501,7 @@ begin
         if (nEM.ge.1) then   ; in ensemble mode (runstyle=2)
            system("mv "+OUTDIR+"nao.000003.png "+OUTDIR+variname(dd)+".summary.png")
            if (PNG_SCALE_SUMMARY.ne.100) then
-              system("convert -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+variname(dd)+".summary.png "+OUTDIR+variname(dd)+".summary.png")
+              system(IM_COMMAND+" "+OUTDIR+variname(dd)+".summary.png -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+variname(dd)+".summary.png")
            end if
         end if
      else
@@ -822,7 +861,7 @@ begin
            system("mv "+OUTDIR+"nao.timeseries.000001.png "+OUTDIR+variname(dd)+".indmem.png")
            system("mv "+OUTDIR+"nao.timeseries.000002.png "+OUTDIR+variname(dd)+".summary.png")
            if (PNG_SCALE_SUMMARY.ne.100) then
-              system("convert -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+variname(dd)+".summary.png "+OUTDIR+variname(dd)+".summary.png")
+              system(IM_COMMAND+" "+OUTDIR+variname(dd)+".summary.png -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+variname(dd)+".summary.png")
            end if
         end if
      else

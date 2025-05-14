@@ -74,7 +74,7 @@ begin
               delete([/temp,temp2/])
            end do
         
-           InterpMethod = "patch"
+           InterpMethod = "bilinear"
            Opt                := True
            Opt@SrcTitle       = str_sub_str(str_squeeze(names(ee))," ","_")+" grid"   ; optional
            Opt@WgtFileName    = REGRID_DIR+str_sub_str(str_squeeze(names(ee))," ","_")+"/"+str_sub_str(str_squeeze(names(ee))," ","_")+"_"+nvarlist_ctype(ff)+"_to_.WgtFile_"+InterpMethod+".nc"
@@ -128,7 +128,7 @@ begin
                  Opt@SrcGridLat      = arr@lat                  ; source grid
                  Opt@SrcGridLon      = arr@lon
                  strsp = str_split(nfiles(gg),"/")
-                 outdir = REGRID_DIR+str_sub_str(str_squeeze(names(ee))," ","_")+"/"
+                 outdir = REGRID_DIR+str_sub_str(str_squeeze(names(ee))," ","_")+"/"+vn_save+"/"
                  if (.not.isfilepresent2(outdir)) then
                     system("mkdir -p "+outdir)
                  end if
@@ -160,6 +160,11 @@ begin
                     end if
                  end if
               end do
+
+              if (vn_save.eq."PRECL") then
+                 outdir = str_sub_str(outdir,"/PRECL/","/{PRECC,PRECL}/")
+              end if
+
               paths_spl := str_split(paths(ee),"/")
               na_m := na
               if (ismissing(EM_num(ee))) then

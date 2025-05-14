@@ -15,6 +15,7 @@ begin
   REMOVE_TREND_OBS = getenv("REMOVE_TREND_OBS") 
   REMOVE_TREND_MODEL = getenv("REMOVE_TREND_MODEL") 
   ENSEMBLE_MEAN_DIR = getenv("ENSEMBLE_MEAN_DIR")
+  IM_COMMAND = getenv("IM_COMMAND")
 
   pi=4.*atan(1.0)
   rad=(pi/180.)
@@ -188,6 +189,7 @@ begin
      ipv_tseries@detrend_option = arr@detrend_option
      finarrH := regCoef_n(ipv_tseries,arr,0,0)
      copy_VarMeta(arr(0,:,:),finarrH)
+     finarrH@units = finarrH@units+"/C"
 
      if ((eyear(ee)-syear(ee)+1).lt.40) then
         z = addfile(fnt,"c")
@@ -195,9 +197,11 @@ begin
         z->$(/"ipv_henley_timeseries_mon"/)$ = set_varAtts(ipv_tseries,"IPV unfiltered Henley timeseries (monthly)","","")
         z->$(/"ipv_henley_pattern_mon"/)$ = set_varAtts(finarrH,"IPV Henley regression pattern (monthly)","","")   ; flip longitudes back to running from 0:360.
         if (.not.any(ismissing(ipv_tseries))) then
-           splt1 := create_power_spectra(ipv_tseries,iopt,jave,pct,val1,val2)
+           jave := (7*(eyear(ee)-syear(ee)+1))/100
+           jave = where(jave.eq.0,1,jave)
+           splt1 := create_power_spectra(ipv_tseries,iopt,jave,pct,val1,val2,False)
            splt1@detrend_option = ipv_tseries@detrend_option
-           z->$(/"ipv_henley_spectra"/)$ = set_varAtts(splt1,"IPV Henley (monthly) power spectra, Markov spectrum and confidence curves","","") 
+           z->$(/"ipv_henley_spectra"/)$ = set_varAtts(splt1,"IPV Henley (monthly) power spectra, Markov spectrum and confidence curves","C^2/df","") 
         end if
         delete([/arr,z,lat,clat,splt1,finarrH/])
         continue
@@ -269,7 +273,7 @@ begin
            end if
            set_global_ncfile_attributes(z_arr,names_tas(ee),syear_tas(ee),eyear_tas(ee),getenv("VERSION"))
            z_arr->$(/"ipv_tas_regression_mon"/)$ = set_varAtts(fintas,"tas regression onto IPV timeseries (monthly)","","")
-           z_arr->$(/"ipv_henley_tas_regression_mon"/)$ = set_varAtts(fintasH,"tas regression onto Henley IPV timeseries (monthly)","","")
+           z_arr->$(/"ipv_henley_tas_regression_mon"/)$ = set_varAtts(fintasH,"tas regression onto Henley IPV timeseries (monthly)",fintasH@units+"/C","")
            delete([/z_arr,fintas,fnt_tas,fintasH/])
         end if
         delete(tas)
@@ -308,7 +312,7 @@ begin
            end if
            set_global_ncfile_attributes(z_arr,names_pr(ee),syear_pr(ee),eyear_pr(ee),getenv("VERSION"))
            z_arr->$(/"ipv_pr_regression_mon"/)$ = set_varAtts(finpr,"pr regression onto IPV timeseries (monthly)","","")
-           z_arr->$(/"ipv_henley_pr_regression_mon"/)$ = set_varAtts(finprH,"pr regression onto Henley IPV timeseries (monthly)","","")
+           z_arr->$(/"ipv_henley_pr_regression_mon"/)$ = set_varAtts(finprH,"pr regression onto Henley IPV timeseries (monthly)",finprH@units+" /C","")
            delete([/z_arr,finpr,fnt_pr,finprH/])
         end if
         delete(pr)
@@ -359,7 +363,7 @@ begin
               finzosH@coordinates ="lat2d_ocean lon2d_ocean"
            end if  
            z_arr->$(/"ipv_zos_regression_mon"/)$ = set_varAtts(finzos,"zos regression onto IPV timeseries (monthly)","","")
-           z_arr->$(/"ipv_henley_zos_regression_mon"/)$ = set_varAtts(finzosH,"zos regression onto Henley IPV timeseries (monthly)","","")
+           z_arr->$(/"ipv_henley_zos_regression_mon"/)$ = set_varAtts(finzosH,"zos regression onto Henley IPV timeseries (monthly)",finzosH@units+"/C","")
            delete([/z_arr,finzos,fnt_zos,finzosH/])
         end if
         delete(zos)
@@ -374,14 +378,14 @@ begin
      z->$(/"ipv_henley_timeseries_mon"/)$ = set_varAtts(ipv_tseries,"IPV unfiltered Henley timeseries (monthly)","C","")
      z->$(/"ipv_henley_pattern_mon"/)$ = set_varAtts(finarrH,"IPV Henley regression pattern (monthly)","","")   ; flip longitudes back to running from 0:360.
      if (.not.any(ismissing(pc1))) then
-        splt1 := create_power_spectra(pc1,iopt,jave,pct,val1,val2)
+        splt1 := create_power_spectra(pc1,iopt,jave,pct,val1,val2,True)
         splt1@detrend_option = pc1@detrend_option
         z->$(/"ipv_spectra"/)$ = set_varAtts(splt1,"IPV (monthly) power spectra, Markov spectrum and confidence curves","","") 
      end if
      if (.not.any(ismissing(ipv_tseries))) then
-        splt1 := create_power_spectra(ipv_tseries,iopt,jave,pct,val1,val2)
+        splt1 := create_power_spectra(ipv_tseries,iopt,jave,pct,val1,val2,False)
         splt1@detrend_option = pc1@detrend_option
-        z->$(/"ipv_henley_spectra"/)$ = set_varAtts(splt1,"IPV Henley (monthly) power spectra, Markov spectrum and confidence curves","","") 
+        z->$(/"ipv_henley_spectra"/)$ = set_varAtts(splt1,"IPV Henley (monthly) power spectra, Markov spectrum and confidence curves","C^2/df","") 
      end if
      delete([/z,finarr,pc1/])
   end do
@@ -761,7 +765,7 @@ begin
         if (nEM.ge.1) then   ; in ensemble mode (runstyle=2)
            system("mv "+OUTDIR+"ipv.000003.png "+OUTDIR+outputname(dd)+".summary.png")
            if (PNG_SCALE_SUMMARY.ne.100) then
-              system("convert -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+outputname(dd)+".summary.png "+OUTDIR+outputname(dd)+".summary.png")
+              system(IM_COMMAND+" "+OUTDIR+outputname(dd)+".summary.png -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+outputname(dd)+".summary.png")
            end if
         end if
      else
@@ -1112,7 +1116,7 @@ begin
         if (nEM.ge.1) then   ; in ensemble mode (runstyle=2)
            system("mv "+OUTDIR+"ipv.000003.png "+OUTDIR+outputname(dd)+".summary.png")
            if (PNG_SCALE_SUMMARY.ne.100) then
-              system("convert -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+outputname(dd)+".summary.png "+OUTDIR+outputname(dd)+".summary.png")
+              system(IM_COMMAND+" "+OUTDIR+outputname(dd)+".summary.png -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+outputname(dd)+".summary.png")
            end if
         end if
      else
@@ -1198,9 +1202,12 @@ begin
            cntr = cntr+1
         end do
      end if
-     do gg = 1,nEM   ; operate on each ensemble mean
-        lbFlag = summary_lb_flag(paths,EM_num,gg,nEM)  ; lbFlag set to True if summary labelbars should be drawn
 
+     do gg = nEMm,nEM   ; operate on each ensemble mean (or individual member)
+        if (gg.eq.0) then
+           continue
+        end if
+        lbFlag = summary_lb_flag(paths,EM_num,gg,nEM)  ; lbFlag set to True if summary labelbars should be drawn
         nens = num(EM_num.eq.gg) ; determines how many model simulations in each ensemble
         cntr_ens := ind(EM_num.eq.gg)   ; cntr_ens(hh) are the indices where each ensemble member of an ensemble reside 
         do hh = 0,nens-1
@@ -1349,7 +1356,7 @@ begin
         if (nEM.ge.1) then   ; in ensemble mode (runstyle=2)
            system("mv "+OUTDIR+"ipv.000003.png "+OUTDIR+outputname(dd)+".summary.png")
            if (PNG_SCALE_SUMMARY.ne.100) then
-              system("convert -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+outputname(dd)+".summary.png "+OUTDIR+outputname(dd)+".summary.png")
+              system(IM_COMMAND+" "+OUTDIR+outputname(dd)+".summary.png -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+outputname(dd)+".summary.png")
            end if
         end if
      else
@@ -1375,8 +1382,6 @@ begin
   res2@cnFillPalette := res@cnFillPalette
   res@cnMissingValFillColor = "gray90"
   res2@cnMissingValFillColor = "gray90"
-  res@gsnAddCyclic = True
-  res2@gsnAddCyclic = True
   res@trGridType = "TriangularMesh"
   res2@trGridType = "TriangularMesh"
 
@@ -1585,9 +1590,8 @@ begin
            qres@gsnLeftString = syear_mod+"-"+eyear_mod 
            qres@gsnRightString = "" 
            qres@gsnCenterString = names_mod 
-;           print(""+fnt)
            plot_indmem(cntr) = gsn_csm_contour_map(wks,arr,qres)
-;           print("Done with "+fnt)
+
            qres2@gsnLeftString = "" 
            qres2@gsnRightString = "" 
            qres2@gsnCenterString = names_mod+"-"+names_zos(0)
@@ -1690,11 +1694,12 @@ begin
         z->$(/variname(dd)+"_pval"/)$ = set_varAtts(p_val,arr_EM@long_name+" p-val statistic","%","")     
 
         delete([/p_val,arr_store,obs0_rg,obs_diff,arr_EM/])
-        if (isfilepresent2(Opt@WgtFileName)) then
-           system("rm "+Opt@WgtFileName)
-        end if
         cntr_EM = cntr_EM+4
      end do
+     if (isfilepresent2(Opt@WgtFileName)) then
+        system("rm "+Opt@WgtFileName)
+     end if
+
      panres@txString = title(dd)+" ZOS Regressions (Monthly)"
      gsn_panel2(wks,plot_indmem,(/nrow,ncol/),panres)
      panres@txString = title(dd)+" ZOS Regressions Differences (Monthly)"
@@ -1713,7 +1718,7 @@ begin
         if (nEM.ge.1) then   ; in ensemble mode (runstyle=2)
            system("mv "+OUTDIR+"ipv.000003.png "+OUTDIR+outputname(dd)+".summary.png")
            if (PNG_SCALE_SUMMARY.ne.100) then
-              system("convert -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+outputname(dd)+".summary.png "+OUTDIR+outputname(dd)+".summary.png")
+              system(IM_COMMAND+" "+OUTDIR+outputname(dd)+".summary.png -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+outputname(dd)+".summary.png")
            end if
         end if
      else
@@ -2073,7 +2078,7 @@ begin
            system("mv "+OUTDIR+"ipv.timeseries.000001.png "+OUTDIR+variname(dd)+".indmem.png")
            system("mv "+OUTDIR+"ipv.timeseries.000002.png "+OUTDIR+variname(dd)+".summary.png")
            if (PNG_SCALE_SUMMARY.ne.100) then
-              system("convert -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+variname(dd)+".summary.png "+OUTDIR+variname(dd)+".summary.png")
+              system(IM_COMMAND+" "+OUTDIR+variname(dd)+".summary.png -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+variname(dd)+".summary.png")
            end if
         end if
      else
@@ -2124,7 +2129,6 @@ begin
   pres@tmXTLabelFontHeightF = 0.021
   pres@tmXBLabelFontHeightF = 0.021
   pres@tmYLLabelFontHeightF = 0.021
-  pres@tiYAxisString = "Power (~S~o~N~C~S~2~N~ / cycles mo~S~-1~N~)"              ; yaxis
   pres@tiXAxisString = "Frequency (cycles mo~S~-1~N~)"
   pres@tiMainString = ""
   pres@txFontHeightF = 0.025
@@ -2184,6 +2188,14 @@ begin
      cntr_EM = 0
 
      YMaxF := new(1,double)
+
+     if (variname(dd).eq."ipv_henley_spectra") then
+        pres@tiYAxisString = "Power (~S~o~N~C~S~2~N~ / cycles mo~S~-1~N~)"              ; yaxis
+        pres2@tiYAxisString = "Power (~S~o~N~C~S~2~N~ / cycles mo~S~-1~N~)"              ; yaxis
+     else
+        pres@tiYAxisString = "Power ( / cycles mo~S~-1~N~)"              ; yaxis
+        pres2@tiYAxisString = "Power ( / cycles mo~S~-1~N~)"              ; yaxis
+     end if
 
      if (numobs.eq.0) then
         fnt = getenv("OUTDIR")+"obs.cvdp_data.ipv."+syear(0)+"-"+eyear(0)+".nc"
@@ -2401,7 +2413,7 @@ begin
            system("mv "+OUTDIR+"ipv.powspec.000001.png "+OUTDIR+outputname(dd)+".indmem.png")
            system("mv "+OUTDIR+"ipv.powspec.000002.png "+OUTDIR+outputname(dd)+".summary.png")
            if (PNG_SCALE_SUMMARY.ne.100) then
-              system("convert -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+outputname(dd)+".summary.png "+OUTDIR+outputname(dd)+".summary.png")
+              system(IM_COMMAND+" "+OUTDIR+outputname(dd)+".summary.png -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+outputname(dd)+".summary.png")
            end if
         end if
      else

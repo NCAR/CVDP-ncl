@@ -645,7 +645,7 @@ begin
            if (dimsizes(fsst).eq.1) then
               fsst@path = fsst
            else
-              fsst@path = str_sub_str(paths(gg),"/*/","/"+sstr(hh)+"/")+"*."+sstr(hh)+".*.nc"
+              fsst@path = paths(gg)+"*."+sstr(hh)+".*.nc"
            end if
            namelist_ssh(gg+maxnumobs) =  names(gg)+" | "+fsst@path+" | "+syear(gg)+" | "+eyear(gg)+" | "+names_EM(gg)
            break

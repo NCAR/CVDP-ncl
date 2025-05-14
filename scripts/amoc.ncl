@@ -17,6 +17,7 @@ begin
   REMOVE_TREND_OBS = getenv("REMOVE_TREND_OBS") 
   REMOVE_TREND_MODEL = getenv("REMOVE_TREND_MODEL") 
   ENSEMBLE_MEAN_DIR = getenv("ENSEMBLE_MEAN_DIR")
+  IM_COMMAND = getenv("IM_COMMAND")
 
   pi=4.*atan(1.0)
   rad=(pi/180.)
@@ -551,7 +552,7 @@ begin
   pres@tmXTLabelFontHeightF = 0.021
   pres@tmXBLabelFontHeightF = 0.021
   pres@tmYLLabelFontHeightF = 0.021
-  pres@tiYAxisString = "Power (~S~o~N~C~S~2~N~ / cycles mo~S~-1~N~)"              ; yaxis
+  pres@tiYAxisString = "Power ( / cycles mo~S~-1~N~)"              ; yaxis
   pres@tiXAxisString = "Frequency (cycles mo~S~-1~N~)"
   pres@tiMainString = ""
   pres@txFontHeightF = 0.025
@@ -836,7 +837,7 @@ begin
         system("mv "+OUTDIR+"amoc.powspec.000001.png "+OUTDIR+outputname+".indmem.png")
         system("mv "+OUTDIR+"amoc.powspec.000002.png "+OUTDIR+outputname+".summary.png")
         if (PNG_SCALE_SUMMARY.ne.100) then
-           system("convert -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+outputname+".summary.png "+OUTDIR+outputname+".summary.png")
+           system(IM_COMMAND+" "+OUTDIR+outputname+".summary.png -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+outputname+".summary.png")
         end if
      end if
   else
@@ -1154,7 +1155,7 @@ begin
            system("mv "+OUTDIR+"amoc_amv.leadlag.000001.png "+OUTDIR+outputname+".indmem.png")
            system("mv "+OUTDIR+"amoc_amv.leadlag.000002.png "+OUTDIR+outputname+".summary.png")
            if (PNG_SCALE_SUMMARY.ne.100) then
-              system("convert -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+outputname+".summary.png "+OUTDIR+outputname+".summary.png")
+              system(IM_COMMAND+" "+OUTDIR+outputname+".summary.png -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+outputname+".summary.png")
            end if
         end if
      end if
@@ -1510,7 +1511,7 @@ begin
            system("mv "+OUTDIR+"amoc.timeseries.000001.png "+OUTDIR+str_sub_str(variname(dd),"_",".")+".indmem.png")
            system("mv "+OUTDIR+"amoc.timeseries.000002.png "+OUTDIR+str_sub_str(variname(dd),"_",".")+".summary.png")
            if (PNG_SCALE_SUMMARY.ne.100) then
-              system("convert -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+str_sub_str(variname(dd),"_",".")+".summary.png "+OUTDIR+str_sub_str(variname(dd),"_",".")+".summary.png")
+              system(IM_COMMAND+" "+OUTDIR+str_sub_str(variname(dd),"_",".")+".summary.png -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+str_sub_str(variname(dd),"_",".")+".summary.png")
            end if
         else
            system("mv "+OUTDIR+"amoc.timeseries.png "+OUTDIR+str_sub_str(variname(dd),"_",".")+".indmem.png")
@@ -1954,7 +1955,7 @@ begin
         if (nEM.ge.1) then   ; in ensemble mode (runstyle=2)
            system("mv "+OUTDIR+"amoc_spareg.000003.png "+OUTDIR+"amoc.tassstreg.ann.summary.png")
            if (PNG_SCALE_SUMMARY.ne.100) then
-              system("convert -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+"amoc.tassstreg.ann.summary.png "+OUTDIR+"amoc.tassstreg.ann.summary.png")
+              system(IM_COMMAND+" "+OUTDIR+"amoc.tassstreg.ann.summary.png -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+"amoc.tassstreg.ann.summary.png")
            end if
         end if
      else
@@ -1968,7 +1969,6 @@ begin
      end if
   end do
 ;---AMOC ZOS Regressions plotting section---------------------------------------------------------------------------
-  res@gsnAddCyclic = True
   res2 = res    ; regression differences
   if (COLORMAP.eq.0) then
      res@cnFillPalette = "ncl_default"
@@ -2288,11 +2288,12 @@ begin
         z->$(/str_sub_str(variname(dd),"var","zos")+"_em_diffobs"/)$ = set_varAtts(obs_diff,obs_diff@long_name+" Ensemble Mean difference from "+names_zos(0),"","")           
         z->$(/str_sub_str(variname(dd),"var","zos")+"_pval"/)$ = set_varAtts(p_val,arr_EM@long_name+" p-val statistic","%","")   
         delete([/arr_store,obs0_rg,obs_diff,arr_EM,z,p_val/])
-        if (isfilepresent2(Opt@WgtFileName)) then
-           system("rm "+Opt@WgtFileName)
-        end if
         cntr_EM = cntr_EM+4
      end do
+     if (isfilepresent2(Opt@WgtFileName)) then
+        system("rm "+Opt@WgtFileName)
+     end if
+
      panres@txString = "AMOC ZOS Regressions (Annual)"
      gsn_panel2(wks,plot_indmem,(/nrow,ncol/),panres)
      
@@ -2313,7 +2314,7 @@ begin
         if (nEM.ge.1) then   ; in ensemble mode (runstyle=2)
            system("mv "+OUTDIR+"amoc_spareg.000003.png "+OUTDIR+"amoc.zosreg.ann.summary.png")
            if (PNG_SCALE_SUMMARY.ne.100) then
-              system("convert -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+"amoc.zosreg.ann.summary.png "+OUTDIR+"amoc.zosreg.ann.summary.png")
+              system(IM_COMMAND+" "+OUTDIR+"amoc.zosreg.ann.summary.png -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+"amoc.zosreg.ann.summary.png")
            end if
         end if
      else
@@ -2648,7 +2649,7 @@ begin
         if (nEM.ge.1) then   ; in ensemble mode (runstyle=2)
            system("mv "+OUTDIR+"amoc.000003.png "+OUTDIR+str_sub_str(variname(dd),"_",".")+".summary.png")
            if (PNG_SCALE_SUMMARY.ne.100) then
-              system("convert -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+str_sub_str(variname(dd),"_",".")+".summary.png "+OUTDIR+str_sub_str(variname(dd),"_",".")+".summary.png")
+              system(IM_COMMAND+" "+OUTDIR+str_sub_str(variname(dd),"_",".")+".summary.png -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+str_sub_str(variname(dd),"_",".")+".summary.png")
            end if
         end if
      else

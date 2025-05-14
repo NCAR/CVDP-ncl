@@ -7,6 +7,7 @@ begin
   OUTDIR = getenv("OUTDIR")  
   OBS = getenv("OBS")
   RUNSTYLE = getenv("RUNSTYLE") 
+  IM_COMMAND = getenv("IM_COMMAND")
 
   if (OBS.eq."False") then
     print("metrics.ncl: Reference data not present.")
@@ -612,7 +613,7 @@ begin
      end do
      gsn_panel(wks,plot,(/4,3/),panres)
      delete(wks)
-     system("convert -density 360 -trim +repage -border 40 -bordercolor white -transparent white "+OUTDIR+"table."+wks_type+" "+OUTDIR+ofile(jj)+".gif")  
+     system(IM_COMMAND+" "+OUTDIR+"table."+wks_type+" -density 360 -trim +repage -bordercolor white -border 40 -transparent white "+OUTDIR+ofile(jj)+".gif")  
      system("rm "+OUTDIR+"table.png")
   end do
   delete([/pres,panres,polyres,polyres2/])
@@ -987,7 +988,7 @@ begin
      delete(wks)
      fils = systemfunc("ls "+OUTDIR+"table*.png")
      do gg = 0,dimsizes(fils)-1
-        system("convert -density 144 -trim +repage -bordercolor white -border 20 -transparent white "+fils(gg)+" "+OUTDIR+"metrics.table_"+gg+"E.gif")  
+        system(IM_COMMAND+" "+fils(gg)+" -density 144 -trim +repage -bordercolor white -border 20 -transparent white "+OUTDIR+"metrics.table_"+gg+"E.gif")  
      end do
      system("rm "+OUTDIR+"table*.png")
   end if
@@ -1356,7 +1357,7 @@ begin
      delete(wks)
      fils = systemfunc("ls "+OUTDIR+"table*.png")
      do gg = 0,dimsizes(fils)-1
-        system("convert -density 144 -trim +repage -bordercolor white -border 20 -transparent white "+fils(gg)+" "+OUTDIR+"metrics.table_"+gg+".gif")  
+        system(IM_COMMAND+" "+fils(gg)+" -density 144 -trim +repage -bordercolor white -border 20 -transparent white "+OUTDIR+"metrics.table_"+gg+".gif")  
      end do
      system("rm "+OUTDIR+"table*.png")
   end if

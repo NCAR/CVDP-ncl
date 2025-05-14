@@ -15,6 +15,7 @@ begin
   REMOVE_TREND_OBS = getenv("REMOVE_TREND_OBS") 
   REMOVE_TREND_MODEL = getenv("REMOVE_TREND_MODEL") 
   ENSEMBLE_MEAN_DIR = getenv("ENSEMBLE_MEAN_DIR")
+  IM_COMMAND = getenv("IM_COMMAND")
 
   pi=4.*atan(1.0)
   rad=(pi/180.)
@@ -319,7 +320,7 @@ begin
      z->$(/"pdv_pattern_mon"/)$ = set_varAtts(finarr,"PDV regression pattern (monthly)","","")   ; flip longitudes back to running from 0:360.
      z->$(/"pdv_timeseries_mon"/)$ = set_varAtts(pc1,"PDV timeseries (monthly)","C","")
      if (.not.any(ismissing(pc1))) then
-        splt1 := create_power_spectra(pc1,iopt,jave,pct,val1,val2)
+        splt1 := create_power_spectra(pc1,iopt,jave,pct,val1,val2,True)
         splt1@detrend_option = pc1@detrend_option
         z->$(/"pdv_spectra"/)$ = set_varAtts(splt1,"PDV (monthly) power spectra, Markov spectrum and confidence curves","","") 
      end if
@@ -672,7 +673,7 @@ begin
         if (nEM.ge.1) then   ; in ensemble mode (runstyle=2)
            system("mv "+OUTDIR+"pdv.000003.png "+OUTDIR+outputname(dd)+".summary.png")
            if (PNG_SCALE_SUMMARY.ne.100) then
-              system("convert -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+outputname(dd)+".summary.png "+OUTDIR+outputname(dd)+".summary.png")
+              system(IM_COMMAND+" "+OUTDIR+outputname(dd)+".summary.png -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+outputname(dd)+".summary.png")
            end if
         end if
      else
@@ -1015,7 +1016,7 @@ begin
         if (nEM.ge.1) then
            system("mv "+OUTDIR+"pdv.000003.png "+OUTDIR+outputname(dd)+".summary.png")
            if (PNG_SCALE_SUMMARY.ne.100) then
-              system("convert -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+outputname(dd)+".summary.png "+OUTDIR+outputname(dd)+".summary.png")
+              system(IM_COMMAND+" "+OUTDIR+outputname(dd)+".summary.png -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+outputname(dd)+".summary.png")
            end if
         end if
      else
@@ -1254,7 +1255,7 @@ begin
         if (nEM.ge.1) then
            system("mv "+OUTDIR+"pdv.000003.png "+OUTDIR+outputname(dd)+".summary.png")
            if (PNG_SCALE_SUMMARY.ne.100) then
-              system("convert -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+outputname(dd)+".summary.png "+OUTDIR+outputname(dd)+".summary.png")
+              system(IM_COMMAND+" "+OUTDIR+outputname(dd)+".summary.png -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+outputname(dd)+".summary.png")
            end if
         end if
      else
@@ -1280,8 +1281,6 @@ begin
   res2@cnFillPalette := res@cnFillPalette
   res@cnMissingValFillColor = "gray90"
   res2@cnMissingValFillColor = "gray90"
-  res@gsnAddCyclic = True
-  res2@gsnAddCyclic = True
   res@trGridType = "TriangularMesh"
   res2@trGridType = "TriangularMesh"
 
@@ -1592,11 +1591,12 @@ begin
         z->$(/variname(dd)+"_pval"/)$ = set_varAtts(p_val,arr_EM@long_name+" p-val statistic","%","")     
 
         delete([/p_val,arr_store,obs0_rg,obs_diff,arr_EM/])
-        if (isfilepresent2(Opt@WgtFileName)) then
-           system("rm "+Opt@WgtFileName)
-        end if
         cntr_EM = cntr_EM+4
      end do
+     if (isfilepresent2(Opt@WgtFileName)) then
+        system("rm "+Opt@WgtFileName)
+     end if
+
      panres@txString = title(dd)+" ZOS Regressions (Monthly)"
      gsn_panel2(wks,plot_indmem,(/nrow,ncol/),panres)
      panres@txString = title(dd)+" ZOS Regressions Differences (Monthly)"
@@ -1615,7 +1615,7 @@ begin
         if (nEM.ge.1) then
            system("mv "+OUTDIR+"pdv.000003.png "+OUTDIR+outputname(dd)+".summary.png")
            if (PNG_SCALE_SUMMARY.ne.100) then
-              system("convert -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+outputname(dd)+".summary.png "+OUTDIR+outputname(dd)+".summary.png")
+              system(IM_COMMAND+" "+OUTDIR+outputname(dd)+".summary.png -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+outputname(dd)+".summary.png")
            end if
         end if
      else
@@ -1974,7 +1974,7 @@ begin
            system("mv "+OUTDIR+"pdv.timeseries.000001.png "+OUTDIR+variname(dd)+".indmem.png")
            system("mv "+OUTDIR+"pdv.timeseries.000002.png "+OUTDIR+variname(dd)+".summary.png")
            if (PNG_SCALE_SUMMARY.ne.100) then
-              system("convert -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+variname(dd)+".summary.png "+OUTDIR+variname(dd)+".summary.png")
+              system(IM_COMMAND+" "+OUTDIR+variname(dd)+".summary.png -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+variname(dd)+".summary.png")
            end if
         else
            system("mv "+OUTDIR+"pdv.timeseries.png "+OUTDIR+variname(dd)+".indmem.png")
@@ -2029,7 +2029,7 @@ begin
   pres@tmXTLabelFontHeightF = 0.021
   pres@tmXBLabelFontHeightF = 0.021
   pres@tmYLLabelFontHeightF = 0.021
-  pres@tiYAxisString = "Power (~S~o~N~C~S~2~N~ / cycles mo~S~-1~N~)"              ; yaxis
+  pres@tiYAxisString = "Power ( / cycles mo~S~-1~N~)"              ; yaxis
   pres@tiXAxisString = "Frequency (cycles mo~S~-1~N~)"
   pres@tiMainString = ""
   pres@txFontHeightF = 0.025
@@ -2305,7 +2305,7 @@ begin
            system("mv "+OUTDIR+"pdv.powspec.000001.png "+OUTDIR+outputname(dd)+".indmem.png")
            system("mv "+OUTDIR+"pdv.powspec.000002.png "+OUTDIR+outputname(dd)+".summary.png")
            if (PNG_SCALE_SUMMARY.ne.100) then
-              system("convert -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+outputname(dd)+".summary.png "+OUTDIR+outputname(dd)+".summary.png")
+              system(IM_COMMAND+" "+OUTDIR+outputname(dd)+".summary.png -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+outputname(dd)+".summary.png")
            end if
         else
            system("mv "+OUTDIR+"pdv.powspec.png "+OUTDIR+outputname(dd)+".indmem.png")

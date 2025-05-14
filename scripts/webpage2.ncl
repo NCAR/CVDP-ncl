@@ -14,11 +14,11 @@ begin
   REMOVE_TREND_MODEL = getenv("REMOVE_TREND_MODEL") 
 
   varilA = (/"None", "LinearTrend", "30yrRunningMean", "rmGMST_EM", "rmEM","QuadraticTrend"/)
-  varilB = (/"No method is used to remove trends.","A linear trend is removed by month.",\
-             "A weighted running mean is applied by month using low-pass filter weights from the IPCC-AR4. (The 30 weights can be found within the functions.ncl file under the remove_trend function.) "+\
-             "These weights are roughly equivalent to a 30-yr low pass smoother. After the weighted running average is applied, the weighted array is subtracted from the raw array to effectively remove the long-term trend.",\
-             "The ensemble mean global mean tas array is regressed upon the variable relevant for that particular metric, and then the regression map is scaled by the value of the ensemble mean global mean tas value at each timestep."+\
-             "This new scaled regression array is then subtracted from the raw array to effectively remove the long-term trend.","The ensemble mean is removed at every timestep.","A quadratic trend is removed by month."/)
+  varilB = (/"a trend removal method is not employed.","a linear trend is removed for each month.",\
+             "a weighted running mean is applied by month using low-pass filter weights from the IPCC-AR4. (The 30 weights can be found within the functions.ncl file under the remove_trend function.) "+\
+             "The weighted 30-yr low pass smoothed array is subtracted from the raw array, effectively removing the long-term trend.",\ 
+             "the ensemble mean global mean tas array is regressed upon the variable relevant for that particular metric, and then the regression map is scaled by the value of the ensemble mean global mean tas value at each timestep. "+\
+             "This new scaled regression array is then subtracted from the raw array to effectively remove the long-term trend.","the ensemble mean is removed at every timestep.","a quadratic trend is removed for each month."/)
   rt_obs = varilB(ind(varilA.eq.REMOVE_TREND_OBS))
   rt_model = varilB(ind(varilA.eq.REMOVE_TREND_MODEL))
 
@@ -393,7 +393,7 @@ begin
 
 
   txt(160) = "<tr class="+quote+"d-flex"+quote+">"
-  txt(161) = "<td class="+quote+"col"+quote+"><b>SIC NH</b></td>"
+  txt(161) = "<td class="+quote+"col"+quote+"><b>SICONC NH</b></td>"
   txt(162) = "<td class="+quote+"col"+quote+">"+table_link_setup(OUTDIR,"siconc_nh_spatialmean_djf.summary.png","DJF")+"</td>"
   txt(163) = "<td class="+quote+"col"+quote+">"+table_link_setup(OUTDIR,"siconc_nh_spatialmean_jfm.summary.png","JFM")+"</td>"
   txt(164) = "<td class="+quote+"col"+quote+">"+table_link_setup(OUTDIR,"siconc_nh_spatialmean_mam.summary.png","MAM")+"</td>"
@@ -404,7 +404,7 @@ begin
   txt(169) = "</tr>"
 
   txt(170) = "<tr class="+quote+"d-flex"+quote+">"
-  txt(171) = "<td class="+quote+"col"+quote+"><b>SIC SH</b></td>"
+  txt(171) = "<td class="+quote+"col"+quote+"><b>SICONC SH</b></td>"
   txt(172) = "<td class="+quote+"col"+quote+">"+table_link_setup(OUTDIR,"siconc_sh_spatialmean_djf.summary.png","DJF")+"</td>"
   txt(173) = "<td class="+quote+"col"+quote+">"+table_link_setup(OUTDIR,"siconc_sh_spatialmean_jfm.summary.png","JFM")+"</td>"
   txt(174) = "<td class="+quote+"col"+quote+">"+table_link_setup(OUTDIR,"siconc_sh_spatialmean_mam.summary.png","MAM")+"</td>"
@@ -476,7 +476,7 @@ begin
   txt(349) = "</tr>"
 
   txt(360) = "<tr class="+quote+"d-flex"+quote+">"
-  txt(361) = "<td class="+quote+"col"+quote+"><b>SIC NH</b></td>"
+  txt(361) = "<td class="+quote+"col"+quote+"><b>SICONC NH</b></td>"
   txt(362) = "<td class="+quote+"col"+quote+">"+table_link_setup(OUTDIR,"siconc_nh_spatialstddev_djf.summary.png","DJF")+"</td>"
   txt(363) = "<td class="+quote+"col"+quote+">"+table_link_setup(OUTDIR,"siconc_nh_spatialstddev_jfm.summary.png","JFM")+"</td>"
   txt(364) = "<td class="+quote+"col"+quote+">"+table_link_setup(OUTDIR,"siconc_nh_spatialstddev_mam.summary.png","MAM")+"</td>"
@@ -487,7 +487,7 @@ begin
   txt(369) = "</tr>"
 
   txt(370) = "<tr class="+quote+"d-flex"+quote+">"
-  txt(371) = "<td class="+quote+"col"+quote+"><b>SIC SH</b></td>"
+  txt(371) = "<td class="+quote+"col"+quote+"><b>SICONC SH</b></td>"
   txt(372) = "<td class="+quote+"col"+quote+">"+table_link_setup(OUTDIR,"siconc_sh_spatialstddev_djf.summary.png","DJF")+"</td>"
   txt(373) = "<td class="+quote+"col"+quote+">"+table_link_setup(OUTDIR,"siconc_sh_spatialstddev_jfm.summary.png","JFM")+"</td>"
   txt(374) = "<td class="+quote+"col"+quote+">"+table_link_setup(OUTDIR,"siconc_sh_spatialstddev_mam.summary.png","MAM")+"</td>"
@@ -558,7 +558,7 @@ begin
   txt(549) = "</tr>"
 
   txt(560) = "<tr class="+quote+"d-flex"+quote+">"
-  txt(561) = "<td class="+quote+"col"+quote+"><b>SIC NH</b></td>"
+  txt(561) = "<td class="+quote+"col"+quote+"><b>SICONC NH</b></td>"
   txt(562) = "<td class="+quote+"col"+quote+">"+table_link_setup(OUTDIR,"siconc_nh_trends_djf.summary.png","DJF")+"</td>"
   txt(563) = "<td class="+quote+"col"+quote+">"+table_link_setup(OUTDIR,"siconc_nh_trends_jfm.summary.png","JFM")+"</td>"
   txt(564) = "<td class="+quote+"col"+quote+">"+table_link_setup(OUTDIR,"siconc_nh_trends_mam.summary.png","MAM")+"</td>"
@@ -569,7 +569,7 @@ begin
   txt(569) = "</tr>"
 
   txt(570) = "<tr class="+quote+"d-flex"+quote+">"
-  txt(571) = "<td class="+quote+"col"+quote+"><b>SIC SH</b></td>"
+  txt(571) = "<td class="+quote+"col"+quote+"><b>SICONC SH</b></td>"
   txt(572) = "<td class="+quote+"col"+quote+">"+table_link_setup(OUTDIR,"siconc_sh_trends_djf.summary.png","DJF")+"</td>"
   txt(573) = "<td class="+quote+"col"+quote+">"+table_link_setup(OUTDIR,"siconc_sh_trends_jfm.summary.png","JFM")+"</td>"
   txt(574) = "<td class="+quote+"col"+quote+">"+table_link_setup(OUTDIR,"siconc_sh_trends_mam.summary.png","MAM")+"</td>"
@@ -714,10 +714,11 @@ begin
   txt(1492) = "<td>"+table_link_setup(OUTDIR,"amoc.stddev.ann.summary.png","Standard Deviations")+"</td>"
   txt(1493) = "<td>"+table_link_setup(OUTDIR,"amoc.pattern.ann.summary.png","Patterns")+"</td></tr>"
   txt(1494) = "<tr><td>"+table_link_setup(OUTDIR,"amoc.timeseries.ann.summary.png","Timeseries")+"</td>"
-  txt(1495) = "<td colspan=2>"+table_link_setup(OUTDIR,"amoc.tassstreg.ann.summary.png","SST/TAS Regressions")+"</td></tr>"
-  txt(1496) = "<tr><td>"+table_link_setup(OUTDIR,"amoc.powspec.summary.png","Spectra")+"</td>"
-  txt(1497) = "<td colspan=2>"+table_link_setup(OUTDIR,"amoc_amv.leadlag.ann.summary.png","AMV/AMOC Lag Correlations")+"</td></tr>"
-  txt(1498) = "</table></div></div>"
+  txt(1495) = "<td>"+table_link_setup(OUTDIR,"amoc.tassstreg.ann.summary.png","SST/TAS Regressions")+"</td>"
+  txt(1496) = "<td>"+table_link_setup(OUTDIR,"amoc.zosreg.ann.summary.png","ZOS Regressions")+"</td></tr>"
+  txt(1497) = "<tr><td>"+table_link_setup(OUTDIR,"amoc.powspec.summary.png","Spectra")+"</td>"
+  txt(1498) = "<td colspan=2>"+table_link_setup(OUTDIR,"amoc_amv.leadlag.ann.summary.png","AMV/AMOC Lag Correlations")+"</td></tr>"
+  txt(1499) = "</table></div></div>"
 
 
   txt(1580) = "<div class="+quote+"row"+quote+">"
@@ -1397,7 +1398,7 @@ begin
 
 
   txt(507) = "<tr class="+quote+"d-flex"+quote+">"
-  txt(508) = "<td class="+quote+"col"+quote+"><b>SIC NH</b></td>"
+  txt(508) = "<td class="+quote+"col"+quote+"><b>SICONC NH</b></td>"
 
   txt(510) = "<td class="+quote+"col"+quote+">"
   if (isfilepresent2(OUTDIR+"siconc_nh_spatialmean_djf.indmem.png")) then
@@ -1485,7 +1486,7 @@ begin
   txt(578) = "</tr>"
 
   txt(604) = "<tr class="+quote+"d-flex"+quote+">"
-  txt(605) = "<td class="+quote+"col"+quote+"><b>SIC SH</b></td>"
+  txt(605) = "<td class="+quote+"col"+quote+"><b>SICONC SH</b></td>"
 
   txt(610) = "<td class="+quote+"col"+quote+">"
   if (isfilepresent2(OUTDIR+"siconc_sh_spatialmean_djf.indmem.png")) then
@@ -2019,7 +2020,7 @@ begin
   txt(1478) = "</tr>"
 
   txt(1508) = "<tr class="+quote+"d-flex"+quote+">"
-  txt(1509) = "<td class="+quote+"col"+quote+"><b>SIC NH</b></td>"
+  txt(1509) = "<td class="+quote+"col"+quote+"><b>SICONC NH</b></td>"
 
   txt(1510) = "<td class="+quote+"col"+quote+">"
   if (isfilepresent2(OUTDIR+"siconc_nh_spatialstddev_djf.indmem.png")) then
@@ -2107,7 +2108,7 @@ begin
   txt(1578) = "</tr>"
 
   txt(1604) = "<tr class="+quote+"d-flex"+quote+">"
-  txt(1605) = "<td class="+quote+"col"+quote+"><b>SIC SH</b></td>"
+  txt(1605) = "<td class="+quote+"col"+quote+"><b>SICONC SH</b></td>"
 
   txt(1610) = "<td class="+quote+"col"+quote+">"
   if (isfilepresent2(OUTDIR+"siconc_sh_spatialstddev_djf.indmem.png")) then
@@ -2645,7 +2646,7 @@ begin
 
 
   txt(2607) = "<tr class="+quote+"d-flex"+quote+">"
-  txt(2608) = "<td class="+quote+"col"+quote+"><b>SIC NH</b></td>"
+  txt(2608) = "<td class="+quote+"col"+quote+"><b>SICONC NH</b></td>"
 
   txt(2610) = "<td class="+quote+"col"+quote+">"
   if (isfilepresent2(OUTDIR+"siconc_nh_trends_djf.indmem.png")) then
@@ -2733,7 +2734,7 @@ begin
   txt(2678) = "</tr>"
 
   txt(2704) = "<tr class="+quote+"d-flex"+quote+">"
-  txt(2705) = "<td class="+quote+"col"+quote+"><b>SIC SH</b></td>"
+  txt(2705) = "<td class="+quote+"col"+quote+"><b>SICONC SH</b></td>"
 
   txt(2710) = "<td class="+quote+"col"+quote+">"
   if (isfilepresent2(OUTDIR+"siconc_sh_trends_djf.indmem.png")) then
@@ -2958,7 +2959,7 @@ begin
   end if
 
   if (isfilepresent2(OUTDIR+"nino34.spatialcomp.indmem.mam1.png")) then
-     txt(3231) = " <a class="+quote+"collapse-link"+quote+" data-toggle="+quote+"collapse"+quote+" href="+quote+"#nnino34_spatialcomp_mam1"+quote+" role="+quote+"button"+quote+" aria-expanded="+quote+"false"+quote+" aria-controls="+quote+"nino34_spatialcomp_mam1"+quote+">MAM<sup>1</sup></a> " 
+     txt(3231) = " <a class="+quote+"collapse-link"+quote+" data-toggle="+quote+"collapse"+quote+" href="+quote+"#nino34_spatialcomp_mam1"+quote+" role="+quote+"button"+quote+" aria-expanded="+quote+"false"+quote+" aria-controls="+quote+"nino34_spatialcomp_mam1"+quote+">MAM<sup>1</sup></a> " 
      txt(3232) = "<div class="+quote+"collapse"+quote+" id="+quote+"nino34_spatialcomp_mam1"+quote+">"
      txt(3233) = "<ul class="+quote+"list-inline my-0"+quote+">"
      txt(3234) = "<li class="+quote+"list-inline-item"+quote+">"+table_link_setup_le(OUTDIR,"nino34.spatialcomp.indmem.mam1.png","Indiv")+"</li>"
@@ -3660,7 +3661,7 @@ begin
      txt(5721) = "Patterns</td></tr>"
   end if
 
-  txt(5730) = "<tr><td>"+table_link_setup(OUTDIR,"amoc.timeseries.ann.indmem.png","Timeseries")+"</td><td colspan=2>"
+  txt(5730) = "<tr><td>"+table_link_setup(OUTDIR,"amoc.timeseries.ann.indmem.png","Timeseries")+"</td><td>"
   if (isfilepresent2(OUTDIR+"amoc.tassstreg.ann.indmem.png")) then
      txt(5731) = "<a class="+quote+"collapse-link"+quote+" data-toggle="+quote+"collapse"+quote+" href="+quote+"#amoc_tassstreg_ann"+quote+" role="+quote+"button"+quote+" aria-expanded="+quote+"false"+quote+" aria-controls="+quote+"amoc_tassstreg_ann"+quote+">SST/TAS Regressions</a> " 
      txt(5732) = "<div class="+quote+"collapse"+quote+" id="+quote+"amoc_tassstreg_ann"+quote+">"
@@ -3669,7 +3670,19 @@ begin
      txt(5735) = "<li class="+quote+"list-inline-item"+quote+">"+table_link_setup_le(OUTDIR,"amoc.tassstreg.ann.indmemdiff.png","Bias")+"</li>"
      txt(5736) = "</ul></div></td>"
   else
-     txt(5731) = "SST/TAS Regressions</td></tr>"
+     txt(5731) = "SST/TAS Regressions</td>"
+  end if
+
+  txt(5740) = "<td>"
+  if (isfilepresent2(OUTDIR+"amoc.zosreg.ann.indmem.png")) then
+     txt(5741) = "<a class="+quote+"collapse-link"+quote+" data-toggle="+quote+"collapse"+quote+" href="+quote+"#amoc_zosreg_ann"+quote+" role="+quote+"button"+quote+" aria-expanded="+quote+"false"+quote+" aria-controls="+quote+"amoc_zosreg_ann"+quote+">ZOS Regressions</a> " 
+     txt(5742) = "<div class="+quote+"collapse"+quote+" id="+quote+"amoc_zosreg_ann"+quote+">"
+     txt(5743) = "<ul class="+quote+"list-inline my-0"+quote+">"
+     txt(5744) = "<li class="+quote+"list-inline-item"+quote+">"+table_link_setup_le(OUTDIR,"amoc.zosreg.ann.indmem.png","Indiv")+"</li>"
+     txt(5745) = "<li class="+quote+"list-inline-item"+quote+">"+table_link_setup_le(OUTDIR,"amoc.zosreg.ann.indmemdiff.png","Bias")+"</li>"
+     txt(5746) = "</ul></div></td></tr>"
+  else
+     txt(5741) = "ZOS Regressions</td></tr>"
   end if
   txt(5750) = "<tr><td>"+table_link_setup(OUTDIR,"amoc.powspec.indmem.png","Spectra")+"</td>"
   txt(5751) = "<td colspan=2>"+table_link_setup(OUTDIR,"amoc_amv.leadlag.ann.indmem.png","AMV/AMOC Lag Correlations")+"</td></tr>"
@@ -4929,84 +4942,81 @@ begin
   
   txt(30) = "<p class=subtitle>General Notes</p>"
   txt(31) = "<TABLE width='800' border=1 frame=void rules=all cellpadding=6 bordercolor=darkgray>"
-  txt(32) = "<tr><td><ul><li>ts (CESM equivalent = ts) is surface ("+quote+"skin"+quote+") temperature and is used in lieu of sea surface temperatures (SSTs), tas (TREFHT) is 2m air temperature."
-  txt(33) = "<li>pr (PRECC+PRECL or PRECT) is total precipitation , psl (PSL) is sea level pressure, sic (aice) is sea ice concentration, msftmz (MOC) is the ocean meridional overturning mass streamfunction, and zos (SSH) is the sea surface height above geoid."
-  txt(34) = "<li>The annual cycle is removed prior to every calculation by subtracting the long-term monthly means. Exception: The annual cycle is not removed for mean spatial maps."
-  txt(35) = "<li>The long-term trend removal is performed after the annual cycle is removed (if necessary) and set by the user for 1) data specified in the input namelist_obs file (usually observational data) and 2) data specified in the namelist file (usually model data). Description of method used in this comparison for specified namelist_obs data: "+rt_obs+" Description of method used in this comparison for specified namelist data: "+rt_model+" The trend removal method is performed for every metric other than Climatological Averages and Linear Trends."
-  txt(36) = "<li>Area-averages are always based on cosine of latitude weighting."
-  txt(37) = "<li>For visual clarity, the Y-axis <i>may</i> differ amongst individual panels on a particular plot."
+  txt(32) = "<tr><td><ul><li>ts (CESM equivalent = TS) is surface ("+quote+"skin"+quote+") temperature and is used in lieu of sea surface temperatures (SSTs), tas (TREFHT) is 2m air temperature."
+  txt(33) = "<li>pr (PRECC+PRECL or PRECT) is total precipitation , psl (PSL) is sea level pressure, siconc (aice) is sea ice concentration, msftmz (MOC) is the ocean meridional overturning mass streamfunction, and zos (SSH) is the sea surface height above geoid."
+  txt(34) = "<li>The annual cycle is removed prior to every calculation by subtracting the long-term monthly means. Exception: The annual cycle is not removed for Climatological Averages and Sea Ice Extent Timeseries (except those entitled "+quote+"Monthly Anomalies"+quote+")."
+  txt(35) = "<li>The long-term trend removal is performed for each month separately after the annual cycle is removed (if necessary) for all metrics except Climatological Averages, Linear Trends and Sea Ice Extent Timeseries (except those entitled "+quote+"Monthly Anomalies"+quote+"). The choice of detrending method is set by the user for 1) data specified in the input namelist_obs file (usually observational data) and 2) data specified in the namelist file (usually model data). For this specific comparison the creator specified the following detrending methods: For specified namelist_obs data, "+rt_obs+" For specified namelist data, "+rt_model
+  txt(36) = "<li>Area-averages use cosine of latitude weighting."
+  txt(37) = "<li>For visual clarity, the y-axis range <i>may</i> differ amongst individual panels on a particular plot."
   txt(39) = "<li>Power Spectra: The best-fit first-order Markov red noise spectrum (red curve) and its 95% (blue curve) and 99% (green curve) confidence bounds are shown on each panel. Top X-axis shows the period (in years), and the bottom X-axis shows the frequency (cycles/mo). If calculated, the observational spectrum is overlaid in gray on each model spectrum. The spectra are displayed in variance-conserving form." 
   txt(40) = "<li>Wavelet Analysis: A wavelet transform is computed using a Morlet wavelet with a wavenumber of 6. Areas significant at the 95% based on a chi-square test are stippled and the “cone of influence” is hatched. See Torrence, C. and G. P. Compo, 1998: A Practical Guide to Wavelet Analysis. Bull. Amer. Meteor. Soc., 79, 61-78. doi: 10.1175/1520-0477(1998)079<0061:APGTWA>2.0.CO;2."
-  txt(43) = "<li>Metrics Tables: Area-weighted pattern correlations and rms differences are calculated between observations and each model simulation (regridded to match the observational grid) for 11 climate metrics. The Total Score column shows the average of the 11 pattern correlations (Z-transformed) and rms differences. The following domains are used to compute the pattern correlations and rms differences: Means, standard deviations, ENSO and PDV: Global;  AMV: 63&deg;S:65&deg;N; El Nino and La Nina Hovm&ouml;llers: entire longitude/temporal range shown, NAM/NAO (20:90&deg;N) and SAM (20:90&deg;S)."
-  txt(44) = "<li>EOF significance: If an eigenvalue is significantly seperated from neighboring values a star is appended to the percent variance explained on the plot. Significance is calculated following North et al. (MWR, 1982)."
-  txt(45) = "<li>Ice Extent: Any grid cell defined as having a value at or above 15% is assumed to be 100% ice covered. The area of these grid cells is summed to create ice extent. For data sets with a northern hemisphere pole hole the CVDP looks for an attribute named pole_hole_area that is attached to the AREA variable in the netCDF file. The format of pole_hole_area should be start month (YYYYMM), end month (YYYYMM), area value, (repeat as necessary). If pole_hole_area is detected the CVDP will add the area value to the calculated northern hemisphere ice extent timeseries from the specified start month to the specified end month, and a * is placed after the dataset name in the ice extent plots."    
-  txt(46) = "<li>The ensemble mean of a metric is the average of the individual members from that ensemble for that metric.</li>"
+  txt(42) = "<li>Metrics Tables: Area-weighted pattern correlations and rms differences are calculated between observations and each model simulation (regridded to match the observational grid) for 11 climate metrics. The Total Score column shows the average of the 11 pattern correlations (Z-transformed) and rms differences. The following domains are used to compute the pattern correlations and rms differences: Standard deviations, ENSO and PDV: Global;  AMV: 63&deg;S:65&deg;N; El Nino and La Nina Hovm&ouml;llers: entire longitude/temporal range shown, NAM/NAO (20:90&deg;N) and SAM (20:90&deg;S)."
+  txt(43) = "<li>EOF significance: If an eigenvalue is significantly separated from neighboring values a star is appended to the percent variance explained on the plot. Significance is calculated following North et al. (MWR, 1982)."
+  txt(44) = "<li>Ice Extent: The area (km<sup>2</sup>) of siconc values greater than or equal to 15%. For data sets with a northern hemisphere pole hole the CVDP looks for an attribute named pole_hole_area that is attached to the AREA variable in the netCDF file. The format of pole_hole_area should be start month (YYYYMM), end month (YYYYMM), area value, (repeat as necessary). If pole_hole_area is detected the CVDP will add the area value to the calculated northern hemisphere ice extent timeseries from the specified start month to the specified end month, and a * is placed after the dataset name in the ice extent plots."    
+  txt(45) = "<li>The ensemble mean of a given metric is computed as the average across the individual members.</li>"
+  txt(46) = "<li>Regional timeseries patterns are created by regressing SST (PSL) anomalies in degrees C (hPa) onto the index time series.</li>"
   txt(47) = "<li>For more information on observational datasets and climate indices, see the <a href="+quote+"http://climatedataguide.ucar.edu/"+quote+" target="+quote+"_blank"+quote+">Climate Data Guide</a>.</ul>"
   txt(48) = "</td></tr></table>"
 
   txt(49) = "<p class=subtitle>Modes of Variability</p>"
   txt(50) = "<TABLE width='800' border=1 frame=void rules=all cellpadding=6 bordercolor=darkgray>"
   txt(51) = "<tr><td><b>ENSO Spatial Composites</b></td>"
-  txt(52) = "<td>The normalized December nino3.4 timeseries is used to composite all years greater than 1 standard deviation (El Ni&ntilde;o) and all years less that -1 standard deviation (La Ni&ntilde;a). The number of El Ni&ntilde;o/La Ni&ntilde;a events composited is shown in the right subtitle. The December nino3.4 timeseries is based on the December values of the monthly nino3.4 time series smoothed with a 3-point binomial filter. TS/TAS/PSL composites: Temperatures are color shaded and in units of Celsius. Sea level pressure is contoured from -16 to 16hPa by 2hPa; negative contours are dashed. PR composites: Precipitation is color shaded and is in units of mm/day. See Deser, C., A. S. Phillips, R. A. Tomas, Y. Okumura, M. A. Alexander, A. Capotondi, J. D. Scott, Y. -O. Kwon, and M. Ohba, 2012: ENSO and Pacific Decadal Variability in Community Climate System Model Version 4. Journal of Climate, 25, 2622-2651, doi: 10.1175/JCLI-D-11-00301.1.</td></tr>"   
-  txt(53) = "<tr><td><b>ENSO Hovm&ouml;llers</b></td>"
-  txt(54) = "<td>A 1-2-1 running average is applied to the monthly nino3.4 timeseries, and then December values are selected and normalized. Meridional averages are calculated by averaging from 3&deg;S:3&deg;N, and spatial patterns are formed by compositing from Jan year 0 to May year 2 where the nino3.4 (1-2-1 weighted) December (year 0) index is greater than 1 (El Niño) and those years where the index is less than -1 (La Niña). See Deser, C., A. S. Phillips, R. A. Tomas, Y. Okumura, M. A. Alexander, A. Capotondi, J. D. Scott, Y. -O. Kwon, and M. Ohba, 2012: ENSO and Pacific Decadal Variability in Community Climate System Model Version 4. Journal of Climate, 25, 2622-2651, doi: 10.1175/JCLI-D-11-00301.1.</td></tr>"  
+  txt(52) = "<td>El Ni&ntilde;o (La Ni&ntilde;a) events are defined based on the December value of the Nino34 SST Index (smoothed with a 3-point binomial filter) greater than or equal to 1 (less than or equal to -1) standard deviation. The number of El Ni&ntilde;o/La Ni&ntilde;a events composited is indicated in the subtitle located to the upper right of each panel. TS/TAS/PSL composites: Temperatures are color shaded and in units of Celsius. Sea level pressure is contoured from -16 to 16hPa by 2hPa; negative contours are dashed. PR composites: Precipitation is color shaded and is in units of mm/day. See Deser, C., A. S. Phillips, R. A. Tomas, Y. Okumura, M. A. Alexander, A. Capotondi, J. D. Scott, Y. -O. Kwon, and M. Ohba (2012), ENSO and Pacific Decadal Variability in Community Climate System Model Version 4. Journal of Climate, 25, 2622-2651, doi: 10.1175/JCLI-D-11-00301.1.</td></tr>"   
+  txt(53) = "<tr><td><b>El Ni&ntilde;o and La Ni&ntilde;a Hovm&ouml;llers</b></td>"
+  txt(54) = "<td>El Ni&ntilde;o (La Ni&ntilde;a) events are defined based on the December value of the Nino34 SST Index (smoothed with a 3-point binomial filter) greater than or equal to 1 (less than or equal to -1) standard deviation. The number of El Ni&ntilde;o/La Ni&ntilde;a events composited is indicated in the subtitle located to the upper right of each panel. Meridional averages are calculated by averaging from 3&deg;S:3&deg;N, and spatial patterns are formed by compositing from Jan year 0 to May year 2. See Deser, C., A. S. Phillips, R. A. Tomas, Y. Okumura, M. A. Alexander, A. Capotondi, J. D. Scott, Y. -O. Kwon, and M. Ohba (2012), ENSO and Pacific Decadal Variability in Community Climate System Model Version 4. Journal of Climate, 25, 2622-2651, doi: 10.1175/JCLI-D-11-00301.1.</td></tr>"  
 
   txt(55) = "<tr><td><b>PDV</b> (Pacific Decadal Variability)</td>"  
-  txt(56) = "<td>Monthly index timeseries defined as the leading principal component (PC) of North Pacific (20:70&deg;N, 110&deg;E:100&deg;W) area-weighted SST anomalies. Pattern created by regressing SST anomalies (in Celsius) at each grid box onto the normalized PC timeseries. Low pass-filtered timeseries (black curve) is based on a a 61-month running mean. See Deser, C., M. A. Alexander, S. -P. Xie, and A. S. Phillips, 2010: Sea surface temperature variability: patterns and mechanisms. <i>Ann. Rev. Mar. Sci.</i>, 2010.2, 115-143, doi:10.1146/annurev-marine-120408-151453. Also see Mantua, N. J., S. R. Hare, Y. Zhang, J. M. Wallace, and R. Francis, 1997: A Pacific interdecadal climate oscillation with impacts on salmon production. <i>Bull. Amer. Met. Soc.</i>, 1069-1079. For more information on the PDO see the <a href="+quote+"https://climatedataguide.ucar.edu/climate-data/pacific-decadal-oscillation-pdo-definition-and-indices?qt-climatedatasetmaintabs=1"+quote+" target="+quote+"_blank"+quote+">Climate Data Guide</a>.</td></tr>"
+  txt(56) = "<td>Monthly index timeseries defined as the leading principal component (PC) of North Pacific (20:70&deg;N, 110&deg;E:100&deg;W) area-weighted SST anomalies. Pattern created by regressing SST anomalies (in Celsius) at each grid box onto the normalized PC timeseries. Low pass-filtered timeseries (black curve) is based on a 61-month running mean. See Deser, C., M. A. Alexander, S. -P. Xie, and A. S. Phillips (2010), Sea surface temperature variability: patterns and mechanisms. <i>Ann. Rev. Mar. Sci.</i>, 2010.2, 115-143, doi:10.1146/annurev-marine-120408-151453. Also see Mantua, N. J., S. R. Hare, Y. Zhang, J. M. Wallace, and R. Francis (1997), A Pacific interdecadal climate oscillation with impacts on salmon production. <i>Bull. Amer. Met. Soc.</i>, 1069-1079. For more information on the PDV see the <a href="+quote+"https://climatedataguide.ucar.edu/climate-data/pacific-decadal-oscillation-pdo-definition-and-indices?qt-climatedatasetmaintabs=1"+quote+" target="+quote+"_blank"+quote+">Climate Data Guide</a>.</td></tr>"
   txt(57) = "<tr><td><b>IPV (Standard)</b> (Interdecadal Pacific Variability)</td>"  
-  txt(58) = "<td>Standard monthly index timeseries defined as the leading principal component (PC) of 13yr low pass filtered Pacific (40&deg;S:60&deg;N, 110&deg;E:70&deg;W) area-weighted SST anomalies.  Pattern created by regressing SST anomalies (in Celsius) at each grid box onto the normalized PC timeseries. At least 40 years of data are required for the standard IPV index to be calculated. See Meehl, G.A. and A. Hu, 2007: Megadroughts in the Indian Monsoon Region and Southwest North America and a Mechanism for Associated Multidecadal Pacific Sea Surface Temperature Anomalies, Journal of Climate, 19, 1605-1623, doi: 10.1175/JCLI3675.1.</td></tr>"
+  txt(58) = "<td>Monthly index timeseries defined as the leading principal component (PC) of 13yr low pass filtered Pacific (40&deg;S:60&deg;N, 110&deg;E:70&deg;W) area-weighted SST anomalies.  Pattern created by regressing SST anomalies (in Celsius) at each grid box onto the normalized PC timeseries. At least 40 years of data are required for the standard IPV index to be calculated. See Meehl, G.A. and A. Hu (2007), Megadroughts in the Indian Monsoon Region and Southwest North America and a Mechanism for Associated Multidecadal Pacific Sea Surface Temperature Anomalies, Journal of Climate, 19, 1605-1623, doi: 10.1175/JCLI3675.1.</td></tr>"
   txt(59) = "<tr><td><b>IPV (Henley)</b> (Interdecadal Pacific Variability)</td>"  
-  txt(60) = "<td>Standard monthly index timeseries defined as the 10&deg;S:10&deg;N, 170&deg;E:90&deg;W area-weighted SST anomalies minus the average of the area-weighted anomalies from 25&deg;:45&deg;N, 140&deg;E:145&deg;W and 15&deg;:50&deg;S, 150&deg;E:160&deg;W.  Pattern created by regressing resulting SST anomaly timeseries onto the SST anomalies at each grid box. See Henley, B.J., J. Gergis, D.J. Karoly, S. Power, J. Kennedy and C.K. Folland, 2015: A Tripole Index for the Interdecadal Pacific Oscillation, <i>Clim. Dyn.</i>, 45, 3077-3090, doi: 10.1007/s00382-015-2525-1.</td></tr>"
+  txt(60) = "<td>Monthly index timeseries defined as the area-weighted SST anomalies averaged over the central tropical Pacific (10&deg;S:10&deg;N, 170&deg;E:90&deg;W) minus the average of the area-weighted SST anomalies averaged over the north (25&deg;:45&deg;N, 140&deg;E:145&deg;W) and south (15&deg;:50&deg;S, 150&deg;E:160&deg;W) Pacific. Pattern created by regressing SST anomalies (in Celsius) at each grid box onto the timeseries. See Henley, B.J., J. Gergis, D.J. Karoly, S. Power, J. Kennedy and C.K. Folland (2015), A Tripole Index for the Interdecadal Pacific Oscillation, <i>Clim. Dyn.</i>, 45, 3077-3090, doi: 10.1007/s00382-015-2525-1.</td></tr>"
 
   txt(61) = "<tr><td><b>AMV</b> (Atlantic Multidecadal Variability)</td>"  
-  txt(62) = "<td>Monthly index timeseries defined as area-weighted SST* anomalies averaged over the North Atlantic (0:60&deg;N, 80&deg;W:0&deg;E), where SST* denotes that the global (60&deg;S:60&deg;N) mean SST anomaly has been removed at each timestep. Pattern created by regressing SST* anomalies onto the index timeseries and smoothing with a 9-point spatial filter. Low pass-filtered timeseries (black curve superimposed on the monthly timeseries) is based on a a 61-month running mean. Based on Trenberth, K. E., and D. J. Shea, 2006: Atlantic hurricanes and natural variability in 2005, <i>Geophys. Res. Lett.</i>, 33, L12704, doi:10.1029/2006GL026894. Low-pass filtered regression maps ("+quote+"Regr LP"+quote+") use a 10-year running mean on both the index timeseries and the field being regressed. For more information on the AMO see the <a href="+quote+"https://climatedataguide.ucar.edu/climate-data/atlantic-multi-decadal-oscillation-amo?qt-climatedatasetmaintabs=1"+quote+" target="+quote+"_blank"+quote+">Climate Data Guide</a>.</td></tr>"
+  txt(62) = "<td>Monthly index timeseries defined as area-weighted SST anomalies averaged over the North Atlantic (0:60&deg;N, 80&deg;W:0&deg;E). Pattern created by regressing SST anomalies onto the index timeseries and smoothing with a 9-point spatial filter. Low pass-filtered timeseries (black curve superimposed on the monthly timeseries) is based on a 61-month running mean. Low-pass filtered regression maps ("+quote+"Regr LP"+quote+") use a 10-year running mean on both the index timeseries and the field being regressed. For more information on the definition of AMV in a changing background climate, see Deser C. and A. S. Phillips (2023), Spurious Indo-Pacific connections to internal Atlantic Multidecadal Variability introduced by the global temperature residual method. Geophys. Res. Lett., 50, e2022GL100574, doi: 10.1029/2022GL100574. For more information on the AMV see the <a href="+quote+"https://climatedataguide.ucar.edu/climate-data/atlantic-multi-decadal-oscillation-amo?qt-climatedatasetmaintabs=1"+quote+" target="+quote+"_blank"+quote+">Climate Data Guide</a>.</td></tr>"
   txt(63) = "<tr><td><b>AMOC</b></td>"
-  txt(64) = "<td>The Atlantic Meridional Overturning Circulation (AMOC) is defined as the oceanic meridional mass transport (Sv) in the Atlantic sector. To compute AMOC, we follow the methods of Danabasoglu et al. (2012). Here we use annual averages of the AMOC, weighted by the cosine of the latitude and vertical extent of each model layer. Areas in which AMOC variance is low (standard deviation < 1e-6 Sv) are set to missing values for clarity. The leading EOF and associated principal component (PC) timeseries are computed over the Atlantic basin from 33&deg;S to 90&deg;N. The AMOC patterns are created by regressing the AMOC anomalies (in Sv) onto the normalized PC timeseries. The SST/TAS patterns associated with AMOC variations are created by regressing TAS/SST anomalies (in Celsius) at each grid box over the globe onto the normalized AMOC PC timeseries. A 15-point low-pass Lanczos filter is applied to the AMOC PC (and AMO) timeseries prior to computing lead/lag correlations, with a minimum of 90 years of data required. See Danabasoglu, G., S. G. Yeager, Y. -O. Kwon, J. J. Tribbia, A. S. Phillips, and J. W. Hurrell, 2012. Variability of the Atlantic Meridional Overturning Circulation in CCSM4. J. Climate, 25, 5153-5172, doi: 10.1175/JCLI-D-11-00463.1.<br><br>For CCSM4 and CESM1, the MOC variable is read in, the Eulerian Mean, Eddy-Induced and Submeso components are summed, and the Atlantic Ocean + Mediterranean Sea + Labrador Sea + GIN Sea + Arctic Ocean + Hudson Bay transport region is selected. For CCSM2 and CCSM3 the same transport region is selected but only the Eulerian Mean component is used as that is all that is available. For CMIP5 (CMIP6) data the msftmyz (msftmz) variable is read in and the atlantic_arctic_ocean basin is used. For CMIP3 data, the stfmmc variable is read in and the atlantic_ocean geo_region is used.</td></tr>" 
-  txt(65) = "<tr><td><b>NAM</b> (Northern Annular Mode)</td>"  
-  txt(66) = "<td>Seasonal/annual PSL averages are formed, square root of the cosine of the latitude weighting is applied, and then the leading EOF and associated principal component (PC) timeseries are computed over 20:90&deg;N, 0:360&deg;E. Pattern created by regressing global PSL anomalies (in hPa) onto normalized PC timeseries. Based on Hurrell, J. W., and C. Deser, 2009: North Atlantic climate variability: The role of the North Atlantic Oscillation. <i>J. Mar. Syst.</i>, 78, 28-41, doi:10.1016/j.jmarsys.2008.11.026. Also see Thompson, D. W. J., and J. M. Wallace, 2000: Annular modes in the extratropical circulation. Part I: Month-to-month variability. Journal of Climate, 13, 1000-1016.</td></tr>"  
-  txt(67) = "<tr><td><b>NAO</b> (North Atlantic Oscillation)</td>"  
-  txt(68) = "<td>Seasonal/annual PSL averages are formed, square root of the cosine of latitude weighting is applied, and then the leading EOF and associated principal component (PC) timeseries are computed over 20:80&deg;N, 90&deg;W:40&deg;E. Pattern created by regressing global PSL anomalies (in hPa) onto normalized PC timeseries. Based on Hurrell, J. W. and C. Deser, 2009: North Atlantic climate variability: The role of the North Atlantic Oscillation. <i>J. Mar. Syst.</i>, 78, 28-41, doi:10.1016/j.jmarsys.2008.11.026. For more information on the NAO see the <a href="+quote+"https://climatedataguide.ucar.edu/climate-data/hurrell-north-atlantic-oscillation-nao-index-pc-based?qt-climatedatasetmaintabs=1"+quote+" target="+quote+"_blank"+quote+">Climate Data Guide</a>.</td></tr>"  
-  txt(69) = "<tr><td><b>SAM/PSA1/PSA2</b> (Southern Annular Mode, Pacific South American Patterns 1/2)</td>"  
-  txt(70) = "<td>Seasonal/annual PSL averages are formed, square root of the cosine of latitude weighting is applied, and then the 1st (SAM), 2nd (PSA1) and 3rd (PSA2) EOFs and associated principal component (PC) timeseries are computed over 20:90&deg;S, 0:360&deg;E. Patterns created by regressing global PSL anomalies (in hPa) onto normalized PC timeseries. SAM calculation based on Thompson, D. W. J. and J.M. Wallace, 2000: Annular modes in the extratropical circulation. Part I: Month-to-month variability. Journal of Climate, 13, 1000-1016.</td></tr>"  
-  txt(71) = "<tr><td><b>PNA/NPO</b> (Pacific North American Pattern, North Pacific Oscillation)</td>" 
-  txt(72) = "<td>Seasonal/annual PSL averages are formed, the square root of the cosine of the latitude weighting is applied, and then the 1st (PNA) and 2nd (NPO) EOFs and associated principal component (PC) timeseries are computed over 20:85&deg;N, 120&deg;E:120&deg;W. Patterns created by regressing global PSL anomalies (in hPa) onto normalized PC timeseries.</td></tr>" 
-  txt(73) = "<tr><td><b>SST Regressions</b></td>"
-  txt(74) = "<td>SST anomalies (in Celsius) at each grid box are regressed upon the normalized atmospheric mode timeseries.</td></tr>" 
-  txt(75) = "<tr><td><b>TAS Regressions</b></td>"
-  txt(76) = "<td>TAS anomalies (in Celsius) at each grid box are regressed upon the normalized atmospheric mode timeseries.</td></tr>" 
-  txt(77) = "<tr><td><b>PR Regressions</b></td>"
-  txt(78) = "<td>PR anomalies (in mm/day) at each grid box are regressed upon the normalized atmospheric mode timeseries.</td></tr>" 
-  txt(79) = "</table>"
+  txt(64) = "<td>The Atlantic Meridional Overturning Circulation (AMOC) is defined as the leading Principal Component (PC) time series of annual mean oceanic meridional mass transport (Sv) in the Atlantic sector (33&deg;S-90&deg;N) following Danabasoglu et al. (2012). Here we use annual averages instead of monthly values. The AMOC patterns are created by regressing the AMOC anomalies (in Sv) onto the normalized PC timeseries. The SST/TAS patterns are created by regressing TAS/SST anomalies (in Celsius) at each grid box over the globe onto the normalized AMOC PC timeseries. A 15-point low-pass Lanczos filter is applied to the AMOC PC (and AMV) timeseries prior to computing lead/lag correlations, with a minimum of 90 years of data required. See Danabasoglu, G., S. G. Yeager, Y. -O. Kwon, J. J. Tribbia, A. S. Phillips, and J. W. Hurrell (2012), Variability of the Atlantic Meridional Overturning Circulation in CCSM4. J. Climate, 25, 5153-5172, doi: 10.1175/JCLI-D-11-00463.1.<br><br>For CCSM4 and CESM1, the MOC variable is read in, the Eulerian Mean, Eddy-Induced and Submeso components are summed, and the Atlantic Ocean + Mediterranean Sea + Labrador Sea + GIN Sea + Arctic Ocean + Hudson Bay transport region is selected. For CCSM2 and CCSM3 the same transport region is selected but only the Eulerian Mean component is used as that is all that is available. For CMIP5 (CMIP6) data the msftmyz (msftmz) variable is read in and the atlantic_arctic_ocean basin is used. For CMIP3 data, the stfmmc variable is read in and the atlantic_ocean geo_region is used.</td></tr>" 
+  txt(65) = "<tr><td><b>SO</b></td>"
+  txt(66) = "<td>The Southern Oscillation Index is defined as the difference between area-averaged PSL anomalies (in hPa) computed over 30&deg;S:0&deg;N, 70:170&deg;E and area-averaged PSL anomalies computed over 30&deg;S:0&deg;N, 160:80&deg;W. Pattern created by regressing global PSL anomalies (in hPa) onto the timeseries. See Deser, C. and J. M. Wallace (1990), Large-scale atmospheric circulation features of warm and cold episodes in the Tropical Pacific. J. Climate, 3, 1254-1281, doi: 10.1175/1520-0442(1990)003<1254:LSACFO>2.0.CO;2.</td></tr>"
+  txt(67) = "<tr><td><b>NAM</b> (Northern Annular Mode)</td>"  
+  txt(68) = "<td>Seasonal/annual PSL averages are formed, square root of the cosine of the latitude weighting is applied, and then the leading EOF and associated principal component (PC) timeseries are computed over 20:90&deg;N, 0:360&deg;E. Pattern created by regressing global PSL anomalies (in hPa) onto normalized PC timeseries. Based on Hurrell, J. W., and C. Deser (2009), North Atlantic climate variability: The role of the North Atlantic Oscillation. <i>J. Mar. Syst.</i>, 78, 28-41, doi:10.1016/j.jmarsys.2008.11.026. Also see Thompson, D. W. J., and J. M. Wallace, 2000: Annular modes in the extratropical circulation. Part I: Month-to-month variability. Journal of Climate, 13, 1000-1016.</td></tr>"  
+  txt(69) = "<tr><td><b>NAO</b> (North Atlantic Oscillation)</td>"  
+  txt(70) = "<td>Seasonal/annual PSL averages are formed, square root of the cosine of latitude weighting is applied, and then the leading EOF and associated principal component (PC) timeseries are computed over 20:80&deg;N, 90&deg;W:40&deg;E. Pattern created by regressing global PSL anomalies (in hPa) onto normalized PC timeseries. Based on Hurrell, J. W. and C. Deser (2009), North Atlantic climate variability: The role of the North Atlantic Oscillation. <i>J. Mar. Syst.</i>, 78, 28-41, doi:10.1016/j.jmarsys.2008.11.026. For more information on the NAO see the <a href="+quote+"https://climatedataguide.ucar.edu/climate-data/hurrell-north-atlantic-oscillation-nao-index-pc-based?qt-climatedatasetmaintabs=1"+quote+" target="+quote+"_blank"+quote+">Climate Data Guide</a>.</td></tr>"  
+  txt(71) = "<tr><td><b>SAM/PSA1/PSA2</b> (Southern Annular Mode, Pacific South American Patterns 1/2)</td>"  
+  txt(72) = "<td>Seasonal/annual PSL averages are formed, square root of the cosine of latitude weighting is applied, and then the 1st (SAM), 2nd (PSA1) and 3rd (PSA2) EOFs and associated principal component (PC) timeseries are computed over 20:90&deg;S, 0:360&deg;E. Patterns created by regressing global PSL anomalies (in hPa) onto normalized PC timeseries. SAM calculation based on Thompson, D. W. J. and J.M. Wallace, (2000), Annular modes in the extratropical circulation. Part I: Month-to-month variability. Journal of Climate, 13, 1000-1016.</td></tr>"  
+  txt(73) = "<tr><td><b>PNA/NPO</b> (Pacific North American Pattern, North Pacific Oscillation)</td>" 
+  txt(74) = "<td>Seasonal/annual PSL averages are formed, the square root of the cosine of the latitude weighting is applied, and then the 1st (PNA) and 2nd (NPO) EOFs and associated principal component (PC) timeseries are computed over 20:85&deg;N, 120&deg;E:120&deg;W. Patterns created by regressing global PSL anomalies (in hPa) onto normalized PC timeseries.</td></tr>" 
+  txt(75) = "</table>"
   
-  txt(90) = "<p class=subtitle>Climate Indices</p>"
+  txt(89) = "<p class=subtitle>Climate Indices</p>"
   txt(91) = "<TABLE width='800' border=1 frame=void rules=all cellpadding=6 bordercolor=darkgray>"
   txt(92) = "<tr><td><b>Atlantic SST Meridional Mode</b></td>"
   txt(93) = "<td>Defined as the difference between area-averaged SST anomalies (in Celsius) computed over 5:15&deg;N, 20:50&deg;W and area-averaged SST anomalies computed over 5:15&deg;S, 20&degW:10&deg;E.  See Doi, T., T. Tozuka and T. Yamagata (2009), Interannual variability of the Guinea Dome and its possible link with the Atlantic Meridional Mode. Climate Dynamics, 33, 985-998, doi:10.1007/s00382-009-0574-z.</td></tr>"
   txt(94) = "<tr><td><b>Atlantic Ni&ntilde;o SST</b></td>"
-  txt(95) = "<td>Area-averaged SST anomalies (in Celsius) computed over 3&deg;S:3&deg;N, 20&deg;W:0&deg;E.  See Zebiak, S. E., (1993): Air–sea interaction in the equatorial Atlantic region. Journal of Climate, 6, 1567–1586.</td></tr>"
+  txt(95) = "<td>Area-averaged SST anomalies (in Celsius) computed over 3&deg;S:3&deg;N, 20&deg;W:0&deg;E. See Zebiak, S. E. (1993), Air–sea interaction in the equatorial Atlantic region. Journal of Climate, 6, 1567–1586.</td></tr>"
   txt(96) = "<tr><td><b>North Atlantic SST</b></td>"
   txt(97) = "<td>Area-averaged SST anomalies (in Celsius) computed over 0&deg;:60&deg;N, 90&deg;W:0&deg;E. </td></tr>"
   txt(98) = "<tr><td><b>Tropical North Atlantic SST</b></td>"
-  txt(99) = "<td>Area-averaged SST anomalies (in Celsius) computed over 5.5:23.5&deg;N, 15:57.5&deg;W.  See Enfield, D.B., A.M. Mestas, D.A. Mayer, and L. Cid-Serrano (1999), How ubiquitous is the dipole relationship in tropical Atlantic sea surface temperatures?, JGR-O, 104, 7841-7848.</td></tr>"
+  txt(99) = "<td>Area-averaged SST anomalies (in Celsius) computed over 5.5:23.5&deg;N, 15:57.5&deg;W. See Enfield, D.B., A.M. Mestas, D.A. Mayer, and L. Cid-Serrano (1999), How ubiquitous is the dipole relationship in tropical Atlantic sea surface temperatures?, JGR-O, 104, 7841-7848.</td></tr>"
   txt(100) = "<tr><td><b>Tropical South Atlantic SST</b></td>"
-  txt(101) = "<td>Area-averaged SST anomalies (in Celsius) computed over 0:20&deg;S, 30&deg;W:10&deg;E.  See Enfield, D.B., A.M. Mestas, D.A. Mayer, and L. Cid-Serrano (1999), How ubiquitous is the dipole relationship in tropical Atlantic sea surface temperatures?, JGR-O, 104, 7841-7848.</td></tr>"
+  txt(101) = "<td>Area-averaged SST anomalies (in Celsius) computed over 0:20&deg;S, 30&deg;W:10&deg;E. See Enfield, D.B., A.M. Mestas, D.A. Mayer, and L. Cid-Serrano (1999), How ubiquitous is the dipole relationship in tropical Atlantic sea surface temperatures?, JGR-O, 104, 7841-7848.</td></tr>"
   txt(102) = "<tr><td><b>ni&ntilde;o1+2</b></td>"
   txt(103) = "<td>Area-averaged SST anomalies (in Celsius) computed over 0:10&deg;S, 80:90&deg;W. </td></tr>"
   txt(104) = "<tr><td><b>ni&ntilde;o3</b></td>"
-  txt(105) = "<td>Area-averaged SST anomalies (in Celsius) computed over 5&deg;S:5&deg;N, 90:150&deg;W.  See Trenberth, K. E. (1997) The Definition of El Niño. Bulletin of the American Meteorological Society, 78, 2771-2777.</td></tr>"
+  txt(105) = "<td>Area-averaged SST anomalies (in Celsius) computed over 5&deg;S:5&deg;N, 90:150&deg;W. See Rasmusson E. M. and T. H. Carpenter (1982), Variations in Tropical Sea Surface Temperature and Surface Wind Fields Associated with the Southern Oscillation/El Niño, Monthly Weather Review, 110, 354 – 384, https://doi.org/10.1175/1520-0493(1982)110<0354:VITSST>2.0.CO;2.</td></tr>"
   txt(106) = "<tr><td><b>ni&ntilde;o3.4</b></td>"
-  txt(107) = "<td>Area-averaged SST anomalies (in Celsius) computed over 5&deg;S:5&deg;N, 120:170&deg;W.  See Trenberth, K. E. (1997) The Definition of El Niño. Bulletin of the American Meteorological Society, 78, 2771-2777.</td></tr>"
+  txt(107) = "<td>Area-averaged SST anomalies (in Celsius) computed over 5&deg;S:5&deg;N, 120:170&deg;W. See Rasmusson E. M. and T. H. Carpenter (1982), Variations in Tropical Sea Surface Temperature and Surface Wind Fields Associated with the Southern Oscillation/El Niño, Monthly Weather Review, 110, 354 – 384, https://doi.org/10.1175/1520-0493(1982)110<0354:VITSST>2.0.CO;2.</td></tr>"
   txt(108) = "<tr><td><b>ni&ntilde;o4</b></td>"
   txt(109) = "<td>Area-averaged SST anomalies (in Celsius) computed over 5&deg;S:5&deg;N, 160&deg;E:150&deg;W. </td></tr>"
   txt(110) = "<tr><td><b>NPI</b> (North Pacific PSL Index)</td>"
-  txt(111) = "<td>Winter (December-March) average PSL anomalies (in hPa) area-averaged over 30&deg;:65&deg;N, 160&deg;E:140&deg;W. Based on Trenberth, K. E. and J. W. Hurrell, 1994: Decadal atmosphere-ocean variations in the Pacific, <i>Climate Dynamics</i>, 9, 303-319.</td></tr>"    
+  txt(111) = "<td>Winter (December-March) average PSL anomalies (in hPa) area-averaged over 30&deg;:65&deg;N, 160&deg;E:140&deg;W. Based on Trenberth, K. E. and J. W. Hurrell (1994), Decadal atmosphere-ocean variations in the Pacific, <i>Climate Dynamics</i>, 9, 303-319.</td></tr>"    
 
   txt(120) = "<tr><td><b>North Pacific Meridional Mode</b></td>"
-  txt(121) = "<td>See Chiang, J. C. H. and D. J. Vimont, (2004): Analogous Pacific and Atlantic Meridional Modes of Tropical Atmosphere–Ocean Variability. Journal of Climate, 17, 4143–4158, doi: 10.1175/jcli4953.1.</td></tr>"
+  txt(121) = "<td>See Chiang, J. C. H. and D. J. Vimont (2004), Analogous Pacific and Atlantic Meridional Modes of Tropical Atmosphere–Ocean Variability. Journal of Climate, 17, 4143–4158, doi: 10.1175/jcli4953.1.</td></tr>"
   txt(122) = "<tr><td><b>South Pacific Meridional Mode</b></td>"
-  txt(123) = "<td>See Zhang, H., A. Clement and P. Di Nezio, (2014): The South Pacific Meridional Mode: A Mechanism for ENSO-like Variability. Journal of Climate, 27, 769–783, doi: 10.1175/jcli-d-13-00082.1.</td></tr>"
+  txt(123) = "<td>See Zhang, H., A. Clement and P. Di Nezio (2014), The South Pacific Meridional Mode: A Mechanism for ENSO-like Variability. Journal of Climate, 27, 769–783, doi: 10.1175/jcli-d-13-00082.1.</td></tr>"
   txt(124) = "<tr><td><b>Indian Ocean SST Dipole</b></td>"
-  txt(125) = "<td>Defined as the difference between area-averaged SST anomalies (in Celsius) computed over 10&deg;S:10&deg;N, 50:70&deg;E and area-averaged SST anomalies computed over 0:10&deg;S, 90:110&deg;E.  See: Saji N.H., Goswami B.N., Vinayachandran P.N., Yamagata T., 1999: A dipole mode in the tropical Indian Ocean, Nature, 401, 360-363.</td></tr>"
+  txt(125) = "<td>Defined as the difference between area-averaged SST anomalies (in Celsius) computed over 10&deg;S:10&deg;N, 50:70&deg;E and area-averaged SST anomalies computed over 0:10&deg;S, 90:110&deg;E.  See: Saji, N.H., B. N. Goswami, P. N. Vinayachandran, and T. Yamagata (1999), A dipole mode in the tropical Indian Ocean, Nature, 401, 360-363.</td></tr>"
   txt(126) = "<tr><td><b>Tropical Indian Ocean SST</b></td>"
   txt(127) = "<td>Area-averaged SST anomalies (in Celsius) computed over 15&deg;S:15&deg;N, 40:110&deg;E. </td></tr>"
   txt(128)= "<tr><td><b>Southern Ocean SST</b></td>"

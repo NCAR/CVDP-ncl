@@ -15,6 +15,7 @@ begin
   REMOVE_TREND_OBS = getenv("REMOVE_TREND_OBS") 
   REMOVE_TREND_MODEL = getenv("REMOVE_TREND_MODEL") 
   ENSEMBLE_MEAN_DIR = getenv("ENSEMBLE_MEAN_DIR")
+  IM_COMMAND = getenv("IM_COMMAND")
 
   delim = "|"
   time_mon2 = ispan(0,11,1)
@@ -778,7 +779,7 @@ begin
            if (nEM.ge.1) then   ; in ensemble mode (runstyle=2)
               system("mv "+OUTDIR+"siconc.trends_timeseries.000003.png "+OUTDIR+variname(dd)+".summary.png")
               if (PNG_SCALE_SUMMARY.ne.100) then
-                 system("convert -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+variname(dd)+".summary.png "+OUTDIR+variname(dd)+".summary.png")
+                 system(IM_COMMAND+" "+OUTDIR+variname(dd)+".summary.png -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+variname(dd)+".summary.png")
               end if
            end if
         else
@@ -1230,7 +1231,7 @@ begin
               system("mv "+OUTDIR+"siconc.timeseries.000001.png "+OUTDIR+variname(dd)+".indmem.png")
               system("mv "+OUTDIR+"siconc.timeseries.000002.png "+OUTDIR+variname(dd)+".summary.png")
               if (PNG_SCALE_SUMMARY.ne.100) then
-                 system("convert -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+variname(dd)+".summary.png "+OUTDIR+variname(dd)+".summary.png")
+                 system(IM_COMMAND+" "+OUTDIR+variname(dd)+".summary.png -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+variname(dd)+".summary.png")
               end if
            end if
         else
@@ -1519,7 +1520,7 @@ begin
         delete([/arr_store,arrEM/])
         cntr_EM = cntr_EM+1
      end do
-     panres@txString = "siconc Extent Climatology"
+     panres@txString = "siconc "+changeCaseChar(hemi(cc))+" Extent Climatology"
      gsn_panel2(wks,plot_indmem,(/nrow,ncol/),panres)
 
      if (nEM.ge.1) then   ; in ensemble mode (runstyle=2)
@@ -1544,7 +1545,7 @@ begin
            system("mv "+OUTDIR+"siconc.trends_timeseries.000001.png "+OUTDIR+"siconc_"+hemi(cc)+"_extent.climo.indmem.png")
            system("mv "+OUTDIR+"siconc.trends_timeseries.000002.png "+OUTDIR+"siconc_"+hemi(cc)+"_extent.climo.summary.png")
            if (PNG_SCALE_SUMMARY.ne.100) then
-              system("convert -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+"siconc_"+hemi(cc)+"_extent.climo.summary.png "+OUTDIR+"siconc_"+hemi(cc)+"_extent.climo.summary.png")
+              system(IM_COMMAND+" "+OUTDIR+"siconc_"+hemi(cc)+"_extent.climo.summary.png -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+"siconc_"+hemi(cc)+"_extent.climo.summary.png")
            end if
         end if
      else

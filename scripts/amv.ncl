@@ -15,6 +15,7 @@ begin
   REMOVE_TREND_OBS = getenv("REMOVE_TREND_OBS") 
   REMOVE_TREND_MODEL = getenv("REMOVE_TREND_MODEL") 
   ENSEMBLE_MEAN_DIR = getenv("ENSEMBLE_MEAN_DIR")
+  IM_COMMAND = getenv("IM_COMMAND")
 
   pi=4.*atan(1.0)
   rad=(pi/180.)
@@ -225,8 +226,8 @@ begin
               z_arr = addfile(fnt_tas,"c")
            end if
            set_global_ncfile_attributes(z_arr,names_tas(ee),syear_tas(ee),eyear_tas(ee),getenv("VERSION"))
-           z_arr->$(/"amv_tas_regression_mon"/)$ = set_varAtts(fintas(0,:,:),"tas regression onto AMV timeseries (monthly)","","")
-           z_arr->$(/"amv_tas_regression_lowpass_mon"/)$ = set_varAtts(fintas(1,:,:),"tas low-pass regression onto AMV low-pass timeseries (monthly)","","")
+           z_arr->$(/"amv_tas_regression_mon"/)$ = set_varAtts(fintas(0,:,:),"tas regression onto AMV timeseries (monthly)",fintas@units+"/C","")
+           z_arr->$(/"amv_tas_regression_lowpass_mon"/)$ = set_varAtts(fintas(1,:,:),"tas low-pass regression onto AMV low-pass timeseries (monthly)",fintas@units+"/C","")
            delete([/z_arr,fintas,fnt_tas/])
         end if
         delete(tas)
@@ -263,8 +264,8 @@ begin
               z_arr = addfile(fnt_pr,"c")
            end if
            set_global_ncfile_attributes(z_arr,names_pr(ee),syear_pr(ee),eyear_pr(ee),getenv("VERSION"))
-           z_arr->$(/"amv_pr_regression_mon"/)$ = set_varAtts(finpr(0,:,:),"pr regression onto AMV low-pass timeseries (monthly)","","")
-           z_arr->$(/"amv_pr_regression_lowpass_mon"/)$ = set_varAtts(finpr(1,:,:),"pr low-pass regression onto AMV low-pass timeseries (monthly)","","")
+           z_arr->$(/"amv_pr_regression_mon"/)$ = set_varAtts(finpr(0,:,:),"pr regression onto AMV low-pass timeseries (monthly)",finpr@units+" /C","")
+           z_arr->$(/"amv_pr_regression_lowpass_mon"/)$ = set_varAtts(finpr(1,:,:),"pr low-pass regression onto AMV low-pass timeseries (monthly)",finpr@units+" /C","")
            delete([/z_arr,finpr,fnt_pr/])
         end if
         delete(pr)
@@ -312,8 +313,8 @@ begin
               delete([/LAT2D,LON2D/])
               finzos@coordinates ="lat2d_ocean lon2d_ocean"
            end if  
-           z_arr->$(/"amv_zos_regression_mon"/)$ = set_varAtts(finzos(0,:,:),"zos regression onto AMV timeseries (monthly)","","")
-           z_arr->$(/"amv_zos_regression_lowpass_mon"/)$ = set_varAtts(finzos(1,:,:),"zos low-pass regression onto AMV low-pass timeseries (monthly)","","")
+           z_arr->$(/"amv_zos_regression_mon"/)$ = set_varAtts(finzos(0,:,:),"zos regression onto AMV timeseries (monthly)",finzos@units+"/C","")
+           z_arr->$(/"amv_zos_regression_lowpass_mon"/)$ = set_varAtts(finzos(1,:,:),"zos low-pass regression onto AMV low-pass timeseries (monthly)",finzos@units+"/C","")
            delete([/z_arr,finzos,fnt_zos/])
         end if
         delete(zos)
@@ -327,14 +328,14 @@ begin
         z = addfile(fnt,"c")
      end if
      set_global_ncfile_attributes(z,names(ee),syear(ee),eyear(ee),getenv("VERSION"))
-     z->$(/"amv_pattern_mon"/)$ = set_varAtts(lonFlip(amoP_pattern_mon),"AMV regression pattern (monthly)","","")   ; flip longitudes back to running from 0:360.
-     z->$(/"amv_pattern_lowpass_mon"/)$ = set_varAtts(lonFlip(amoP_pattern_lowpass_mon),"AMV low-pass regression pattern (monthly)","","")   ; flip longitudes back to running from 0:360.
+     z->$(/"amv_pattern_mon"/)$ = set_varAtts(lonFlip(amoP_pattern_mon),"AMV regression pattern (monthly)","C/C","")   ; flip longitudes back to running from 0:360.
+     z->$(/"amv_pattern_lowpass_mon"/)$ = set_varAtts(lonFlip(amoP_pattern_lowpass_mon),"AMV low-pass regression pattern (monthly)","C/C","")   ; flip longitudes back to running from 0:360.
      z->$(/"amv_timeseries_mon"/)$ = set_varAtts(amoP,"AMV timeseries (monthly)","C","")
      z->$(/"amv_timeseries_lowpass_mon"/)$ = set_varAtts(amoP_lp,"AMV low-pass timeseries (monthly)","C","")
      if (.not.any(ismissing(amoP))) then
-        splt1 := create_power_spectra(dim_standardize(amoP,0),iopt,jave,pct,val1,val2)
+        splt1 := create_power_spectra(amoP,iopt,jave,pct,val1,val2,False)
         splt1@detrend_option = amoP@detrend_option
-        z->$(/"amv_spectra"/)$ = set_varAtts(splt1,"AMV (monthly) power spectra, Markov spectrum and confidence curves","","") 
+        z->$(/"amv_spectra"/)$ = set_varAtts(splt1,"AMV (monthly) power spectra, Markov spectrum and confidence curves","C^2/df","") 
      end if
      delete([/z,amoP_pattern_mon,amoP_pattern_lowpass_mon,amoP_lp,amoP/])
   end do
@@ -659,7 +660,7 @@ begin
         if (nEM.ge.1) then   ; in ensemble mode (runstyle=2)
            system("mv "+OUTDIR+"amv.000003.png "+OUTDIR+outputname(dd)+".summary.png")
            if (PNG_SCALE_SUMMARY.ne.100) then
-              system("convert -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+outputname(dd)+".summary.png "+OUTDIR+outputname(dd)+".summary.png")
+              system(IM_COMMAND+" "+OUTDIR+outputname(dd)+".summary.png -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+outputname(dd)+".summary.png")
            end if
         end if
      else
@@ -999,7 +1000,7 @@ begin
         if (nEM.ge.1) then   ; in ensemble mode (runstyle=2)
            system("mv "+OUTDIR+"amv.000003.png "+OUTDIR+outputname(dd)+".summary.png")
            if (PNG_SCALE_SUMMARY.ne.100) then
-              system("convert -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+outputname(dd)+".summary.png "+OUTDIR+outputname(dd)+".summary.png")
+              system(IM_COMMAND+" "+OUTDIR+outputname(dd)+".summary.png -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+outputname(dd)+".summary.png")
            end if
         end if
      else
@@ -1236,7 +1237,7 @@ begin
         if (nEM.ge.1) then   ; in ensemble mode (runstyle=2)
            system("mv "+OUTDIR+"amv.000003.png "+OUTDIR+outputname(dd)+".summary.png")
            if (PNG_SCALE_SUMMARY.ne.100) then
-              system("convert -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+outputname(dd)+".summary.png "+OUTDIR+outputname(dd)+".summary.png")
+              system(IM_COMMAND+" "+OUTDIR+outputname(dd)+".summary.png -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+outputname(dd)+".summary.png")
            end if
         end if
      else
@@ -1262,8 +1263,6 @@ begin
   res2@cnFillPalette := res@cnFillPalette
   res@cnMissingValFillColor = "gray90"
   res2@cnMissingValFillColor = "gray90"
-  res@gsnAddCyclic = True
-  res2@gsnAddCyclic = True
   res@trGridType = "TriangularMesh"
   res2@trGridType = "TriangularMesh"
 
@@ -1574,11 +1573,11 @@ begin
         z->$(/variname(dd)+"_pval"/)$ = set_varAtts(p_val,arr_EM@long_name+" p-val statistic","%","")     
 
         delete([/p_val,arr_store,obs0_rg,obs_diff,arr_EM/])
-        if (isfilepresent2(Opt@WgtFileName)) then
-           system("rm "+Opt@WgtFileName)
-        end if
         cntr_EM = cntr_EM+4
      end do
+     if (isfilepresent2(Opt@WgtFileName)) then
+        system("rm "+Opt@WgtFileName)
+     end if
      panres@txString = title(dd)+" ZOS Regressions (Monthly)"
      gsn_panel2(wks,plot_indmem,(/nrow,ncol/),panres)
      panres@txString = title(dd)+" ZOS Regressions Differences (Monthly)"
@@ -1597,7 +1596,7 @@ begin
         if (nEM.ge.1) then   ; in ensemble mode (runstyle=2)
            system("mv "+OUTDIR+"amv.000003.png "+OUTDIR+outputname(dd)+".summary.png")
            if (PNG_SCALE_SUMMARY.ne.100) then
-              system("convert -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+outputname(dd)+".summary.png "+OUTDIR+outputname(dd)+".summary.png")
+              system(IM_COMMAND+" "+OUTDIR+outputname(dd)+".summary.png -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+outputname(dd)+".summary.png")
            end if
         end if
      else
@@ -1959,7 +1958,7 @@ begin
            system("mv "+OUTDIR+"amv.timeseries.000001.png "+OUTDIR+variname(dd)+".indmem.png")
            system("mv "+OUTDIR+"amv.timeseries.000002.png "+OUTDIR+variname(dd)+".summary.png")
            if (PNG_SCALE_SUMMARY.ne.100) then
-              system("convert -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+variname(dd)+".summary.png "+OUTDIR+variname(dd)+".summary.png")
+              system(IM_COMMAND+" "+OUTDIR+variname(dd)+".summary.png -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+variname(dd)+".summary.png")
            end if
         end if
      else
@@ -2290,7 +2289,7 @@ begin
            system("mv "+OUTDIR+"amv.powspec.000001.png "+OUTDIR+outputname(dd)+".indmem.png")
            system("mv "+OUTDIR+"amv.powspec.000002.png "+OUTDIR+outputname(dd)+".summary.png")
            if (PNG_SCALE_SUMMARY.ne.100) then
-              system("convert -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+outputname(dd)+".summary.png "+OUTDIR+outputname(dd)+".summary.png")
+              system(IM_COMMAND+" "+OUTDIR+outputname(dd)+".summary.png -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+outputname(dd)+".summary.png")
            end if
         end if
      else

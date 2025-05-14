@@ -3,12 +3,12 @@
 ; to a file named file.out, type: ncl driver.ncl >&! file.out &
 ; 
 ;=====================================================================================================
-  runstyle = 2        ; See online documentation! runstyle 2 requires additional column of data in namelist.
+  runstyle = 1        ; See online documentation! runstyle 2 requires additional column of data in namelist.
                       ; 1 = Individual simulations mode. This is equivalent to running previous versions of the CVDP.
                       ; 2 = Ensemble mode. This is similar to running version 1.0 of the CVDP-LE.
 
   outdir            = "/project/diag/Comparison1/"   ; Set location of output files   (must end in a "/")
-  webpage_title     = "Title goes here"      ; Set webpage title                                                                
+  webpage_title     = "Webpage title goes here"      ; Set webpage title                                                                
   remove_trend_obs  = "QuadraticTrend"       ; valid options are None, LinearTrend, QuadraticTrend, 30yrRunningMean   (see documentation)
   remove_trend_model= "QuadraticTrend"       ; valid options are None, LinearTrend, QuadraticTrend, 30yrRunningMean, rmGMST_EM, rmEM  (see documentation)
   ensemble_mean_dir = "/project/cas/CVDP-EM_ncl/"     ; directory where the ensemble means should be located when remove_trend_model = "rmGMST_EM" or "rmEM"
@@ -23,9 +23,9 @@
   max_num_tasks = 3                          ; Sets how many CVDP NCL scripts can be run at once. (If unsure set to 3.)     
   
   modular =  "False"                                      ; True = Run only those CVDP scripts specified in modular_list. False = Run all CVDP scripts (Default)
-  modular_list = "amoc,amv,pr.trends_timeseries,ipv"     ; Example: modular_list = "amoc,amv,pr.trends_timeseries,ipv"   For a list of available scripts see complete_list at line 57. 
+  modular_list = "amoc,amv,ipv"     ; Example: modular_list = "amoc,amv,pr.trends_timeseries,ipv"   For a list of available scripts see complete_list at line 57. 
 
-  zp = "scripts/"                            ; directory path of CVDP NCL scripts. (must end in a "/")
+  zp = "~asphilli/CESM-diagnostics/CVDP/Release/v6.1.0/scripts/"                            ; directory path of CVDP NCL scripts. (must end in a "/")
                                              ; Examples: "scripts/" if all code is local, or on NCAR's CGD or CISL systems: "~asphilli/CESM-diagnostics/CVDP/Release/v6.0.0/scripts/"
                                              ; Regardless of this setting the following files should be in one directory: namelist, driver.ncl, and namelist_obs. 
                                              ; If pointing to code in ~asphilli make sure the driver script version #s match between this script and the script in ~asphilli.  
@@ -36,6 +36,11 @@
   
   tar_output        = "False"                ; True = tar up all output in outdir and remove individual files, False = do not                                      
                                              ; Note: All files in outdir will be tarred up and then removed from the outdir directory. 
+
+  compute_monthly_modes = "False"             ; True = compute atmospheric modes of variability on monthly timescales. False = do not.
+                                             ; If True, monthly patterns and timeseries are calculated and written to output .nc files but are not plotted.
+                                             ; Seasonal and annual atmospheric modes are always calculated, written to .nc files and plotted.
+                                             ; If True, the CVDP package will run more slowly.
 ;---Options for unstructured data checking------------------------------------------------------------   
   regrid_check      = "False"                ; If True, check each file specified in namelist_byvar/* for unstructured grids. If unstructured 
                                              ; data is found, the files will  be regridded to the lat/lon grid specified in regrid_to_res. 
@@ -50,7 +55,7 @@
   machine_casesen = "True"                   ; True = Your filesystem is case sensitive  (Default), False = Your filesystem is case insensitive.
 
 ;========END USER MODIFICATIONS=======================================================================
-  version = "6.0.0"
+  version = "6.1.0"
 
   print("Started: CVDP ("+systemfunc("date")+")")
 
@@ -93,13 +98,16 @@
   if (png_scale.ge.2) then
      pngsumscale = 75
   end if
+  im = identify_im_version()   ; identify command to use for image magick
+
   obs                  = "True"              ; obs are required for atmospheric variables, so this is always set to "True"
   envvar_str = "   export OUTDIR="+outdir+";   export OBS="+obs+";   "+\
          "export CREATE_GRAPHICS="+create_graphics+";   export VERSION="+version+";   export PNG_SCALE="+png_scale+";   "+\
          "export OUTPUT_TYPE="+output_type+";   export MACHINE="+machine_casesen+";   export RUNSTYLE="+runstyle+";   "+\
          "export COLORMAP="+colormap+";   export CVDP_SCRIPTS="+zp+";   export PNG_SCALE_SUMMARY="+pngsumscale+";   "+\
          "export REMOVE_TREND_OBS="+remove_trend_obs+";   export REMOVE_TREND_MODEL="+remove_trend_model+";   "+\
-         "export ENSEMBLE_MEAN_DIR="+ensemble_mean_dir+";   export MAX_TASKS="+max_num_tasks+";"  
+         "export ENSEMBLE_MEAN_DIR="+ensemble_mean_dir+";   export MONTHLY_MODES="+compute_monthly_modes+";   "+\
+         "export MAX_TASKS="+max_num_tasks+";   export IM_COMMAND="+im+";"  
   if (regrid_check.eq."True") then
      envvar_str = envvar_str+"   export REGRID_TO_RES="+regrid_to_res+";   export REGRID_DIR="+regrid_dir+";"     
   end if
@@ -154,7 +162,7 @@
 ;
   if (create_graphics.eq."True") then
      print("Creating webpages and finalizing images")
-     image_finalize(outdir,output_type,max_num_tasks,zp,toint(144*png_scale))    ; trim whitespace, convert to .png (if necessary) and apply watermarks to images
+     image_finalize(outdir,output_type,max_num_tasks,zp,toint(144*png_scale),im)    ; trim whitespace, convert to .png (if necessary) and apply watermarks to images
 
      quote = str_get_dq()
      system("cp namelist_byvar/* "+outdir)
@@ -180,7 +188,7 @@
         system("rm "+outdir+"cvdp.tar")
      end if
      system("cd "+outdir+"; tar -cf cvdp.tar *")
-     system("cd "+outdir+"; rm *.png *.ps *.txt *.html *.nc namelist*")
+     system("cd "+outdir+"; rm *.png *.ps *.txt *.html *.nc *.gif namelist*")
      print("tar file location: "+outdir+"cvdp.tar")
   end if
 

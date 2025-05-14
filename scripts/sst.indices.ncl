@@ -17,6 +17,7 @@ begin
   REMOVE_TREND_OBS = getenv("REMOVE_TREND_OBS") 
   REMOVE_TREND_MODEL = getenv("REMOVE_TREND_MODEL") 
   ENSEMBLE_MEAN_DIR = getenv("ENSEMBLE_MEAN_DIR")
+  IM_COMMAND = getenv("IM_COMMAND")
 
   nsim = numAsciiRow("namelist_byvar/namelist_ts")
 
@@ -199,8 +200,9 @@ begin
      nino34@comment_cvdp = "area average domain ("+llats+":"+llatn+"N, "+llonw+":"+llone+"E)"
      nino34@units = sst@units
      nino34@long_name = "nino3.4 sst timeseries (monthly)"   
-     nino34_regr := regCoef_n(dim_standardize(nino34,0),sst,0,0)
+     nino34_regr := regCoef_n(nino34,sst,0,0)
      copy_VarMeta(sst(0,:,:),nino34_regr)
+     nino34_regr@units = "C/C"
      nino34_regr@long_name = "nino3.4 timeseries sst regression pattern (monthly)"
 
      llats = -5.    ; nino3
@@ -212,8 +214,9 @@ begin
      copy_VarCoords(nino34,nino3)
      nino3@units = sst@units
      nino3@long_name = "nino3 sst timeseries (monthly)"    
-     nino3_regr := regCoef_n(dim_standardize(nino3,0),sst,0,0)
+     nino3_regr := regCoef_n(nino3,sst,0,0)
      copy_VarMeta(sst(0,:,:),nino3_regr)
+     nino3_regr@units = "C/C"
      nino3_regr@long_name = "nino3 timeseries sst regression pattern (monthly)"
      
      llats = -5.    ; nino4
@@ -225,8 +228,9 @@ begin
      copy_VarCoords(nino34,nino4)
      nino4@units = sst@units
      nino4@long_name = "nino4 sst timeseries (monthly)"   
-     nino4_regr := regCoef_n(dim_standardize(nino4,0),sst,0,0)
+     nino4_regr := regCoef_n(nino4,sst,0,0)
      copy_VarMeta(sst(0,:,:),nino4_regr)
+     nino4_regr@units = "C/C"
      nino4_regr@long_name = "nino4 timeseries sst regression pattern (monthly)"     
 
      llats = -10.    ; nino1+2
@@ -238,8 +242,9 @@ begin
      copy_VarCoords(nino34,nino12)
      nino12@units = sst@units
      nino12@long_name = "nino1+2 sst timeseries (monthly)"   
-     nino12_regr := regCoef_n(dim_standardize(nino12,0),sst,0,0)
+     nino12_regr := regCoef_n(nino12,sst,0,0)
      copy_VarMeta(sst(0,:,:),nino12_regr)
+     nino12_regr@units = "C/C"
      nino12_regr@long_name = "nino1+2 timeseries sst regression pattern (monthly)"
 
      ssttemp = lonFlip(sst)   
@@ -248,12 +253,13 @@ begin
      amm = amm_n
      amm = (/ amm_n - amm_s /)
      delete([/amm_n,amm_s/])
-     amm@comment_cvdp = "area average domain (-5:20N, 80W:0E) - (-10:5N, 60W:15E)"
+     amm@comment_cvdp = "area average domain (5:15N, 50:20W) - (15:5S, 20W:10E)"
      copy_VarCoords(nino34,amm)
      amm@units = sst@units
      amm@long_name = "Atlantic Meridional Mode Index sst timeseries (monthly)"   
-     amm_regr := regCoef_n(dim_standardize(amm,0),sst,0,0)
+     amm_regr := regCoef_n(amm,sst,0,0)
      copy_VarMeta(sst(0,:,:),amm_regr)
+     amm_regr@units = "C/C"
      amm_regr@long_name = "Atlantic Meridional Mode sst regression pattern (monthly)"
 
      llats = -3.    ;  Atlantic Nino (ATL3)
@@ -265,8 +271,9 @@ begin
      copy_VarCoords(nino34,atl3)
      atl3@units = sst@units
      atl3@long_name = "Atlantic Nino Index sst timeseries (monthly)" 
-     atl3_regr := regCoef_n(dim_standardize(atl3,0),sst,0,0)
+     atl3_regr := regCoef_n(atl3,sst,0,0)
      copy_VarMeta(sst(0,:,:),atl3_regr)
+     atl3_regr@units = "C/C"
      atl3_regr@long_name = "Atlantic Nino Index sst regression pattern (monthly)"  
 
      llats = 0.    ;  North Atlantic
@@ -278,8 +285,9 @@ begin
      copy_VarCoords(nino34,natl)
      natl@units = sst@units
      natl@long_name = "North Atlantic sst timeseries (monthly)" 
-     natl_regr := regCoef_n(dim_standardize(natl,0),sst,0,0)
+     natl_regr := regCoef_n(natl,sst,0,0)
      copy_VarMeta(sst(0,:,:),natl_regr)
+     natl_regr@units = "C/C"
      natl_regr@long_name = "North Atlantic timeseries sst regression pattern (monthly)"  
   
      
@@ -293,8 +301,9 @@ begin
      tsa@units = sst@units
      tsa@long_name = "Tropical Southern Atlantic sst timeseries (monthly)"     
      delete(ssttemp)
-     tsa_regr := regCoef_n(dim_standardize(tsa,0),sst,0,0)
+     tsa_regr := regCoef_n(tsa,sst,0,0)
      copy_VarMeta(sst(0,:,:),tsa_regr)
+     tsa_regr@units = "C/C"
      tsa_regr@long_name = "Tropical Southern Atlantic timeseries sst regression pattern (monthly)"  
      
      llats = 5.5    ;  Tropical Northern Atlantic Index
@@ -306,8 +315,9 @@ begin
      copy_VarCoords(nino34,tna)
      tna@units = sst@units
      tna@long_name = "Tropical Northern Atlantic sst timeseries (monthly)"  
-     tna_regr := regCoef_n(dim_standardize(tna,0),sst,0,0)
+     tna_regr := regCoef_n(tna,sst,0,0)
      copy_VarMeta(sst(0,:,:),tna_regr)
+     tna_regr@units = "C/C"
      tna_regr@long_name = "Tropical Northern Atlantic timeseries sst regression pattern (monthly)"  
 
      llats = -15.    ;  Indian Ocean SST index
@@ -319,8 +329,9 @@ begin
      copy_VarCoords(nino34,tio)
      tio@units = sst@units
      tio@long_name = "Tropical Indian Ocean sst timeseries (monthly)"   
-     tio_regr := regCoef_n(dim_standardize(tio,0),sst,0,0)
+     tio_regr := regCoef_n(tio,sst,0,0)
      copy_VarMeta(sst(0,:,:),tio_regr)
+     tio_regr@units = "C/C"
      tio_regr@long_name = "Tropical Indian Ocean timeseries sst regression pattern (monthly)"  
      
                      ; Indian Ocean Dipole Index http://www.bom.gov.au/climate/IOD/about_IOD.shtml
@@ -336,8 +347,9 @@ begin
      copy_VarCoords(nino34,socn)
      socn@units = sst@units
      socn@long_name = "Southern Ocean Index (monthly)"   
-     socn_regr := regCoef_n(dim_standardize(socn,0),sst,0,0)
+     socn_regr := regCoef_n(socn,sst,0,0)
      copy_VarMeta(sst(0,:,:),socn_regr)
+     socn_regr@units = "C/C"
      socn_regr@long_name = "Southern Ocean Index sst regression pattern (monthly)"  
      delete(coswgt)
 ;------------------------------------------------------------------------------------------
@@ -736,8 +748,9 @@ begin
               end if
            end if
 
-           iod_regr:= regCoef_n(dim_standardize(iod,0),arr,0,0)
+           iod_regr:= regCoef_n(iod,arr,0,0)
            copy_VarMeta(arr(0,:,:),iod_regr)
+           iod_regr@units = "C/C"
 
            arr = runave_n_Wrap(arr,3,0,0)
            arr(0,:,:) = (/ dim_avg_n(arr(:1,:,:),0) /)
@@ -1333,7 +1346,7 @@ begin
         system("mv "+OUTDIR+"nino34.powspec.000001.png "+OUTDIR+"nino34.powspec.indmem.png")
         system("mv "+OUTDIR+"nino34.powspec.000002.png "+OUTDIR+"nino34.powspec.summary.png")
         if (PNG_SCALE_SUMMARY.ne.100) then
-           system("convert -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+"nino34.powspec.summary.png "+OUTDIR+"nino34.powspec.summary.png")
+           system(IM_COMMAND+" "+OUTDIR+"nino34.powspec.summary.png -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+"nino34.powspec.summary.png")
         end if
      end if
   else
@@ -1638,7 +1651,7 @@ begin
         system("mv "+OUTDIR+"nino34.autocor.000001.png "+OUTDIR+"nino34.autocor.indmem.png")
         system("mv "+OUTDIR+"nino34.autocor.000002.png "+OUTDIR+"nino34.autocor.summary.png")
         if (PNG_SCALE_SUMMARY.ne.100) then
-           system("convert -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+"nino34.autocor.summary.png "+OUTDIR+"nino34.autocor.summary.png")
+           system(IM_COMMAND+" "+OUTDIR+"nino34.autocor.summary.png -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+"nino34.autocor.summary.png")
         end if
      end if
   else
@@ -1890,7 +1903,7 @@ begin
         system("mv "+OUTDIR+"nino34.monstddev.000001.png "+OUTDIR+"nino34.monstddev.indmem.png")
         system("mv "+OUTDIR+"nino34.monstddev.000002.png "+OUTDIR+"nino34.monstddev.summary.png")
         if (PNG_SCALE_SUMMARY.ne.100) then
-           system("convert -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+"nino34.monstddev.summary.png "+OUTDIR+"nino34.monstddev.summary.png")
+           system(IM_COMMAND+" "+OUTDIR+"nino34.monstddev.summary.png -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+"nino34.monstddev.summary.png")
         end if
      end if
   else
@@ -2500,7 +2513,7 @@ begin
         if (nEM.ge.1) then   ; in ensemble mode (runstyle=2)
            system("mv "+OUTDIR+"nino34_spacomp.000003.png "+OUTDIR+"nino34.spatialcomp"+fnaddsub(dd)+".summary."+variname_seas(dd)+".png")
            if (PNG_SCALE_SUMMARY.ne.100) then
-              system("convert -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+"nino34.spatialcomp"+fnaddsub(dd)+".summary."+variname_seas(dd)+".png "+OUTDIR+"nino34.spatialcomp"+fnaddsub(dd)+".summary."+variname_seas(dd)+".png")
+              system(IM_COMMAND+" "+OUTDIR+"nino34.spatialcomp"+fnaddsub(dd)+".summary."+variname_seas(dd)+".png -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+"nino34.spatialcomp"+fnaddsub(dd)+".summary."+variname_seas(dd)+".png")
            end if
         end if
      else
@@ -2528,9 +2541,6 @@ begin
      res@cnLevels := ispan(-21,21,3)
   end if 
   res2@cnLevels := ispan(-14,14,2)
-  res@gsnAddCyclic = True
-  res2@gsnAddCyclic = True
-  tres@gsnAddCyclic = True
   res2@cnFillPalette := res@cnFillPalette
   res@cnMissingValFillColor = "gray90"
   res2@cnMissingValFillColor = "gray90"
@@ -2868,7 +2878,7 @@ begin
         if (nEM.ge.1) then   ; in ensemble mode (runstyle=2)
            system("mv "+OUTDIR+"nino34_spacomp.000003.png "+OUTDIR+"nino34.spatialcomp"+fnaddsub(dd)+".zos.summary."+variname_seas(dd)+".png")
            if (PNG_SCALE_SUMMARY.ne.100) then
-              system("convert -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+"nino34.spatialcomp"+fnaddsub(dd)+".zos.summary."+variname_seas(dd)+".png "+OUTDIR+"nino34.spatialcomp"+fnaddsub(dd)+".pr.summary."+variname_seas(dd)+".png")
+              system(IM_COMMAND+" "+OUTDIR+"nino34.spatialcomp"+fnaddsub(dd)+".zos.summary."+variname_seas(dd)+".png -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+"nino34.spatialcomp"+fnaddsub(dd)+".pr.summary."+variname_seas(dd)+".png")
            end if
         end if
      else
@@ -3154,7 +3164,7 @@ begin
         if (nEM.ge.1) then   ; in ensemble mode (runstyle=2)
            system("mv "+OUTDIR+"nino34_spacomp.000003.png "+OUTDIR+"nino34.spatialcomp"+fnaddsub(dd)+".pr.summary."+variname_seas(dd)+".png")
            if (PNG_SCALE_SUMMARY.ne.100) then
-              system("convert -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+"nino34.spatialcomp"+fnaddsub(dd)+".pr.summary."+variname_seas(dd)+".png "+OUTDIR+"nino34.spatialcomp"+fnaddsub(dd)+".pr.summary."+variname_seas(dd)+".png")
+              system(IM_COMMAND+" "+OUTDIR+"nino34.spatialcomp"+fnaddsub(dd)+".pr.summary."+variname_seas(dd)+".png -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+"nino34.spatialcomp"+fnaddsub(dd)+".pr.summary."+variname_seas(dd)+".png")
            end if
         end if
      else
@@ -3168,7 +3178,7 @@ begin
      end if
   end do
 ;---SST timeseries regression plotting section---------------------------------------------------------------------------
-  delete([/res@cnLevels,res2@cnLevels,res@cnFillPalette,res2@cnFillPalette,res@trGridType,res2@trGridType/]) 
+  delete([/res@cnLevels,res2@cnLevels,res@cnFillPalette,res2@cnFillPalette/]) 
   if (isatt(res,"lbLabelStrings")) then
      delete(res@lbLabelStrings)
   end if
@@ -3436,7 +3446,7 @@ begin
         if (nEM.ge.1) then   ; in ensemble mode (runstyle=2)
            system("mv "+OUTDIR+"sst_regr_pattern.000003.png "+OUTDIR+str_sub_str(varinameF,"_mon","")+".summary.png")
            if (PNG_SCALE_SUMMARY.ne.100) then
-              system("convert -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+str_sub_str(varinameF,"_mon","")+".summary.png "+OUTDIR+str_sub_str(varinameF,"_mon","")+".summary.png")
+              system(IM_COMMAND+" "+OUTDIR+str_sub_str(varinameF,"_mon","")+".summary.png -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+str_sub_str(varinameF,"_mon","")+".summary.png")
            end if
         end if
      else
@@ -3602,12 +3612,12 @@ begin
            fnt = getenv("OUTDIR")+modname(cntr)+".cvdp_data.sst.indices."+syear(cntr)+"-"+eyear(cntr)+".nc"
            fnt2 = getenv("OUTDIR")+modname(cntr)+".cvdp_data."+syear(cntr)+"-"+eyear(cntr)+".nc"
            arr := read_cvdp_le_data(fnt,fnt2,varinameF)
-           arr!0 = "time"
-           arr&time = fspan(syear(cntr),eyear(cntr)+.91667,nyr(cntr)*12)
            if (isatt(arr,"is_all_missing")) then 
               cntr = cntr+1
               continue
            end if
+           arr!0 = "time"
+           arr&time = fspan(syear(cntr),eyear(cntr)+.91667,nyr(cntr)*12)
            xyres@trXMinF = syear(cntr)-.5
            xyres@trXMaxF = eyear(cntr)+0.5
            xyres@trYMinF = min((/min(obs0),min(arr)/))-dim_stddev(arr)/2.
@@ -3801,7 +3811,7 @@ begin
            system("mv "+OUTDIR+"sst.tseries.000001.png "+OUTDIR+variname(dd)+".timeseries.indmem.png")
            system("mv "+OUTDIR+"sst.tseries.000002.png "+OUTDIR+variname(dd)+".timeseries.summary.png")
            if (PNG_SCALE_SUMMARY.ne.100) then
-              system("convert -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+variname(dd)+".timeseries.summary.png "+OUTDIR+variname(dd)+".timeseries.summary.png")
+              system(IM_COMMAND+" "+OUTDIR+variname(dd)+".timeseries.summary.png -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+variname(dd)+".timeseries.summary.png")
            end if
         end if
      else
@@ -4222,7 +4232,9 @@ begin
            gsn_panel2(wks,plot_summary,(/nEM,4/),panres2)
         end if
      end if
-     delete(panres2@gsnPanelXWhiteSpacePercent)
+     if (isatt(panres2,"gsnPanelXWhiteSpacePercent")) then
+        delete(panres2@gsnPanelXWhiteSpacePercent)
+     end if
      delete(wks)
 
      if (wks_type.eq."png") then
@@ -4231,7 +4243,7 @@ begin
         if (nEM.ge.1) then   
            system("mv "+OUTDIR+"nino34.hov.000003.png "+OUTDIR+str_sub_str(variname(dd),"_",".")+".summary.png")
            if (PNG_SCALE_SUMMARY.ne.100) then
-              system("convert -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+str_sub_str(variname(dd),"_",".")+".summary.png "+OUTDIR+str_sub_str(variname(dd),"_",".")+".summary.png")
+              system(IM_COMMAND+" "+OUTDIR+str_sub_str(variname(dd),"_",".")+".summary.png -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+str_sub_str(variname(dd),"_",".")+".summary.png")
            end if
         end if
      else
@@ -4665,7 +4677,7 @@ begin
      if (nEM.ge.1) then  
         system("mv "+OUTDIR+"nino34.wavelet.000003.png "+OUTDIR+"nino34.wavelet.summary.png")
         if (PNG_SCALE_SUMMARY.ne.100) then
-           system("convert -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+"nino34.wavelet.summary.png "+OUTDIR+"nino34.wavelet.summary.png")
+           system(IM_COMMAND+" "+OUTDIR+"nino34.wavelet.summary.png -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+"nino34.wavelet.summary.png")
         end if
      end if
   else

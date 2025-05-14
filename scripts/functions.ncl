@@ -66,7 +66,7 @@ function data_read_in(zpath:string,vn:string,yearS:integer,yearE:integer)
 local zpath,vn,cpath0,ta,tfiles,c,arr,farr,yearS,yearE,mocheck,fils_precc,fils_precl,opt
 begin
   if (vn.eq."TS") then
-     vname = (/"TS","ts","sst","t_surf","skt","tos"/)
+     vname = (/"TS","ts","sst","t_surf","skt","tos","SST"/)
   end if
   if (vn.eq."PSL") then
      vname = (/"PSL","psl","slp","SLP","prmsl","msl","slp_dyn"/)
@@ -300,7 +300,7 @@ begin
         end if
         farr@units = "C"
      end if
-     if (farr@units.eq."degrees_C".or.farr@units.eq."degrees C".or.farr@units.eq."degree_C".or.farr@units.eq."degree C") then
+     if (farr@units.eq."degrees_C".or.farr@units.eq."degrees C".or.farr@units.eq."degree_C".or.farr@units.eq."degree C".or.farr@units.eq."degC") then
         farr@units = "C"
      end if
   end if
@@ -397,15 +397,22 @@ begin
         do ii=0,dimsizes(vname)-1
            if (isfilevar(c[0],vname(ii))) then
               dimC = filevardimsizes(c[0],"MOC")
-              if (vname(ii).eq."MOC") then    ; CCSM/CESM file     
-                 if (dimC(2).ge.2) then
-                    arr = dim_sum_n_Wrap(c[:]->$vname(ii)$(:,1,:,:,:),1)  ; select Atl+Med+Labrador+GIN sea+Arctic+Hudson Bay transport region and sum over moc_comp
-                 else
-                    arr = c[:]->$vname(ii)$(:,1,0,:,:)        ; select Atl+Med+Labrador+GIN sea+Arctic+Hudson Bay transport region and the only moc_comp dimension        
+              if (vname(ii).eq."MOC") then    ; CCSM/CESM file    
+                 if (dimsizes(dimC).eq.5) then
+                    if (dimC(2).ge.2) then
+                       arr = dim_sum_n_Wrap(c[:]->$vname(ii)$(:,1,:,:,:),1)  ; select Atl+Med+Labrador+GIN sea+Arctic+Hudson Bay transport region and sum over moc_comp
+                    else
+                       arr = c[:]->$vname(ii)$(:,1,0,:,:)        ; select Atl+Med+Labrador+GIN sea+Arctic+Hudson Bay transport region and the only moc_comp dimension        
+                    end if
+                 else if (dimsizes(dimC).eq.4) then         ; for high-resolution CESM1/2
+                       arr = c[:]->$vname(ii)$(:,:,1,:)        ; select Atl+Med+Labrador+GIN sea+Arctic+Hudson Bay transport region
+                    else
+                       print("Unknown MOC variable format")
+                    end if
                  end if
               else                           ; CMIP file
                  arr = c[:]->$vname(ii)$(:,0,:,:)             ; CMIP file: 0th basin/region = atlantic_ocean (CMIP3) or atlantic_arctic_ocean (CMIP5)         
-              end if   
+              end if
               delete(dimC)  
               break
            end if
@@ -425,14 +432,21 @@ begin
         do i=0,dimsizes(vname)-1
            if (isfilevar(c,vname(i))) then
               dimC = filevardimsizes(c,"MOC")
-              if (vname(i).eq."MOC") then    ; CCSM/CESM file     
-                 if (dimC(2).ge.2) then
-                    arr = dim_sum_n_Wrap(c->$vname(i)$(:,1,:,:,:),1)  ; select Atl+Med+Labrador+GIN sea+Arctic+Hudson Bay transport region and sum over moc_comp
-                 else
-                    arr = c->$vname(i)$(:,1,0,:,:)        ; select Atl+Med+Labrador+GIN sea+Arctic+Hudson Bay transport region         
-                 end if
-              else                           ; CMIP file
-                 arr = c->$vname(i)$(:,0,:,:)             ; CMIP file: 0th basin/region = atlantic_ocean (CMIP3) or atlantic_arctic_ocean (CMIP5)         
+              if (vname(i).eq."MOC") then    ; CCSM/CESM file                                                                                               
+                 if (dimsizes(dimC).eq.5) then                                                                                                              
+                    if (dimC(2).ge.2) then                                                                                                                  
+                       arr = dim_sum_n_Wrap(c->$vname(i)$(:,1,:,:,:),1)  ; select Atl+Med+Labrador+GIN sea+Arctic+Hudson Bay transport region and sum over moc_comp       
+                    else                                                                                                                                    
+                       arr = c->$vname(i)$(:,1,0,:,:)        ; select Atl+Med+Labrador+GIN sea+Arctic+Hudson Bay transport region                           
+                    end if                                                                                                                                  
+                 else if (dimsizes(dimC).eq.4) then          ; for high-resolution CESM1/2                                                                                                        
+                       arr = c->$vname(i)$(:,:,1,:)        ; select Atl+Med+Labrador+GIN sea+Arctic+Hudson Bay transport region                                
+                    else                                                                                                                                       
+                       print("Unknown MOC variable format")                                                                                                     
+                    end if                                                                                                                                     
+                 end if                                                                                                                                     
+              else                           ; CMIP file                                                                                                    
+                 arr = c->$vname(i)$(:,0,:,:)             ; CMIP file: 0th basin/region = atlantic_ocean (CMIP3) or atlantic_arctic_ocean (CMIP5)           
               end if   
               delete(dimC)                       
               break
@@ -615,7 +629,7 @@ end
 undef("data_read_in_ocean")
 function data_read_in_ocean(zpath:string,vn:string,yearS:integer,yearE:integer)
 ; path for ice file(s), variable name, start year, and end year are read in.
-local zpath,vn,cpath0,ta,tfiles,c,arr,farr,yearS,yearE,mocheck,dimC,lev
+local zpath,vn,cpath0,ta,tfiles,c,arr,farr,yearS,yearE,mocheck,dimC,lev,geolat,geolon
 begin
   if (vn.eq."SSH") then
      vname = (/"SSH","zos","ssh"/)
@@ -640,7 +654,7 @@ begin
               arr = c[:]->$vname(ii)$
               if (isatt(arr,"coordinates")) then
                  strarr = str_split(arr@coordinates," ")
-                 if (any(strarr.eq."TLONG")) then    ; CESM longitude 2D coordinate
+                 if (any(strarr.eq."TLONG")) then    ; CESM POP longitude 2D coordinate
                     dimZ = dimsizes(c[0]->TLONG)
                     if (dimsizes(dimZ).eq.3) then
                        arr@lon2d = c[0]->TLONG(0,:,:)
@@ -649,7 +663,7 @@ begin
                     end if
                     delete(dimZ)
                  end if
-                 if (any(strarr.eq."TLAT")) then     ; CESM latitude 2D coordinate
+                 if (any(strarr.eq."TLAT")) then     ; CESM POP latitude 2D coordinate
                     dimZ = dimsizes(c[0]->TLAT)
                     if (dimsizes(dimZ).eq.3) then
                        arr@lat2d = c[0]->TLAT(0,:,:)
@@ -657,6 +671,28 @@ begin
                        arr@lat2d = c[0]->TLAT
                     end if
                     delete(dimZ)
+                 end if
+                 if (any(strarr.eq."geolon")) then    ; CESM MOM longitude 2D coordinate
+                    dimZ = dimsizes(c[0]->geolon)
+                    if (dimsizes(dimZ).eq.3) then
+                       geolon = c[0]->geolon(0,:,:)
+                    else
+                       geolon = c[0]->geolon
+                    end if
+                    geolon@units = "degrees_east"
+                    arr@lon2d = geolon
+                    delete([/dimZ,geolon/])
+                 end if
+                 if (any(strarr.eq."geolat")) then     ; CESM MOM latitude 2D coordinate
+                    dimZ = dimsizes(c[0]->geolat)
+                    if (dimsizes(dimZ).eq.3) then
+                       geolat = c[0]->geolat(0,:,:)
+                    else
+                       geolat = c[0]->geolat
+                    end if
+                    geolat@units = "degrees_north"
+                    arr@lat2d = geolat
+                    delete([/dimZ,geolat/])
                  end if
                  delete(strarr)
               end if
@@ -851,10 +887,10 @@ function data_read_in_ice(zpath:string,vn:string,yearS:integer,yearE:integer)
 local zpath,vn,cpath0,ta,tfiles,c,arr,farr,yearS,yearE,mocheck,dimC,lev,opt,farrF
 begin
   if (vn.eq."aice_nh") then
-     vname = (/"aice_nh","aice","sic","siconc","SIC","CN","ice","icec"/)
+     vname = (/"aice_nh","aice","sic","siconc","SIC","CN","ice","icec","SEAICE"/)
   end if
   if (vn.eq."aice_sh") then
-     vname = (/"aice_sh","aice","sic","siconc","SIC","CN","ice","icec"/)
+     vname = (/"aice_sh","aice","sic","siconc","SIC","CN","ice","icec","SEAICE"/)
   end if
 
   if (ismissing(zpath) ) then
@@ -1871,8 +1907,8 @@ end
 ; Create power spectra and add all necessary metadata
 ;
 undef("create_power_spectra")
-function create_power_spectra(PC1,IOPT,JAVE,PCT,VAL1,VAL2)
-local PC1,IOPT,JAVE,PCT,VAL1,VAL2,SDOF,SPLT1
+function create_power_spectra(PC1,IOPT,JAVE,PCT,VAL1,VAL2,ISTD)
+local PC1,IOPT,JAVE,PCT,VAL1,VAL2,SDOF,SPLT1,ISTD
 begin
    SDOF = specx_anal(PC1,IOPT,JAVE,PCT)   ; pc1 is standardized
    SPLT1 = specx_ci(SDOF,VAL1,VAL2)
@@ -1883,7 +1919,11 @@ begin
    SPLT1!1 = "frequency"
    SPLT1&frequency = SDOF@frq
    SPLT1&frequency@units = "1"
-   SPLT1@units_info = "df refers to frequency interval; data are standardized so there are no physical units"
+   if (ISTD) then
+      SPLT1@units_info = "df refers to frequency interval; data are standardized so there are no physical units"
+   else
+      SPLT1@units_info = "df refers to frequency interval"
+   end if
    SPLT1@units = "1/df"
    SPLT1@info = "(0,:)=spectrum,(1,:)=Markov red noise spectrum, (2,:)="+VAL1+"% confidence bound for Markhov, (3,:)="+VAL2+"% confidence bound for Markhov"
    return(SPLT1)
@@ -1945,6 +1985,55 @@ begin
      end do
      delete([/tarr,pcts_s,tarr_CW,evecv,pcts/])        
   end do
+  return(fineof)
+end
+;=================================================================================================
+; Compute monthly EOFS (for atmospheric modes)
+;
+undef("calculate_eofs_mon")
+function calculate_eofs_mon(karr:numeric,minlat[1]:numeric,maxlat[1]:numeric,minlon[1]:numeric,maxlon[1]:numeric,numeof:integer)
+local karr,fineof,dimz,karr_seas,karr_ann,minlat,maxlat,minlon,maxlon,numeof,attstring,evecv,pcts,pcts_s,tarr,signif,signif_str
+begin
+  dimz = dimsizes(karr)
+  fineof = new((/numeof,dimz(1),dimz(2)/),typeof(karr))
+  fineof!0 = "neof"
+  fineof&neof = ispan(1,numeof,1)
+  fineof!1 = "lat"
+  fineof&lat = karr&lat
+  fineof!2 = "lon"
+  fineof&lon = karr&lon
+  copy_VarAtts(karr,fineof)
+
+  if (minlon.lt.0.or.maxlon.lt.0) then
+     if (min(karr&lon).ge.0) then
+        print("Warning! Input array longitudes span "+min(karr&lon)+"-"+max(karr&lon)+". Longitudes specified for EOF ("+minlon+"/"+maxlon+") are out of range.")
+        print("Exiting from calculate_eofs function.")
+        exit
+     end if
+  end if
+
+  tarr = karr
+  tarr_CW = SqrtCosWeight(tarr)
+
+  evecv = eofunc_n(tarr_CW(:,{minlat:maxlat},{minlon:maxlon}),numeof,75,0)
+  pcts = eofunc_ts_n(tarr_CW(:,{minlat:maxlat},{minlon:maxlon}),evecv,False,0)
+
+  fineof@pcvar = str_join(tostring(evecv@pcvar),",")
+   
+  if (numeof.ge.2) then
+     signif := eofunc_north2(evecv@pcvar,dimz(0),False)   ; dimz(0) based on monthly data
+     signif_str := new(numeof,string)
+     signif_str = where(signif.eq.True,"True","False")
+     fineof@$(/"pcvar_signif"/)$ = str_join(signif_str,",")
+  end if
+
+  do bb = 0,numeof-1
+     pcts_s = dim_standardize(pcts(bb,:),0)
+     fineof(bb,:,:) = (/ regCoef_n(pcts_s,tarr,0,0) /)
+     attstring = "pc"+(bb+1)
+     fineof@$attstring$ = pcts_s
+  end do
+  delete([/tarr,pcts_s,tarr_CW,evecv,pcts/])
   return(fineof)
 end
 ;;================================================================================================================
@@ -2155,8 +2244,8 @@ begin
   if (EMRES@vpHeightF.eq.0.25.and.EMRES@vpWidthF.eq.0.7) then  ; only calculated number out to 35 ensembles using test.yaxis_title.ncl
      mtvalarr = new(36,float)    ; these settings were tested with tmXB/YLFontHeights = 0.0125/0.018, and *StringFontHeightF of 0.015/0.024
      mtvalarr = mtval
-     mtvalarr((/1,9,16,17,25/)) = .75
-     mtvalarr(4) = .78
+     mtvalarr((/1,16,17,25/)) = .75
+     mtvalarr((/4,9/)) = .78
      mtvalarr((/12,17,20,26,30/)) = .82
      mtvalarr((/5,10,27,31,35/)) = .85
      mtvalarr((/11,13,15,18,21,24,28,32/)) = .9
@@ -2168,8 +2257,8 @@ begin
   if (EMRES@vpHeightF.eq.0.35.and.EMRES@vpWidthF.eq.0.65) then  ; only calculated number out to 35 ensembles using test.yaxis_title.ncl
      mtvalarr = new(36,float)    ; these settings were tested with tmXB/YLFontHeights = 0.0125/0.018, and *StringFontHeightF of 0.015/0.024
      mtvalarr = mtval
-     mtvalarr((/1,4,9,16,25/)) = .83
-     mtvalarr((/17,20,26,30/)) = .93
+     mtvalarr((/4,9,16,25/)) = .83
+     mtvalarr((/7,17,20,26,30/)) = .93
      if (NUMEM.le.35) then
         mtval = mtvalarr(NUMEM)
      end if 
@@ -2391,10 +2480,9 @@ end
 ; zp0 = path of CVDP scripts, pngsize = size (in ImageMagick units) of png converted from ps
 ;
 undef("image_finalize")
-procedure image_finalize(odir[1]:string,otype[1]:string,max_nt[1]:integer,zp0[1]:string,pngsize[1]:integer)
-local odir,otype,max_nt,zp0,pngsize,ofiles,ofilesS,ofilesT,gg,filesize,ofiles_png,numPlotsCompleted,numJobsActive,pid,command
+procedure image_finalize(odir[1]:string,otype[1]:string,max_nt[1]:integer,zp0[1]:string,pngsize[1]:integer,im_command[1]:string)
+local odir,otype,max_nt,zp0,pngsize,ofiles,ofilesS,ofilesT,gg,filesize,ofiles_png,numPlotsCompleted,numJobsActive,pid,command,im_command
 begin
-
   ofiles = systemfunc("ls "+odir+"*."+otype)
   if (otype.ne."png") then
      ofilesS = systemfunc("ls "+outdir+"*."+output_type)
@@ -2407,10 +2495,10 @@ begin
         end if
      end do
      ofiles_png = str_sub_str(ofiles,"."+otype,".png")
-     oreso = "-density "+pngsize+" -trim +repage -border 8"
+     oreso = "-density "+pngsize+" -trim +repage -bordercolor white -background white -border 8"
   else
      ofiles_png = ofiles
-     oreso = "-trim +repage -border 15x30"
+     oreso = "-trim +repage -bordercolor white -background white -border 15x30"
   end if
 
   do ff = 0,1  ; first time through trim and add border, second time through add watermark
@@ -2427,12 +2515,16 @@ begin
         end do
         if (ff.eq.0) then
            if (otype.eq."png") then
-              command = "convert "+oreso+" -bordercolor white -background white -flatten "+ofiles(gg)+" "+ofiles_png(gg)
+              command = im_command+" "+ofiles(gg)+" "+oreso+" -flatten "+ofiles_png(gg)
            else
-              command = "ps2epsi "+ofiles(gg)+" "+str_sub_str(ofiles(gg),"."+otype,".eps")+"; convert "+oreso+" -bordercolor white -background white -flatten "+str_sub_str(ofiles(gg),"."+otype,".eps")+" "+ofiles_png(gg)
+              command = "ps2epsi "+ofiles(gg)+" "+str_sub_str(ofiles(gg),"."+otype,".eps")+"; "+im_command+" "+str_sub_str(ofiles(gg),"."+otype,".eps")+" "+oreso+" -bordercolor white -background white -flatten "+ofiles_png(gg)
            end if
         else
-           command = "composite -dissolve 50% -gravity northeast "+zp0+"copyright.gif "+ofiles_png(gg)+" "+ofiles_png(gg)
+           if (im_command.eq."convert") then
+              command = "composite -dissolve 50% -gravity northeast "+zp0+"copyright.gif "+ofiles_png(gg)+" "+ofiles_png(gg)
+           else
+              command = "magick composite -dissolve 50% -gravity northeast "+zp0+"copyright.gif "+ofiles_png(gg)+" "+ofiles_png(gg)
+           end if
         end if
         pid = subprocess(command)
         numJobsActive = numJobsActive + 1
@@ -2455,7 +2547,11 @@ begin
               break
            end if
         end do
-        command = "composite -dissolve 100% -gravity northeast "+zp0+"copyright2.gif "+ofiles(gg)+" "+ofiles(gg)
+        if (im_command.eq."convert") then
+           command = "composite -dissolve 100% -gravity northeast "+zp0+"copyright2.gif "+ofiles(gg)+" "+ofiles(gg)
+        else
+           command = "magick composite -dissolve 100% -gravity northeast "+zp0+"copyright2.gif "+ofiles(gg)+" "+ofiles(gg)
+        end if
         pid = subprocess(command)
         numJobsActive = numJobsActive + 1
      end do
@@ -2721,7 +2817,7 @@ begin
         sarr@detrend_option = "ensemble mean global mean tas regressed out"
      end if
   end if
-  if (sopt.eq."rmEM") then   ; remove ensemble mean global TAS
+  if (sopt.eq."rmEM") then   ; remove ensemble mean
      if (isatt(sopt_em,"is_all_missing")) then
         sarr = sarr@_FillValue
         sarr@is_all_missing = True
@@ -2733,8 +2829,20 @@ begin
   return(sarr)
 end
 
-
-
-
-
+;====================================================================================================================
+; This function identifies the version of Image Magick that is loaded locally and returns the correct command.
+; While one can call "convert" using version 7, an error message noting the deprecation of convert is returned. 
+; To avoid the error message, one needs to call magick instead of convert in version 7.
+;
+undef("identify_im_version")
+function identify_im_version()
+local im_command, rt
+begin
+  im_command = "magick"   ; try to use newer magick command first
+  rt = systemfunc("magick -version 2> /dev/null")
+  if (ismissing(rt(0))) then   ; but if magick is not there, use convert
+     im_command = "convert"
+  end if
+  return(im_command)
+end
 

@@ -6,7 +6,7 @@ begin
 
   OUTDIR      = getenv("OUTDIR")
   o = getenv("OBS")
-;  
+
   if (o.eq."True") then
      obsflag = True
   else
@@ -30,15 +30,22 @@ begin
   names = new(nsim,"string")
   syear = new(nsim,"integer",-999)
   eyear = new(nsim,"integer",-999)
-  names_EM = new(nsim,"string")
     
   delim = "|"
   do gg = 0,nsim-1
      names(gg) = str_sub_str(str_sub_str(str_sub_str(str_sub_str(str_sub_str(str_strip(str_get_field(na(gg),1,delim))," ","_"),"/","_"),"'","_"),"(","_"),")","_")
      syear(gg) = stringtointeger(str_strip(str_get_field(na(gg),3,delim)))
      eyear(gg) = stringtointeger(str_strip(str_get_field(na(gg),4,delim)))
+     if (str_get_field(na(gg),5,delim).ne."") then
+        if (.not.isvar("names_EM")) then
+           names_EM = new(nsim,"string")
+        end if
+        temp      = str_split(str_strip(str_get_field(na(gg),5,delim)),"-")
+        names_EM(gg)  = str_join(temp(1:),"-")
+        delete([/temp/])
+     end if
   end do
-
+;---------------------------------------
   do gg = 0,nsim-1
      fils := systemfunc("ls "+OUTDIR+names(gg)+".*.nc 2> /dev/null")
      if (.not.ismissing(fils(0))) then
@@ -73,41 +80,43 @@ begin
 ;- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 ; Combine all ensemble mean files for one ensemble mean into one file
 ;
-  names_EMus = get_unique_values(names_EM+" | "+syear+" | "+eyear)
-  names_EMu = str_sub_str(str_strip(str_get_field(names_EMus,1,delim))," ","_")
-  syearEM = str_strip(str_get_field(names_EMus,2,delim))
-  eyearEM = str_strip(str_get_field(names_EMus,3,delim))
+  if (isvar("names_EM")) then
+     names_EMus = get_unique_values(names_EM+" | "+syear+" | "+eyear)
+     names_EMu = str_sub_str(str_strip(str_get_field(names_EMus,1,delim))," ","_")
+     syearEM = str_strip(str_get_field(names_EMus,2,delim))
+     eyearEM = str_strip(str_get_field(names_EMus,3,delim))
 
-  do gg = 0,dimsizes(names_EMu)-1
-     fils := systemfunc("ls "+OUTDIR+names_EMu(gg)+"_EM.*.nc 2> /dev/null")
-     if (.not.ismissing(fils(0))) then
-        dimf := dimsizes(fils)
-        ofile := OUTDIR+names_EMu(gg)+"_EM.cvdp_data."+syearEM(gg)+"-"+eyearEM(gg)+".nc"
-        if (dimf.eq.1) then
-           if (fils(0).ne.ofile) then
-              system("mv "+fils(0)+" "+ofile)
-           end if
-        else
-           if (isfilepresent(ofile)) then                                    ; if file master is present append individual data files to file master.
-              do hh = 0,dimf-1
-                 if (fils(hh).ne.ofile) then
-                    system("ncks -A -h "+fils(hh)+" "+ofile)
+     do gg = 0,dimsizes(names_EMu)-1
+        fils := systemfunc("ls "+OUTDIR+names_EMu(gg)+"_EM.*.nc 2> /dev/null")
+        if (.not.ismissing(fils(0))) then
+           dimf := dimsizes(fils)
+           ofile := OUTDIR+names_EMu(gg)+"_EM.cvdp_data."+syearEM(gg)+"-"+eyearEM(gg)+".nc"
+           if (dimf.eq.1) then
+              if (fils(0).ne.ofile) then
+                 system("mv "+fils(0)+" "+ofile)
+              end if
+           else
+              if (isfilepresent(ofile)) then                                    ; if file master is present append individual data files to file master.
+                 do hh = 0,dimf-1
+                    if (fils(hh).ne.ofile) then
+                       system("ncks -A -h "+fils(hh)+" "+ofile)
+                    end if
+                 end do
+                 system("rm "+str_sub_str(str_join(fils," "),ofile,""))
+              else                                                              ; if file master is not present, append individual data files to last file in list,
+                 do hh = 0,dimf-2                                               ; and when done move the last file to be the master file
+                    system("ncks -A -h "+fils(hh)+" "+fils(dimf-1))             
+                 end do
+                 system("mv "+fils(dimf-1)+" "+ofile)
+                 if (dimsizes(fils).ge.2) then
+                    system("rm "+str_sub_str(str_sub_str(str_join(fils," "),ofile,""),fils(dimf-1),""))   ; remove each script's file, but do not remove the master file (if present)
                  end if
-              end do
-              system("rm "+str_sub_str(str_join(fils," "),ofile,""))
-           else                                                              ; if file master is not present, append individual data files to last file in list,
-              do hh = 0,dimf-2                                               ; and when done move the last file to be the master file
-                 system("ncks -A -h "+fils(hh)+" "+fils(dimf-1))             
-              end do
-              system("mv "+fils(dimf-1)+" "+ofile)
-              if (dimsizes(fils).ge.2) then
-                 system("rm "+str_sub_str(str_sub_str(str_join(fils," "),ofile,""),fils(dimf-1),""))   ; remove each script's file, but do not remove the master file (if present)
               end if
            end if
+           system("ncks -O "+ofile+" "+ofile)   ; done to alphabetize output variable
         end if
-        system("ncks -O "+ofile+" "+ofile)   ; done to alphabetize output variable
-     end if
-  end do
+     end do
+  end if
 ;------------------------------------------------
   if (obsflag) then
 
@@ -189,3 +198,4 @@ begin
   end if
   print("Finished: ncfiles.append.ncl")
 end
+

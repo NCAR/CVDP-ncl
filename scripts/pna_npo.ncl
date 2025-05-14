@@ -15,6 +15,8 @@ begin
   REMOVE_TREND_OBS = getenv("REMOVE_TREND_OBS") 
   REMOVE_TREND_MODEL = getenv("REMOVE_TREND_MODEL") 
   ENSEMBLE_MEAN_DIR = getenv("ENSEMBLE_MEAN_DIR")
+  MONTHLY_MODES = getenv("MONTHLY_MODES")
+  IM_COMMAND = getenv("IM_COMMAND")
   
   nsim = numAsciiRow("namelist_byvar/namelist_psl")
 
@@ -131,7 +133,43 @@ begin
            delete([/pattern,pattern2/])
         end do
      end do     
-     delete([/fnt,fnt2,fineof,z,arr,fineof,pcts/])
+     delete([/fineof,pcts/])
+
+     if (MONTHLY_MODES.eq."True")then
+        fineof_mon := calculate_eofs_mon(arr,20.,85,120,240,3)
+ 
+        pcts_mon := new((/2,dimsizes(arr&time)/),typeof(arr))
+        pcts_mon!1 = "time"
+        pcts_mon&time = arr&time
+        pcts_mon@detrend_option = arr@detrend_option
+        do ff = 0,1
+           pcts_mon(ff,:) = (/ fineof_mon@$(/"pc"+(ff+1)/)$/)
+           if (.not.ismissing(fineof_mon(ff,{latcheck(ff)},{loncheck(ff)}))) then    ; attempt to make all plots have the same sign
+              if (fineof_mon(ff,{latcheck(ff)},{loncheck(ff)}).ge.0) then
+                 fineof_mon(ff,:,:) = fineof_mon(ff,:,:)*-1.
+                 pcts_mon(ff,:) = pcts_mon(ff,:)*-1
+              end if
+           end if
+           z->$(/climmodes(ff)+"_timeseries_mon"/)$ = set_varAtts(pcts_mon(ff,:),climmodes(ff)+" normalized principal component timeseries (mon)","1","")
+
+           pattern_mon := fineof_mon(ff,:,:)
+           pcvar_mon := str_split(fineof_mon@pcvar,",")
+           pattern_mon@pcvar = sprintf("%4.1f", tofloat(pcvar_mon(ff)))+"%"
+           if (isatt(fineof_mon,"pcvar_signif")) then
+              signif_mon := str_split(fineof_mon@pcvar_signif,",")
+              if (signif_mon(ff).eq.True) then
+                 pattern_mon@pcvar = pattern_mon@pcvar+"*"
+              end if
+           end if
+           pattern_mon2 := (/ pattern_mon /)
+           copy_VarCoords(pattern_mon,pattern_mon2)
+           pattern_mon2@units = pattern_mon@units
+           pattern_mon2@pcvar = pattern_mon@pcvar
+           z->$(/climmodes(ff)+"_pattern_mon"/)$  = set_varAtts(pattern_mon2,climmodes(ff)+" spatial pattern (mon)","","")
+        end do 
+        delete([/pattern_mon,pattern_mon2,fineof_mon,pcts_mon,signif_mon/])
+     end if
+     delete([/fnt,fnt2,z,arr/])
   end do
 
   if (CREATE_GRAPHICS.eq."False") then
@@ -469,7 +507,7 @@ begin
         if (nEM.ge.1) then   ; in ensemble mode (runstyle=2)
            system("mv "+OUTDIR+"pna.000003.png "+OUTDIR+variname(dd)+".summary.png")
            if (PNG_SCALE_SUMMARY.ne.100) then
-              system("convert -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+variname(dd)+".summary.png "+OUTDIR+variname(dd)+".summary.png")
+              system(IM_COMMAND+" "+OUTDIR+variname(dd)+".summary.png -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+variname(dd)+".summary.png")
            end if
         end if
      else
@@ -834,7 +872,7 @@ begin
            system("mv "+OUTDIR+"pna_npo.timeseries.000001.png "+OUTDIR+variname(dd)+".indmem.png")
            system("mv "+OUTDIR+"pna_npo.timeseries.000002.png "+OUTDIR+variname(dd)+".summary.png")
            if (PNG_SCALE_SUMMARY.ne.100) then
-              system("convert -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+variname(dd)+".summary.png "+OUTDIR+variname(dd)+".summary.png")
+              system(IM_COMMAND+" "+OUTDIR+variname(dd)+".summary.png -resize "+PNG_SCALE_SUMMARY+"% "+OUTDIR+variname(dd)+".summary.png")
            end if
         end if
      else
