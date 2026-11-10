@@ -84,7 +84,10 @@ begin
            continue
         end if  
 
-        if (OPT_CLIMO.eq."Full") then
+        if (OPT_CLIMO.eq."Full".or.(EM_num(ee).eq.0.and.((CLIMO_SYEAR.ge.0.and.(CLIMO_SYEAR.lt.syear(ee).or.CLIMO_EYEAR.gt.eyear(ee))).or.(CLIMO_SYEAR.lt.0.and.(eyear(ee)+CLIMO_SYEAR).lt.syear(ee))))) then   ; observations not covering the custom climatological period use their full record
+           if (OPT_CLIMO.ne."Full") then
+              print("Custom climatological period not covered by observational dataset "+names(ee)+" ("+syear(ee)+"-"+eyear(ee)+"): using its full record")
+           end if
            arr_anom = rmMonAnnCycTLL(arr)
         else
            check_custom_climo(names(ee),syear(ee),eyear(ee),CLIMO_SYEAR,CLIMO_EYEAR)
@@ -113,7 +116,10 @@ begin
         if (isatt(arr,"area")) then
            arr = (/ where(arr.ge.15,1.,0.) /)  ; ice extent calculation (all cells greater than 15% treated as 100% covered)
 
-           if (OPT_CLIMO.eq."Full") then
+           if (OPT_CLIMO.eq."Full".or.(EM_num(ee).eq.0.and.((CLIMO_SYEAR.ge.0.and.(CLIMO_SYEAR.lt.syear(ee).or.CLIMO_EYEAR.gt.eyear(ee))).or.(CLIMO_SYEAR.lt.0.and.(eyear(ee)+CLIMO_SYEAR).lt.syear(ee))))) then   ; observations not covering the custom climatological period use their full record
+              if (OPT_CLIMO.ne."Full") then
+                 print("Custom climatological period not covered by observational dataset "+names(ee)+" ("+syear(ee)+"-"+eyear(ee)+"): using its full record")
+              end if
               climo := clmMonTLL(arr)
            else
               check_custom_climo(names(ee),syear(ee),eyear(ee),CLIMO_SYEAR,CLIMO_EYEAR)

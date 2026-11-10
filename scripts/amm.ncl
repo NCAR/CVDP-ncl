@@ -131,7 +131,10 @@ begin
      sst = where(sst.le.-1.8,-1.8,sst)    ; set all values below -1.8 to -1.8
      sst = mask(sst,conform(sst,landsea_mask(d->LSMASK,sst&lat,sst&lon),(/1,2/)).ge.1,False)
 
-     if (OPT_CLIMO.eq."Full") then
+     if (OPT_CLIMO.eq."Full".or.(EM_num(ee).eq.0.and.((CLIMO_SYEAR.ge.0.and.(CLIMO_SYEAR.lt.syear(ee).or.CLIMO_EYEAR.gt.eyear(ee))).or.(CLIMO_SYEAR.lt.0.and.(eyear(ee)+CLIMO_SYEAR).lt.syear(ee))))) then   ; observations not covering the custom climatological period use their full record
+        if (OPT_CLIMO.ne."Full") then
+           print("Custom climatological period not covered by observational dataset "+names(ee)+" ("+syear(ee)+"-"+eyear(ee)+"): using its full record")
+        end if
         climo = clmMonTLL(sst)
         sst = rmMonAnnCycTLL(sst)
      else
@@ -193,7 +196,10 @@ begin
         if (.not.isatt(tas,"is_all_missing")) then
            tas = mask(tas,conform(tas,landsea_mask(d->LSMASK,tas&lat,tas&lon),(/1,2/)).eq.0,False)
 
-           if (OPT_CLIMO.eq."Full") then
+           if (OPT_CLIMO.eq."Full".or.(EM_num(ee).eq.0.and.((CLIMO_SYEAR.ge.0.and.(CLIMO_SYEAR.lt.syear_tas(ee).or.CLIMO_EYEAR.gt.eyear_tas(ee))).or.(CLIMO_SYEAR.lt.0.and.(eyear_tas(ee)+CLIMO_SYEAR).lt.syear_tas(ee))))) then   ; observations not covering the custom climatological period use their full record
+              if (OPT_CLIMO.ne."Full") then
+                 print("Custom climatological period not covered by observational dataset "+names_tas(ee)+" ("+syear_tas(ee)+"-"+eyear_tas(ee)+"): using its full record")
+              end if
               tas = rmMonAnnCycTLL(tas)
            else
               check_custom_climo(names_tas(ee),syear_tas(ee),eyear_tas(ee),CLIMO_SYEAR,CLIMO_EYEAR)
@@ -247,7 +253,10 @@ begin
      if (plot_flag.eq.0) then
         pr = data_read_in(paths_pr(ee),"PRECT",syear_pr(ee),eyear_pr(ee))
         if (.not.isatt(pr,"is_all_missing")) then
-           if (OPT_CLIMO.eq."Full") then
+           if (OPT_CLIMO.eq."Full".or.(EM_num(ee).eq.0.and.((CLIMO_SYEAR.ge.0.and.(CLIMO_SYEAR.lt.syear_pr(ee).or.CLIMO_EYEAR.gt.eyear_pr(ee))).or.(CLIMO_SYEAR.lt.0.and.(eyear_pr(ee)+CLIMO_SYEAR).lt.syear_pr(ee))))) then   ; observations not covering the custom climatological period use their full record
+              if (OPT_CLIMO.ne."Full") then
+                 print("Custom climatological period not covered by observational dataset "+names_pr(ee)+" ("+syear_pr(ee)+"-"+eyear_pr(ee)+"): using its full record")
+              end if
               pr = rmMonAnnCycTLL(pr)
            else
               check_custom_climo(names_pr(ee),syear_pr(ee),eyear_pr(ee),CLIMO_SYEAR,CLIMO_EYEAR)

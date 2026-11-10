@@ -173,7 +173,10 @@ begin
      sst = mask(sst,conform(sst,landsea_mask(m->LSMASK,sst&lat,sst&lon),(/1,2/)).ge.1,False)
      delete(m)  
 
-     if (OPT_CLIMO.eq."Full") then
+     if (OPT_CLIMO.eq."Full".or.(EM_num(ee).eq.0.and.((CLIMO_SYEAR.ge.0.and.(CLIMO_SYEAR.lt.syear(ee).or.CLIMO_EYEAR.gt.eyear(ee))).or.(CLIMO_SYEAR.lt.0.and.(eyear(ee)+CLIMO_SYEAR).lt.syear(ee))))) then   ; observations not covering the custom climatological period use their full record
+        if (OPT_CLIMO.ne."Full") then
+           print("Custom climatological period not covered by observational dataset "+names(ee)+" ("+syear(ee)+"-"+eyear(ee)+"): using its full record")
+        end if
         sst = rmMonAnnCycTLL(sst)
      else
         check_custom_climo(names(ee),syear(ee),eyear(ee),CLIMO_SYEAR,CLIMO_EYEAR)
@@ -472,7 +475,10 @@ begin
         arr_zos := data_read_in_ocean(paths_zos(ee),"SSH",syear_zos(ee),eyear_zos(ee))
         if (plot_flag.eq.0.and.isatt(f_test,"is_all_missing").and..not.isatt(arr_zos,"is_all_missing")) then  ; if years of the two variables match, if the metrics haven't already been calculated, 
 
-           if (OPT_CLIMO.eq."Full") then
+           if (OPT_CLIMO.eq."Full".or.(EM_num(ee).eq.0.and.((CLIMO_SYEAR.ge.0.and.(CLIMO_SYEAR.lt.syear_zos(ee).or.CLIMO_EYEAR.gt.eyear_zos(ee))).or.(CLIMO_SYEAR.lt.0.and.(eyear_zos(ee)+CLIMO_SYEAR).lt.syear_zos(ee))))) then   ; observations not covering the custom climatological period use their full record
+              if (OPT_CLIMO.ne."Full") then
+                 print("Custom climatological period not covered by observational dataset "+names_zos(ee)+" ("+syear_zos(ee)+"-"+eyear_zos(ee)+"): using its full record")
+              end if
               arr_zos = rmMonAnnCycTLL(arr_zos)
            else
               check_custom_climo(names_zos(ee),syear_zos(ee),eyear_zos(ee),CLIMO_SYEAR,CLIMO_EYEAR)
@@ -750,7 +756,10 @@ begin
            arr&time = fspan(tmin*1.,(tmax*1.)+(11/12.),dimsizes(yyyymm))  ; then convert time from YYYYMM->YYYY.frac
 
            if (hh.ge.1) then   ; 0 = SST, where the annual cycle has already been removed and detrending option has been applied
-              if (OPT_CLIMO.eq."Full") then
+              if (OPT_CLIMO.eq."Full".or.(EM_num(ee).eq.0.and.((CLIMO_SYEAR.ge.0.and.(CLIMO_SYEAR.lt.tmin.or.CLIMO_EYEAR.gt.tmax)).or.(CLIMO_SYEAR.lt.0.and.(tmax+CLIMO_SYEAR).lt.tmin)))) then   ; observations not covering the custom climatological period use their full record
+                 if (OPT_CLIMO.ne."Full") then
+                    print("Custom climatological period not covered by observational dataset "+"row "+ee+" ("+tmin+"-"+tmax+"): using its full record")
+                 end if
                  arr = rmMonAnnCycTLL(arr)
               else
                  if (hh.eq.1) then
@@ -870,7 +879,7 @@ begin
            end if
            if (hh.eq.1) then
               z_arr@notes = "Data from "+names_tas(ee)+" from "+syear_tas(ee)+"-"+eyear_tas(ee)
-              if (OPT_CLIMO.eq."Full") then
+              if (OPT_CLIMO.eq."Full".or.(EM_num(ee).eq.0.and.((CLIMO_SYEAR.ge.0.and.(CLIMO_SYEAR.lt.syear_tas(ee).or.CLIMO_EYEAR.gt.eyear_tas(ee))).or.(CLIMO_SYEAR.lt.0.and.(eyear_tas(ee)+CLIMO_SYEAR).lt.syear_tas(ee))))) then   ; observations not covering the custom climatological period use their full record
                  z_arr@climatology = syear_tas(ee)+"-"+eyear_tas(ee)+" climatology removed prior to all calculations (other than means)"
               else
                  if (CLIMO_SYEAR.lt.0) then
