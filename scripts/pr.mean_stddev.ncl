@@ -4,6 +4,18 @@
 ;
 load "$CVDP_SCRIPTS/functions.ncl"
 
+undef("set_fill_mode")
+procedure set_fill_mode(res:logical,x:numeric)
+; Area-filled contours fail on very fine grids (ARPRAM - ALGORITHM FAILURE, blank panel),
+; e.g. 1280x960, so raster-fill those. Other grids keep the default AreaFill.
+begin
+  if (product(dimsizes(x)).gt.500000) then
+     res@cnFillMode = "RasterFill"
+  else
+     res@cnFillMode = "AreaFill"
+  end if
+end
+
 begin
   print("Starting: pr.mean_stddev.ncl")
   CREATE_GRAPHICS  = getenv("CREATE_GRAPHICS")  
@@ -294,6 +306,7 @@ begin
      qres@gsnLeftString = syear(0)+"-"+eyear(0) 
      qres@gsnRightString = ""  ; obs0@units
      qres@gsnCenterString = names(0)    
+     set_fill_mode(qres,obs0)
      plot_indmem(0) = gsn_csm_contour_map(wks,obs0,qres)
      cntr_EM = 0
      if (numobs.ge.2) then     ; plot obs #2-
@@ -312,10 +325,12 @@ begin
            qres@gsnLeftString = syear(cntr)+"-"+eyear(cntr) 
            qres@gsnRightString = "r="+pattern_correlation(obs0_rg,arr)
            qres@gsnCenterString = names(cntr)   
+           set_fill_mode(qres,arr)
            plot_indmem(cntr) = gsn_csm_contour_map(wks,arr,qres)
            qres2@gsnLeftString = ""   ;syear(cntr)+"-"+eyear(cntr) 
            qres2@gsnRightString = ""  ; arr@units
            qres2@gsnCenterString = names(cntr)+"-"+names(0)
+           set_fill_mode(qres2,obs_diff)
            plot_indmem_diff(cntr) = gsn_csm_contour_map(wks,obs_diff,qres2)
            delete([/arr,obs_diff,obs0_rg/])
            cntr = cntr+1
@@ -382,10 +397,12 @@ begin
            qres@gsnLeftString = syear_mod+"-"+eyear_mod
            qres@gsnRightString = "r="+pattern_correlation(obs0_rg,arr)
            qres@gsnCenterString = names_mod
+           set_fill_mode(qres,arr)
            plot_indmem(cntr) = gsn_csm_contour_map(wks,arr,qres)
            qres2@gsnLeftString = "" ;syear(cntr)+"-"+eyear(cntr) 
            qres2@gsnRightString = ""  ; arr@units
            qres2@gsnCenterString = names_mod+"-"+names(0)  
+           set_fill_mode(qres2,obs_diff)
            plot_indmem_diff(cntr) = gsn_csm_contour_map(wks,obs_diff,qres2)
            delete([/arr,obs_diff/])
            cntr = cntr+1
@@ -422,6 +439,7 @@ begin
         qres@gsnLeftString = syear(0)+"-"+eyear(0) 
         qres@gsnRightString = ""  ; obs0@units
         qres@gsnCenterString = names(0)
+        set_fill_mode(qres,obs0)
         plot_summary(cntr_EM+1) = gsn_csm_contour_map(wks,obs0,qres)
 
         qres@gsnCenterStringFontColor = csubtitle_color(gg-1)
@@ -434,17 +452,20 @@ begin
         qres@gsnCenterStringFontColor = csubtitle_color(gg-1)
         qres@gsnRightString = "r="+pattern_correlation(obs0_rg,arr_EM)
         qres@gsnCenterString = names_EM_mod +" ("+arr_store@nens+" Members)"                   
+        set_fill_mode(qres,arr_EM)
         plot_summary(cntr_EM) = gsn_csm_contour_map(wks,arr_EM,qres)
         obs_diff = arr_EM
         obs_diff = (/ arr_EM - obs0_rg /)
         qres2@gsnLeftString = ""
         qres2@gsnCenterString = names_EM_mod+" - "+names(0)  
         qres2@gsnRightString = arr_EM@units
+        set_fill_mode(qres2,obs_diff)
         plot_summary(cntr_EM+2) = gsn_csm_contour_map(wks,obs_diff,qres2)
 
         p_val = calculate_pval(obs0_rg,arr_store)
         tres@gsnCenterString = "Rank of "+names(0)+" within Ensemble" 
         tres@gsnRightString = calculate_area_in_range(p_val,10,90)+"%"
+        set_fill_mode(tres,p_val)
         plot_summary(cntr_EM+3) = gsn_csm_contour_map(wks,p_val,tres)
 
         fout = getenv("OUTDIR")+str_sub_str(names_EM_mod," ","_")+"_EM.cvdp_data.pr.mean_stddev."+syear_mod+"-"+eyear_mod+".nc"
