@@ -173,14 +173,24 @@ begin
      MJJAS=pr_ann_jandec
      f_yr=dimsizes(pr&time)-1                 ;final year of dataset
      pu_yr=dimsizes(pr&time)-13               ;penultimate year of dataset
-     Annual(1:,:,:)=(/dim_avg_n_Wrap((/pr(10:pu_yr:12,:,:),pr(11:pu_yr:12,:,:),pr(12:f_yr:12,:,:),\
-             pr(13:f_yr:12,:,:),pr(14:f_yr:12,:,:),pr(15:f_yr:12,:,:),\
-             pr(16:f_yr:12,:,:),pr(17:f_yr:12,:,:),pr(18:f_yr:12,:,:),\
-             pr(19:f_yr:12,:,:),pr(20:f_yr:12,:,:),pr(21:f_yr:12,:,:)/),0)/)
-     NDJFM(1:,:,:)=(/dim_avg_n((/pr(10:pu_yr:12,:,:),pr(11:pu_yr:12,:,:),pr(12:f_yr:12,:,:),\
-             pr(13:f_yr:12,:,:),pr(14:f_yr:12,:,:)/),0)/)
-     MJJAS(1:,:,:)=(/dim_avg_n_Wrap((/pr(16::12,:,:),pr(17::12,:,:),pr(18::12,:,:),\
-             pr(19::12,:,:),pr(20::12,:,:)/),0)/)
+     ; Average in latitude bands so that no inline (/.../) temporary exceeds ~5e8 values: NCL
+     ; aborts (munmap_chunk(): invalid pointer) building one of more than 2^31 values, e.g. the
+     ; 12-month stack for a 171-yr run on a 1280x960 grid. Results are identical; typical grids use 1 band.
+     nlat_pr=dimsizes(pr&lat)
+     nband=toint(ceil(1.*dimsizes(pr&time)*nlat_pr*dimsizes(pr&lon)/5.e8))
+     do bb=0,nband-1
+        j0=(bb*nlat_pr)/nband
+        j1=((bb+1)*nlat_pr)/nband-1
+        Annual(1:,j0:j1,:)=(/dim_avg_n((/pr(10:pu_yr:12,j0:j1,:),pr(11:pu_yr:12,j0:j1,:),pr(12:f_yr:12,j0:j1,:),\
+                pr(13:f_yr:12,j0:j1,:),pr(14:f_yr:12,j0:j1,:),pr(15:f_yr:12,j0:j1,:),\
+                pr(16:f_yr:12,j0:j1,:),pr(17:f_yr:12,j0:j1,:),pr(18:f_yr:12,j0:j1,:),\
+                pr(19:f_yr:12,j0:j1,:),pr(20:f_yr:12,j0:j1,:),pr(21:f_yr:12,j0:j1,:)/),0)/)
+        NDJFM(1:,j0:j1,:)=(/dim_avg_n((/pr(10:pu_yr:12,j0:j1,:),pr(11:pu_yr:12,j0:j1,:),pr(12:f_yr:12,j0:j1,:),\
+                pr(13:f_yr:12,j0:j1,:),pr(14:f_yr:12,j0:j1,:)/),0)/)
+        MJJAS(1:,j0:j1,:)=(/dim_avg_n((/pr(16::12,j0:j1,:),pr(17::12,j0:j1,:),pr(18::12,j0:j1,:),\
+                pr(19::12,j0:j1,:),pr(20::12,j0:j1,:)/),0)/)
+     end do
+     delete([/nlat_pr,nband,bb,j0,j1/])
      pr_summer=MJJAS
      pr_summer(:,{-90:0},:) = NDJFM(:,{-90:0},:)   ;move from pure calendar years into NH/SH summers
      pr_winter=NDJFM
