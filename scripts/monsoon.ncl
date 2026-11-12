@@ -92,7 +92,7 @@ begin
   do ee = 0,nsim-1
      fnt = OUTDIR+modname(ee)+".cvdp_data.monsoon."+syear(ee)+"-"+eyear(ee)+".nc"
      fnt2 = OUTDIR+modname(ee)+".cvdp_data."+syear(ee)+"-"+eyear(ee)+".nc"
-     f_test := read_cvdp_le_data(fnt,fnt2,"monsoon_domain")
+     f_test := read_cvdp_le_data(fnt,fnt2,"monsoon_rainfixed_global")   ; newest output variable: older files lacking it are recomputed
      if (.not.isatt(f_test,"is_all_missing")) then
         continue
      end if
@@ -108,6 +108,7 @@ begin
            print("Custom climatological period not covered by observational dataset "+names(ee)+" ("+syear(ee)+"-"+eyear(ee)+"): using its full record")
         end if
         climo_pr = clmMonTLL(pr)
+        climo_yrs = (/syear(ee),eyear(ee)/)
      else
         check_custom_climo(names(ee),syear(ee),eyear(ee),CLIMO_SYEAR,CLIMO_EYEAR)
         temp_arr = pr
@@ -115,8 +116,10 @@ begin
         temp_arr&time = cd_calendar(pr&time,-1)
         if (CLIMO_SYEAR.lt.0) then
            climo_pr = clmMonTLL(temp_arr({(eyear(ee)+CLIMO_SYEAR)*100+1:(eyear(ee)+CLIMO_EYEAR)*100+12},:,:))
+           climo_yrs = (/eyear(ee)+CLIMO_SYEAR,eyear(ee)+CLIMO_EYEAR/)
         else
            climo_pr = clmMonTLL(temp_arr({CLIMO_SYEAR*100+1:CLIMO_EYEAR*100+12},:,:))
+           climo_yrs = (/CLIMO_SYEAR,CLIMO_EYEAR/)
         end if
         delete(temp_arr)
      end if
@@ -150,6 +153,7 @@ begin
      if AR6_DEFS then
         monsoon_domain=where(((climo_summer-climo_winter).gt.2.5),climo_summer,climo_summer@_FillValue)
         z->monsoon_domain=set_varAtts(monsoon_domain,"Monsoon domain's rainfall","mm/day","climatology, after IPCC WG1 AR6 Annex V")
+        fixed_dom = .not.ismissing(monsoon_domain)   ; climatological domain, held fixed for the monsoon_rainfixed_* timeseries
         delete([/climo_Annual,climo_MJJAS,climo_NDJFM,climo_summer,climo_winter,monsoon_domain,climo_pr/])
      else
         climo_intensity=climo_Annual
@@ -158,6 +162,7 @@ begin
         z->monsoon_domain=set_varAtts(monsoon_domain,"Monsoon domain's rainfall","mm/day","climatology, after IPCC AR5 Fig 14.1a")
         z->monsoon_intensity=set_varAtts(climo_intensity,"Seasonal rainfall intensity (summer-winter)","mm/day","climatology [used to calculated global monsoon domain]")
         z->monsoon_summer_rainrate=set_varAtts(climo_summer,"Summer (MJJAS) rainfall intensity","mm/day","climatology [used to calculated global monsoon domain]")
+        fixed_dom = .not.ismissing(monsoon_domain)   ; climatological domain, held fixed for the monsoon_rainfixed_* timeseries
         delete([/climo_Annual,climo_MJJAS,climo_NDJFM,climo_summer,climo_winter,climo_intensity,monsoon_domain,climo_pr/])
      end if
 
@@ -206,6 +211,18 @@ begin
         monsoonrain=where((pr_summer.gt.Annual*0.55).and.(intensity.gt.2),pr_summer,pr_summer@_FillValue)
         monsoonarea=where((pr_summer.gt.Annual*0.55).and.(intensity.gt.2),conform(pr_ann_jandec,area,(/1,2/)),0)
      end if                                   ;Now I can create timeseries of monsoon area and rainfall every year
+     ;summer rainfall within the climatological domain, which stays fixed from year to year
+     monsoonrainfx=pr_summer
+     monsoonrainfx=where(conform(pr_summer,fixed_dom,(/1,2/)),pr_summer,pr_summer@_FillValue)
+     ;interannual standard deviation of summer rainfall over the climatological years, within the climatological domain
+     ;(water years labelled by end date, so the first year has no SH summer and is missing there)
+     cy0 = climo_yrs(0)-syear(ee)
+     cy1 = climo_yrs(1)-syear(ee)
+     monsoon_rain_stddev=dim_stddev_n_Wrap(pr_summer(cy0:cy1,:,:),0)
+     monsoon_rain_stddev=where(fixed_dom,monsoon_rain_stddev,monsoon_rain_stddev@_FillValue)
+     monsoon_rain_stddev@time_op_ncl = "Interannual standard deviation of local-summer (NH MJJAS, SH NDJFM) rainfall: "+climo_yrs(0)+"-"+climo_yrs(1)
+     z->monsoon_rain_stddev=set_varAtts(monsoon_rain_stddev,"Interannual standard deviation of monsoon summer rainfall","mm/day","over the climatological period, within the climatological monsoon domain")
+     delete([/monsoon_rain_stddev,cy0,cy1,climo_yrs,fixed_dom/])
      delete([/pr_ann_jandec,Annual,NDJFM,MJJAS,pr_summer,pr_winter,intensity,f_yr,pu_yr/])
 
      ;write out the global monsoon timeseries to file
@@ -220,12 +237,17 @@ begin
      monsoon_rain_global!0 = "TIME"
      monsoon_rain_global&TIME = TIME
      z->monsoon_rain_global=set_varAtts(monsoon_rain_global,"rainfall over global monsoon domain","mm/day","averaged over summer for each water year (i.e. Nov-Oct, labelled for end date). After IPCC AR5 Fig 14.1a, but with annually varying domain.")
-     delete([/monsoon_area_global,monsoon_rain_global/])
+     monsoon_rainfixed_global=wgt_areaave_Wrap(monsoonrainfx,coswgt,1.0,0)
+     monsoon_rainfixed_global!0 = "TIME"
+     monsoon_rainfixed_global&TIME = TIME
+     z->monsoon_rainfixed_global=set_varAtts(monsoon_rainfixed_global,"rainfall over fixed global monsoon domain","mm/day","averaged over summer for each water year (i.e. Nov-Oct, labelled for end date), within the domain diagnosed from the climatological period, which stays fixed.")
+     delete([/monsoon_area_global,monsoon_rain_global,monsoon_rainfixed_global/])
 
      ;The named monsoon domains are only defined over land...
      lsm = landsea_mask(basemap,pr&lat,pr&lon)
      monsoonrain = mask(monsoonrain,conform(monsoonrain,lsm,(/1,2/)).ne.1,False)
      monsoonarea = mask(monsoonarea,conform(monsoonarea,lsm,(/1,2/)).ne.1,False)
+     monsoonrainfx = mask(monsoonrainfx,conform(monsoonrainfx,lsm,(/1,2/)).ne.1,False)
      delete(lsm)
 
      if AR6_DEFS then
@@ -233,6 +255,7 @@ begin
         do reg_i=0,dimsizes(domain_names)-1
            this_rain=mask(monsoonrain,conform(monsoonrain,region_mask,(/1,2/)).eq.domain_numbers(reg_i),True)
            this_area=mask(monsoonarea,conform(monsoonarea,region_mask,(/1,2/)).eq.domain_numbers(reg_i),True)
+           this_rainfx=mask(monsoonrainfx,conform(monsoonrainfx,region_mask,(/1,2/)).eq.domain_numbers(reg_i),True)
            monsoon_area_ts=dim_sum_n_Wrap(this_area,(/1,2/))
            monsoon_area_ts!0 = "TIME"
            monsoon_area_ts&TIME = TIME
@@ -243,7 +266,12 @@ begin
            z->$varname$ = set_varAtts(monsoon_rain_ts,"rainfall over "+domain_names(reg_i)+" domain","mm/day","averaged over summer for each water year (i.e. Nov-Oct, labelled for end date). After IPCC WG1 AR6 Annex V, but with annually varying domain.")
            varname="monsoon_area_"+domain_names(reg_i)
            z->$varname$=set_varAtts(monsoon_area_ts,"Area of "+domain_names(reg_i)+" monsoon domain","km2","Calculated after IPCC WG1 AR6 Annex V, but for each water year (i.e. Nov-Oct, labelled for end date)")
-           delete([/this_rain,this_area,monsoon_area_ts,monsoon_rain_ts,varname/])
+           monsoon_rainfx_ts=wgt_areaave_Wrap(this_rainfx,coswgt,1.0,0)
+           monsoon_rainfx_ts!0 = "TIME"
+           monsoon_rainfx_ts&TIME = TIME
+           varname="monsoon_rainfixed_"+domain_names(reg_i)
+           z->$varname$ = set_varAtts(monsoon_rainfx_ts,"rainfall over fixed "+domain_names(reg_i)+" domain","mm/day","averaged over summer for each water year (i.e. Nov-Oct, labelled for end date). After IPCC WG1 AR6 Annex V, within the domain diagnosed from the climatological period, which stays fixed.")
+           delete([/this_rain,this_area,this_rainfx,monsoon_area_ts,monsoon_rain_ts,monsoon_rainfx_ts,varname/])
         end do
         delete(region_mask)
      else
@@ -252,23 +280,28 @@ begin
            if domain_names(reg_i).eq."SAS" then
               this_rain=monsoonrain(:,{domain_lats(reg_i,0):domain_lats(reg_i,1)},{domain_lons(reg_i,0):domain_lons(reg_i,1)})
               this_area=monsoonarea(:,{domain_lats(reg_i,0):domain_lats(reg_i,1)},{domain_lons(reg_i,0):domain_lons(reg_i,1)})
+              this_rainfx=monsoonrainfx(:,{domain_lats(reg_i,0):domain_lats(reg_i,1)},{domain_lons(reg_i,0):domain_lons(reg_i,1)})
               SAS_mask=this_rain(0,:,:)
               SAS_mask=(/1/)
               SAS_mask({domain_lats(reg_i+1,0):},{domain_lons(reg_i+1,0):})=(/0/)
               this_rain=mask(this_rain,conform(this_rain,SAS_mask,(/1,2/)).eq.0,False)
               this_area=mask(this_area,conform(this_area,SAS_mask,(/1,2/)).eq.0,False)
+              this_rainfx=mask(this_rainfx,conform(this_rainfx,SAS_mask,(/1,2/)).eq.0,False)
               delete(SAS_mask)
            else
               if domain_names(reg_i).eq."NAF" then
                  ;NAF crosses Greenwich Meridian, so needs a lonFlip
                  tmp_rain=lonFlip(monsoonrain)
                  tmp_area=lonFlip(monsoonarea)
+                 tmp_rainfx=lonFlip(monsoonrainfx)
                  this_rain=tmp_rain(:,{domain_lats(reg_i,0):domain_lats(reg_i,1)},{domain_lons(reg_i,0):domain_lons(reg_i,1)})
                  this_area=tmp_area(:,{domain_lats(reg_i,0):domain_lats(reg_i,1)},{domain_lons(reg_i,0):domain_lons(reg_i,1)})
-                 delete([/tmp_rain,tmp_area/])
+                 this_rainfx=tmp_rainfx(:,{domain_lats(reg_i,0):domain_lats(reg_i,1)},{domain_lons(reg_i,0):domain_lons(reg_i,1)})
+                 delete([/tmp_rain,tmp_area,tmp_rainfx/])
               else
                  this_rain=monsoonrain(:,{domain_lats(reg_i,0):domain_lats(reg_i,1)},{domain_lons(reg_i,0):domain_lons(reg_i,1)})
                  this_area=monsoonarea(:,{domain_lats(reg_i,0):domain_lats(reg_i,1)},{domain_lons(reg_i,0):domain_lons(reg_i,1)})
+                 this_rainfx=monsoonrainfx(:,{domain_lats(reg_i,0):domain_lats(reg_i,1)},{domain_lons(reg_i,0):domain_lons(reg_i,1)})
               end if
            end if
            this_coswgt=coswgt({domain_lats(reg_i,0):domain_lats(reg_i,1)})
@@ -282,15 +315,21 @@ begin
            z->$varname$ = set_varAtts(monsoon_rain_ts,"rainfall over "+domain_names(reg_i)+" domain","mm/day","averaged over summer for each water year (i.e. Nov-Oct, labelled for end date). After IPCC AR5 Fig 14.3, but with annually varying domain.")
            varname="monsoon_area_"+domain_names(reg_i)
            z->$varname$=set_varAtts(monsoon_area_ts,"Area of "+domain_names(reg_i)+" monsoon domain","km2","Calculated after IPCC AR5 Fig 14.1a and Fig 14.3, but for each water year (i.e. Nov-Oct, labelled for end date)")
-           delete([/this_coswgt,this_rain,this_area,monsoon_area_ts,monsoon_rain_ts,varname/])
+           monsoon_rainfx_ts=wgt_areaave_Wrap(this_rainfx,this_coswgt,1.0,0)
+           monsoon_rainfx_ts!0 = "TIME"
+           monsoon_rainfx_ts&TIME = TIME
+           varname="monsoon_rainfixed_"+domain_names(reg_i)
+           z->$varname$ = set_varAtts(monsoon_rainfx_ts,"rainfall over fixed "+domain_names(reg_i)+" domain","mm/day","averaged over summer for each water year (i.e. Nov-Oct, labelled for end date). After IPCC AR5 Fig 14.3, within the domain diagnosed from the climatological period, which stays fixed.")
+           delete([/this_coswgt,this_rain,this_area,this_rainfx,monsoon_area_ts,monsoon_rain_ts,monsoon_rainfx_ts,varname/])
         end do
      end if
-     delete([/pr,coswgt,area,monsoonrain,monsoonarea,z,TIME/])
+     delete([/pr,coswgt,area,monsoonrain,monsoonarea,monsoonrainfx,z,TIME/])
   end do
 
   if (nEM.ge.1) then     ; runstyle 2: create ensemble mean outputs from the member files
-     emvars = array_append_record((/"monsoon_domain","monsoon_rain_global","monsoon_area_global"/), \
-                                  array_append_record("monsoon_rain_"+domain_names,"monsoon_area_"+domain_names,0),0)
+     emvars = array_append_record((/"monsoon_domain","monsoon_rain_stddev","monsoon_rain_global","monsoon_area_global","monsoon_rainfixed_global"/), \
+                                  array_append_record(array_append_record("monsoon_rain_"+domain_names,"monsoon_area_"+domain_names,0), \
+                                                      "monsoon_rainfixed_"+domain_names,0),0)
      do gg = 1,nEM
         emi := ind(EM_num.eq.gg)
         le = dimsizes(emi)-1
@@ -334,8 +373,7 @@ begin
      wks_type@wkHeight = 1500*PNG_SCALE
   end if
 
-  ;First plot the global monsoon domains on a map
-  wks_domain=gsn_open_wks(wks_type,OUTDIR+"global_monsoon_domain")
+  ;First plot the climatological global monsoon domains, then their interannual standard deviation, on maps
   res = True
   res@mpProjection = "WinkelTripel"
   res@mpGeophysicalLineColor = "gray42"
@@ -375,19 +413,6 @@ begin
      res@cnFillPalette = "BlueDarkRed18"
   end if
 
-  map_domains = new(nsim,"graphic")
-  do ee = 0,nsim-1
-     fnt = OUTDIR+modname(ee)+".cvdp_data.monsoon."+syear(ee)+"-"+eyear(ee)+".nc"
-     fnt2 = OUTDIR+modname(ee)+".cvdp_data."+syear(ee)+"-"+eyear(ee)+".nc"
-     monsoon_domain := read_cvdp_le_data(fnt,fnt2,"monsoon_domain")
-     if (isatt(monsoon_domain,"is_all_missing")) then
-        continue
-     end if
-     res@gsnLeftString = syear(ee)+"-"+eyear(ee)
-     res@gsnRightString = monsoon_domain@units
-     res@gsnCenterString = names(ee)
-     map_domains(ee)=gsn_csm_contour_map(wks_domain,monsoon_domain,res)
-  end do
   panres = True
   panres@gsnMaximize = True
   panres@gsnPaperOrientation = "portrait"
@@ -413,9 +438,40 @@ begin
   panres@lbLabelStride = 1
   ncol = floattointeger(sqrt(nsim))
   nrow = (nsim/ncol)+mod(nsim,ncol)
-  panres@txString = "Global Monsoon Rainfall"
-  gsn_panel2(wks_domain,map_domains,(/nrow,ncol/),panres)
-  delete([/wks_domain,map_domains,panres,res/])
+
+  mapvars   = (/"monsoon_domain","monsoon_rain_stddev"/)
+  mapfiles  = (/"global_monsoon_domain","global_monsoon_stddev"/)
+  maptitles = (/"Global Monsoon Rainfall","Interannual Standard Deviation of Global Monsoon Rainfall"/)
+  maplevs   = (/(/0.5,1,2,3,4,5,6,7,8,9,10,12,14,16,18/), \
+                (/0.1,0.2,0.3,0.4,0.5,0.75,1,1.25,1.5,2,2.5,3,3.5,4,5/)/)
+  do mm = 0,dimsizes(mapvars)-1
+     wks_domain=gsn_open_wks(wks_type,OUTDIR+mapfiles(mm))
+     res@cnLevels = maplevs(mm,:)
+     map_domains = new(nsim,"graphic")
+     do ee = 0,nsim-1
+        fnt = OUTDIR+modname(ee)+".cvdp_data.monsoon."+syear(ee)+"-"+eyear(ee)+".nc"
+        fnt2 = OUTDIR+modname(ee)+".cvdp_data."+syear(ee)+"-"+eyear(ee)+".nc"
+        monsoon_map := read_cvdp_le_data(fnt,fnt2,mapvars(mm))
+        if (isatt(monsoon_map,"is_all_missing")) then
+           continue
+        end if
+        if (product(dimsizes(monsoon_map)).gt.500000) then   ; area fill fails on very fine grids (ARPRAM - ALGORITHM FAILURE)
+           res@cnFillMode = "RasterFill"
+        else
+           res@cnFillMode = "AreaFill"
+        end if
+        res@gsnLeftString = syear(ee)+"-"+eyear(ee)
+        res@gsnRightString = monsoon_map@units
+        res@gsnCenterString = names(ee)
+        map_domains(ee)=gsn_csm_contour_map(wks_domain,monsoon_map,res)
+     end do
+     if (.not.all(ismissing(map_domains))) then
+        panres@txString = maptitles(mm)
+        gsn_panel2(wks_domain,map_domains,(/nrow,ncol/),panres)
+     end if
+     delete([/wks_domain,map_domains/])
+  end do
+  delete([/mapvars,mapfiles,maptitles,maplevs,panres,res/])
 
   if (nEM.ge.1) then     ; runstyle 2: ensemble summary figure (EM / reference / difference / rank)
      domlev := (/0.5,1,2,3,4,5,6,7,8,9,10,12,14,16,18/)
@@ -432,6 +488,13 @@ begin
             OUTDIR+modname+".cvdp_data."+syear+"-"+eyear+".nc", \
             names,syear,eyear,paths,names_EM,EM_num,nEM,domlev,dompal,domdiflev,domdifpal,"Global Monsoon Rainfall",wks_type)
      delete([/domlev,domdiflev/])
+     sdlev := (/0.1,0.2,0.3,0.4,0.5,0.75,1,1.25,1.5,2,2.5,3,3.5,4,5/)
+     sddiflev := (/-2.,-1.5,-1,-0.5,-0.25,-0.1,0.,0.1,0.25,0.5,1,1.5,2/)
+     ensemble_summary_figure("monsoon_rain_stddev","monsoon.", \
+            OUTDIR+modname+".cvdp_data.monsoon."+syear+"-"+eyear+".nc", \
+            OUTDIR+modname+".cvdp_data."+syear+"-"+eyear+".nc", \
+            names,syear,eyear,paths,names_EM,EM_num,nEM,sdlev,dompal,sddiflev,domdifpal,"Interannual Std. Dev. of Global Monsoon Rainfall",wks_type)
+     delete([/sdlev,sddiflev/])
   end if
 
 ;;;;Now plot the timeseries: one figure per (rain rate | area) x (global + each domain)
@@ -487,22 +550,28 @@ begin
      panres@txFontHeightF = 0.012
   end if
 
-  kinds = (/"rain","area"/)
+  kinds = (/"rain","area","rainfixed"/)
   do kk = 0,dimsizes(kinds)-1
      do plot_i = 0,dimsizes(domain_names)
         if (plot_i.eq.0) then
            vname = "monsoon_"+kinds(kk)+"_global"
            if (kinds(kk).eq."rain") then
               vtitle = "Average summer rainfall over global monsoon domain (mm/day)"
+           else if (kinds(kk).eq."rainfixed") then
+              vtitle = "Average summer rainfall over fixed (climatological) global monsoon domain (mm/day)"
            else
               vtitle = "Area of global monsoon domain (km2)"
+           end if
            end if
         else
            vname = "monsoon_"+kinds(kk)+"_"+domain_names(plot_i-1)
            if (kinds(kk).eq."rain") then
               vtitle = "Average monsoon rainfall over "+domain_names(plot_i-1)+" domain (mm/day)"
+           else if (kinds(kk).eq."rainfixed") then
+              vtitle = "Average monsoon rainfall over fixed (climatological) "+domain_names(plot_i-1)+" domain (mm/day)"
            else
               vtitle = "Area of "+domain_names(plot_i-1)+" monsoon domain (km2)"
+           end if
            end if
         end if
         wks_ts = gsn_open_wks(wks_type,OUTDIR+vname+".timeseries")

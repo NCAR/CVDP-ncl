@@ -1065,15 +1065,15 @@ begin
         kk = kk+1
         txt(kk) = "<p class=cap>IPCC AR6 WGI, Figure AV.1: global and regional monsoon domains.</p>"
         kk = kk+1
-        txt(kk) = "<p class=btext>"+table_link_setup(OUTDIR,"global_monsoon_domain.png","Global monsoon domain map")+"</p>"
+        txt(kk) = "<p class=btext>"+table_link_setup(OUTDIR,"global_monsoon_domain.png","Global monsoon domain map")+" &nbsp; "+table_link_setup(OUTDIR,"global_monsoon_stddev.png","Interannual standard deviation of monsoon rainfall")+"</p>"
         kk = kk+1
-        txt(kk) = "<table border=1 cellpadding=4 width=990><tr><th>Monsoon region</th><th>Area index</th><th>Rainfall index</th></tr>"
+        txt(kk) = "<table border=1 cellpadding=4 width=990><tr><th>Monsoon region</th><th>Area index</th><th>Rainfall index</th><th>Rainfall index (fixed domain)</th></tr>"
         kk = kk+1
         mtok = (/"NAmerM","EqAmer","SAmerM","WAfriM","SAfri","SAsiaM","EAsiaM","AusMCM","global"/)
         mnam = (/"N. American","Equatorial American","S. American","W. African","S. African","S. Asian","E. Asian","Australian-Maritime Continent","Global"/)
         do rr = 0,dimsizes(mtok)-1
-           if (isfilepresent2(OUTDIR+"monsoon_area_"+mtok(rr)+".timeseries.png").or.isfilepresent2(OUTDIR+"monsoon_rain_"+mtok(rr)+".timeseries.png")) then
-              txt(kk) = "<tr><td class=s1>"+mnam(rr)+" ("+mtok(rr)+")</td><td>"+table_link_setup(OUTDIR,"monsoon_area_"+mtok(rr)+".timeseries.png","Area")+"</td><td>"+table_link_setup(OUTDIR,"monsoon_rain_"+mtok(rr)+".timeseries.png","Rainfall")+"</td></tr>"
+           if (isfilepresent2(OUTDIR+"monsoon_area_"+mtok(rr)+".timeseries.png").or.isfilepresent2(OUTDIR+"monsoon_rain_"+mtok(rr)+".timeseries.png").or.isfilepresent2(OUTDIR+"monsoon_rainfixed_"+mtok(rr)+".timeseries.png")) then
+              txt(kk) = "<tr><td class=s1>"+mnam(rr)+" ("+mtok(rr)+")</td><td>"+table_link_setup(OUTDIR,"monsoon_area_"+mtok(rr)+".timeseries.png","Area")+"</td><td>"+table_link_setup(OUTDIR,"monsoon_rain_"+mtok(rr)+".timeseries.png","Rainfall")+"</td><td>"+table_link_setup(OUTDIR,"monsoon_rainfixed_"+mtok(rr)+".timeseries.png","Rainfall")+"</td></tr>"
               kk = kk+1
            end if
         end do
@@ -5137,7 +5137,7 @@ begin
   txt(134) = "<tr><td><b>AR6 regional PR &amp; TAS indices</b></td>"
   txt(135) = "<td>Area-weighted averages of monthly precipitation and near-surface air temperature anomalies over each of the 58 IPCC AR6 reference regions (Iturbide et al., 2020), plus global and six latitude-band (60-90&deg;, 30-60&deg;, 0-30&deg; in each hemisphere) averages, each split into all/land/ocean with a land-sea mask. No detrending is applied; the linear trend is shown on each timeseries. Series are plotted per region for every simulation and reference dataset (see the <a href="+quote+"ar6_indices.html"+quote+">IPCC AR6 Regional Indices</a> page). To keep the multi-panel figures legible, monthly series are smoothed and thinned before plotting: an annual running mean sampled yearly for 30-150 year records, or a decadal (10-year) running mean sampled every 5 years for records longer than 150 years, each with a &plusmn;1&sigma; envelope; series of 30 years or less are drawn at full monthly resolution. See Iturbide, M., et al. (2020), An update of IPCC climate reference regions for subcontinental analysis of climate model data, Earth Syst. Sci. Data, 12, 2959-2970, doi:10.5194/essd-12-2959-2020.</td></tr>"
   txt(136) = "<tr><td><b>Global and regional monsoons</b></td>"
-  txt(137) = "<td>The global monsoon domain and the eight AR6 regional monsoons (IPCC AR6 WGI, Figure AV.1: NAmerM, EqAmer, SAmerM, WAfriM, SAfri, SAsiaM, EAsiaM, AusMCM) are diagnosed from the local summer-minus-winter precipitation range and intensity. Per-region monsoon-area (domain extent) and monsoon-rain (precipitation) indices are provided on the <a href="+quote+"ar6_indices.html"+quote+">IPCC AR6 Regional Indices</a> page.</td></tr>"
+  txt(137) = "<td>The global monsoon domain and the eight AR6 regional monsoons (IPCC AR6 WGI, Figure AV.1: NAmerM, EqAmer, SAmerM, WAfriM, SAfri, SAsiaM, EAsiaM, AusMCM) are diagnosed from the local summer-minus-winter precipitation range and intensity. Per-region monsoon-area (domain extent) and monsoon-rain (local-summer precipitation averaged over that year's domain) indices are calculated, together with a fixed-domain rainfall index (local-summer precipitation averaged over the domain diagnosed from the climatological period, which stays fixed, so that it isolates changes in intensity from changes in extent) and a map of the interannual standard deviation of local-summer precipitation over the climatological period within that domain. These are provided on the <a href="+quote+"ar6_indices.html"+quote+">IPCC AR6 Regional Indices</a> page.</td></tr>"
   txt(138) = "</table>"
 
   txt(142) = "<br>Created "+systemfunc("date")
